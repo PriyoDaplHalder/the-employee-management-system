@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -37,6 +37,8 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
 } from "@mui/icons-material";
+import DynamicBox from './DynamicBox';
+import DebouncedTextField from './DebouncedTextField';
 
 const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -48,7 +50,6 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
     githubToken: false,
     adminPassword: false,
   });
-  const [dynamicBoxes, setDynamicBoxes] = useState([]);
   const [editingBoxId, setEditingBoxId] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
@@ -80,6 +81,9 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
     notes: "",
     dynamicBoxes: [],
   });
+
+  // Memoize dynamic boxes to reduce re-renders
+  const memoizedDynamicBoxes = useMemo(() => formData.dynamicBoxes, [formData.dynamicBoxes]);
 
   useEffect(() => {
     if (open && project) {
@@ -126,8 +130,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
             notes: data.relatedInfo.notes || "",
             dynamicBoxes: data.relatedInfo.dynamicBoxes || [],
           }));
-          // Set dynamic boxes state
-          setDynamicBoxes(data.relatedInfo.dynamicBoxes || []);
+          // Remove the separate dynamic boxes state - use only formData
         }
       } else if (response.status !== 404) {
         const errorData = await response.json();
@@ -141,7 +144,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
     }
   };
 
-  const handleInputChange = (field, value, subField = null) => {
+  const handleInputChange = useCallback((field, value, subField = null) => {
     if (subField) {
       setFormData(prev => ({
         ...prev,
@@ -156,7 +159,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
         [field]: value,
       }));
     }
-  };
+  }, []);
 
   const togglePasswordVisibility = (passwordField) => {
     setShowPasswords(prev => ({
@@ -165,130 +168,118 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
     }));
   };
 
-  // Dynamic box functions
-  const showConfirmDialog = (title, message, onConfirm) => {
+  // Dynamic box functions - optimized with useCallback
+  const showConfirmDialog = useCallback((title, message, onConfirm) => {
     setConfirmDialog({
       open: true,
       title,
       message,
       onConfirm,
     });
-  };
+  }, []);
 
-  const handleConfirmClose = () => {
+  const handleConfirmClose = useCallback(() => {
     setConfirmDialog({
       open: false,
       title: "",
       message: "",
       onConfirm: null,
     });
-  };
+  }, []);
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = useCallback(() => {
     if (confirmDialog.onConfirm) {
       confirmDialog.onConfirm();
     }
     handleConfirmClose();
-  };
+  }, [confirmDialog.onConfirm, handleConfirmClose]);
 
-  const addNewBox = () => {
+  const addNewBox = useCallback(() => {
     const newBox = {
       id: Date.now().toString(),
       name: "New Box",
       fields: []
     };
-    const updatedBoxes = [...dynamicBoxes, newBox];
-    setDynamicBoxes(updatedBoxes);
     setFormData(prev => ({
       ...prev,
-      dynamicBoxes: updatedBoxes
+      dynamicBoxes: [...prev.dynamicBoxes, newBox]
     }));
     setEditingBoxId(newBox.id);
-  };
+  }, []);
 
-  const updateBoxName = (boxId, newName) => {
-    const updatedBoxes = dynamicBoxes.map(box =>
-      box.id === boxId ? { ...box, name: newName } : box
-    );
-    setDynamicBoxes(updatedBoxes);
+  const updateBoxName = useCallback((boxId, newName) => {
     setFormData(prev => ({
       ...prev,
-      dynamicBoxes: updatedBoxes
+      dynamicBoxes: prev.dynamicBoxes.map(box =>
+        box.id === boxId ? { ...box, name: newName } : box
+      )
     }));
-  };
+  }, []);
 
-  const deleteBox = (boxId) => {
-    const box = dynamicBoxes.find(b => b.id === boxId);
+  const deleteBox = useCallback((boxId) => {
+    const box = formData.dynamicBoxes.find(b => b.id === boxId);
     const boxName = box?.name || "this box";
     
     showConfirmDialog(
       "Delete Box",
       `Are you sure you want to delete "${boxName}"? This will also delete all fields within this box. This action cannot be undone once clicked on save changes.`,
       () => {
-        const updatedBoxes = dynamicBoxes.filter(box => box.id !== boxId);
-        setDynamicBoxes(updatedBoxes);
         setFormData(prev => ({
           ...prev,
-          dynamicBoxes: updatedBoxes
+          dynamicBoxes: prev.dynamicBoxes.filter(box => box.id !== boxId)
         }));
       }
     );
-  };
+  }, [formData.dynamicBoxes, showConfirmDialog]);
 
-  const addFieldToBox = (boxId) => {
+  const addFieldToBox = useCallback((boxId) => {
     const newField = {
       id: Date.now().toString(),
       label: "New Field",
       value: ""
     };
-    const updatedBoxes = dynamicBoxes.map(box =>
-      box.id === boxId ? { ...box, fields: [...box.fields, newField] } : box
-    );
-    setDynamicBoxes(updatedBoxes);
     setFormData(prev => ({
       ...prev,
-      dynamicBoxes: updatedBoxes
+      dynamicBoxes: prev.dynamicBoxes.map(box =>
+        box.id === boxId ? { ...box, fields: [...box.fields, newField] } : box
+      )
     }));
-  };
+  }, []);
 
-  const updateFieldLabel = (boxId, fieldId, newLabel) => {
-    const updatedBoxes = dynamicBoxes.map(box =>
-      box.id === boxId
-        ? {
-            ...box,
-            fields: box.fields.map(field =>
-              field.id === fieldId ? { ...field, label: newLabel } : field
-            )
-          }
-        : box
-    );
-    setDynamicBoxes(updatedBoxes);
+  const updateFieldLabel = useCallback((boxId, fieldId, newLabel) => {
     setFormData(prev => ({
       ...prev,
-      dynamicBoxes: updatedBoxes
+      dynamicBoxes: prev.dynamicBoxes.map(box =>
+        box.id === boxId
+          ? {
+              ...box,
+              fields: box.fields.map(field =>
+                field.id === fieldId ? { ...field, label: newLabel } : field
+              )
+            }
+          : box
+      )
     }));
-  };
+  }, []);
 
-  const updateFieldValue = (boxId, fieldId, newValue) => {
-    const updatedBoxes = dynamicBoxes.map(box =>
-      box.id === boxId
-        ? {
-            ...box,
-            fields: box.fields.map(field =>
-              field.id === fieldId ? { ...field, value: newValue } : field
-            )
-          }
-        : box
-    );
-    setDynamicBoxes(updatedBoxes);
+  const updateFieldValue = useCallback((boxId, fieldId, newValue) => {
     setFormData(prev => ({
       ...prev,
-      dynamicBoxes: updatedBoxes
+      dynamicBoxes: prev.dynamicBoxes.map(box =>
+        box.id === boxId
+          ? {
+              ...box,
+              fields: box.fields.map(field =>
+                field.id === fieldId ? { ...field, value: newValue } : field
+              )
+            }
+          : box
+      )
     }));
-  };
+  }, []);
 
-  const deleteField = (boxId, fieldId) => {
-    const box = dynamicBoxes.find(b => b.id === boxId);
+  const deleteField = useCallback((boxId, fieldId) => {
+    const box = formData.dynamicBoxes.find(b => b.id === boxId);
     const field = box?.fields.find(f => f.id === fieldId);
     const fieldLabel = field?.label || "this field";
     
@@ -296,19 +287,17 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
       "Delete Field",
       `Are you sure you want to delete the field "${fieldLabel}"? This action cannot be undone once clicked on saved changes.`,
       () => {
-        const updatedBoxes = dynamicBoxes.map(box =>
-          box.id === boxId
-            ? { ...box, fields: box.fields.filter(field => field.id !== fieldId) }
-            : box
-        );
-        setDynamicBoxes(updatedBoxes);
         setFormData(prev => ({
           ...prev,
-          dynamicBoxes: updatedBoxes
+          dynamicBoxes: prev.dynamicBoxes.map(box =>
+            box.id === boxId
+              ? { ...box, fields: box.fields.filter(field => field.id !== fieldId) }
+              : box
+          )
         }));
       }
     );
-  };
+  }, [formData.dynamicBoxes, showConfirmDialog]);
 
   const handleSave = async () => {
     setSaveLoading(true);
@@ -431,11 +420,11 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                 
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Monday Board Link"
                       value={formData.mondayBoardLink}
-                      onChange={(e) => handleInputChange("mondayBoardLink", e.target.value)}
+                      onChange={(value) => handleInputChange("mondayBoardLink", value)}
                       placeholder="https://company.monday.com/boards/..."
                       disabled={saveLoading}
                       InputProps={{
@@ -444,11 +433,11 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Gantt Chart Link"
                       value={formData.ganttChartLink}
-                      onChange={(e) => handleInputChange("ganttChartLink", e.target.value)}
+                      onChange={(value) => handleInputChange("ganttChartLink", value)}
                       placeholder="https://gantt.example.com/..."
                       disabled={saveLoading}
                       InputProps={{
@@ -457,11 +446,11 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Issue List Link"
                       value={formData.issueListLink}
-                      onChange={(e) => handleInputChange("issueListLink", e.target.value)}
+                      onChange={(value) => handleInputChange("issueListLink", value)}
                       placeholder="https://issues.example.com/..."
                       disabled={saveLoading}
                       InputProps={{
@@ -470,11 +459,11 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Time Sheet Link"
                       value={formData.timeSheetLink}
-                      onChange={(e) => handleInputChange("timeSheetLink", e.target.value)}
+                      onChange={(value) => handleInputChange("timeSheetLink", value)}
                       placeholder="https://timesheet.example.com/..."
                       disabled={saveLoading}
                       InputProps={{
@@ -483,11 +472,11 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Sample Excel Sheet Link"
                       value={formData.sampleExcelSheetLink}
-                      onChange={(e) => handleInputChange("sampleExcelSheetLink", e.target.value)}
+                      onChange={(value) => handleInputChange("sampleExcelSheetLink", value)}
                       placeholder="https://example.com/sample-sheet.xlsx"
                       disabled={saveLoading}
                       InputProps={{
@@ -511,52 +500,52 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                 
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Backend Repository Link"
                       value={formData.github.backendLink}
-                      onChange={(e) => handleInputChange("github", e.target.value, "backendLink")}
+                      onChange={(value) => handleInputChange("github", value, "backendLink")}
                       placeholder="https://github.com/user/backend-repo"
                       disabled={saveLoading}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Frontend Repository Link"
                       value={formData.github.frontendLink}
-                      onChange={(e) => handleInputChange("github", e.target.value, "frontendLink")}
+                      onChange={(value) => handleInputChange("github", value, "frontendLink")}
                       placeholder="https://github.com/user/frontend-repo"
                       disabled={saveLoading}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="GitHub Email"
                       value={formData.github.email}
-                      onChange={(e) => handleInputChange("github", e.target.value, "email")}
+                      onChange={(value) => handleInputChange("github", value, "email")}
                       placeholder="github@example.com"
                       disabled={saveLoading}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="GitHub UID"
                       value={formData.github.uid}
-                      onChange={(e) => handleInputChange("github", e.target.value, "uid")}
+                      onChange={(value) => handleInputChange("github", value, "uid")}
                       placeholder="GitHub User ID"
                       disabled={saveLoading}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="GitHub Token"
                       type={showPasswords.githubToken ? "text" : "password"}
                       value={formData.github.token}
-                      onChange={(e) => handleInputChange("github", e.target.value, "token")}
+                      onChange={(value) => handleInputChange("github", value, "token")}
                       placeholder="GitHub Personal Access Token"
                       disabled={saveLoading}
                       InputProps={{
@@ -576,12 +565,12 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="GitHub Password"
                       type={showPasswords.githubPassword ? "text" : "password"}
                       value={formData.github.password}
-                      onChange={(e) => handleInputChange("github", e.target.value, "password")}
+                      onChange={(value) => handleInputChange("github", value, "password")}
                       placeholder="GitHub Password"
                       disabled={saveLoading}
                       InputProps={{
@@ -601,11 +590,11 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                     />
                   </Grid>
                   <Grid item xs={12}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Main Branch"
                       value={formData.github.mainBranch}
-                      onChange={(e) => handleInputChange("github", e.target.value, "mainBranch")}
+                      onChange={(value) => handleInputChange("github", value, "mainBranch")}
                       placeholder="main"
                       disabled={saveLoading}
                     />
@@ -626,11 +615,11 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                 
                 <Grid container spacing={2}>
                   <Grid item xs={12}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Home Page Link"
                       value={formData.homePageLink}
-                      onChange={(e) => handleInputChange("homePageLink", e.target.value)}
+                      onChange={(value) => handleInputChange("homePageLink", value)}
                       placeholder="https://projectname.com"
                       disabled={saveLoading}
                       InputProps={{
@@ -639,11 +628,11 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Admin Panel Link"
                       value={formData.adminPanel.link}
-                      onChange={(e) => handleInputChange("adminPanel", e.target.value, "link")}
+                      onChange={(value) => handleInputChange("adminPanel", value, "link")}
                       placeholder="https://admin.projectname.com"
                       disabled={saveLoading}
                       InputProps={{
@@ -652,22 +641,22 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Admin Email"
                       value={formData.adminPanel.email}
-                      onChange={(e) => handleInputChange("adminPanel", e.target.value, "email")}
+                      onChange={(value) => handleInputChange("adminPanel", value, "email")}
                       placeholder="admin@projectname.com"
                       disabled={saveLoading}
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <TextField
+                    <DebouncedTextField
                       fullWidth
                       label="Admin Password"
                       type={showPasswords.adminPassword ? "text" : "password"}
                       value={formData.adminPanel.password}
-                      onChange={(e) => handleInputChange("adminPanel", e.target.value, "password")}
+                      onChange={(value) => handleInputChange("adminPanel", value, "password")}
                       placeholder="Admin Panel Password"
                       disabled={saveLoading}
                       InputProps={{
@@ -696,13 +685,13 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                 <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.main", mb: 2 }}>
                   Additional Notes
                 </Typography>
-                <TextField
+                <DebouncedTextField
                   sx={{ width: "50vw" }}
                   multiline
                   rows={4}
                   label="Notes"
                   value={formData.notes}
-                  onChange={(e) => handleInputChange("notes", e.target.value)}
+                  onChange={(value) => handleInputChange("notes", value)}
                   placeholder="Add any additional information, credentials, or notes related to this project..."
                   disabled={saveLoading}
                 />
@@ -710,109 +699,20 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
             </Grid>
 
             {/* Dynamic Boxes */}
-            {dynamicBoxes.map((box) => (
-              <Grid item xs={12} key={box.id}>
-                <Paper variant="outlined" sx={{ p: 3 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-                    {editingBoxId === box.id ? (
-                      <TextField
-                        variant="outlined"
-                        size="small"
-                        value={box.name}
-                        onChange={(e) => updateBoxName(box.id, e.target.value)}
-                        onBlur={() => setEditingBoxId(null)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            setEditingBoxId(null);
-                          }
-                        }}
-                        autoFocus
-                        sx={{ fontWeight: 600 }}
-                      />
-                    ) : (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.main" }}>
-                          {box.name}
-                        </Typography>
-                        <IconButton
-                          size="small"
-                          onClick={() => setEditingBoxId(box.id)}
-                          disabled={saveLoading}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    )}
-                    <Box sx={{ display: "flex", gap: 1 }}>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={() => addFieldToBox(box.id)}
-                        disabled={saveLoading}
-                        sx={{ borderRadius: 2 }}
-                      >
-                        Add Field
-                      </Button>
-                      <IconButton
-                        color="error"
-                        onClick={() => deleteBox(box.id)}
-                        disabled={saveLoading}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  </Box>
-                  
-                  <Grid container spacing={2}>
-                    {box.fields.map((field) => (
-                      <Grid item xs={12} sm={6} key={field.id}>
-                        <Box sx={{ display: "flex", alignItems: "flex-end", gap: 1 }}>
-                          <TextField
-                            fullWidth
-                            label={field.label}
-                            value={field.value}
-                            onChange={(e) => updateFieldValue(box.id, field.id, e.target.value)}
-                            disabled={saveLoading}
-                            InputProps={{
-                              endAdornment: (
-                                <InputAdornment position="end">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => {
-                                      const newLabel = prompt("Enter new label:", field.label);
-                                      if (newLabel && newLabel.trim()) {
-                                        updateFieldLabel(box.id, field.id, newLabel.trim());
-                                      }
-                                    }}
-                                    disabled={saveLoading}
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                </InputAdornment>
-                              ),
-                            }}
-                          />
-                          <IconButton
-                            color="error"
-                            onClick={() => deleteField(box.id, field.id)}
-                            disabled={saveLoading}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Box>
-                      </Grid>
-                    ))}
-                    {box.fields.length === 0 && (
-                      <Grid item xs={12}>
-                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 2 }}>
-                          No fields added yet. Click "Add Field" to create input fields.
-                        </Typography>
-                      </Grid>
-                    )}
-                  </Grid>
-                </Paper>
-              </Grid>
+            {memoizedDynamicBoxes.map((box) => (
+              <DynamicBox
+                key={box.id}
+                box={box}
+                editingBoxId={editingBoxId}
+                setEditingBoxId={setEditingBoxId}
+                updateBoxName={updateBoxName}
+                addFieldToBox={addFieldToBox}
+                deleteBox={deleteBox}
+                updateFieldValue={updateFieldValue}
+                updateFieldLabel={updateFieldLabel}
+                deleteField={deleteField}
+                saveLoading={saveLoading}
+              />
             ))}
 
             {/* Add New Box Button */}
