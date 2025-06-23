@@ -17,6 +17,38 @@ const projectSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  relatedInfo: {
+    mondayBoardLink: { type: String, trim: true },
+    ganttChartLink: { type: String, trim: true },
+    issueListLink: { type: String, trim: true },
+    sampleExcelSheetLink: { type: String, trim: true },
+    timeSheetLink: { type: String, trim: true },
+    github: {
+      backendLink: { type: String, trim: true },
+      frontendLink: { type: String, trim: true },
+      email: { type: String, trim: true },
+      uid: { type: String, trim: true },
+      token: { type: String, trim: true },
+      password: { type: String, trim: true },
+      mainBranch: { type: String, trim: true, default: 'main' },
+    },
+    homePageLink: { type: String, trim: true },
+    adminPanel: {
+      link: { type: String, trim: true },
+      email: { type: String, trim: true },
+      password: { type: String, trim: true },
+    },
+    notes: { type: String, trim: true },
+    dynamicBoxes: [{
+      id: { type: String, required: true },
+      name: { type: String, required: true, trim: true },
+      fields: [{
+        id: { type: String, required: true },
+        label: { type: String, required: true, trim: true },
+        value: { type: String, trim: true }
+      }]
+    }],
+  },
 }, {
   timestamps: true,
 });

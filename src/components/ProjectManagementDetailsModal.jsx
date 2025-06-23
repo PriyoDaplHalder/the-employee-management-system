@@ -34,8 +34,10 @@ import {
   Delete as DeleteIcon,
   CalendarToday as CalendarIcon,
   Notes as NotesIcon,
+  Info as InfoIcon,
 } from "@mui/icons-material";
 import ConfirmationModal from "./ConfirmationModal";
+import ProjectRelatedInfoModal from "./ProjectRelatedInfoModal";
 
 const ProjectManagementDetailsModal = ({ project, open, onClose, onRefresh }) => {
   const [assignments, setAssignments] = useState([]);
@@ -45,6 +47,7 @@ const ProjectManagementDetailsModal = ({ project, open, onClose, onRefresh }) =>
   const [actionLoading, setActionLoading] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] = useState(null);
+  const [showRelatedInfoModal, setShowRelatedInfoModal] = useState(false);
 
   useEffect(() => {
     if (open && project) {
@@ -131,6 +134,19 @@ const ProjectManagementDetailsModal = ({ project, open, onClose, onRefresh }) =>
   const cancelRemoveAssignment = () => {
     setShowDeleteConfirmation(false);
     setAssignmentToDelete(null);
+  };
+
+  const handleRelatedInfoClick = () => {
+    setShowRelatedInfoModal(true);
+  };
+
+  const handleCloseRelatedInfo = () => {
+    setShowRelatedInfoModal(false);
+  };
+
+  const handleRelatedInfoSuccess = () => {
+    setSuccess("Related information updated successfully!");
+    setTimeout(() => setSuccess(""), 3000);
   };
 
   if (!project) return null;
@@ -386,11 +402,30 @@ const ProjectManagementDetailsModal = ({ project, open, onClose, onRefresh }) =>
       </DialogContent>
 
       <DialogActions sx={{ 
-        p: 1, 
+        p: 3, 
         borderTop: "1px solid", 
-        borderColor: "divider" 
+        borderColor: "divider",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
       }}>
-        <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2 }}>
+        <Button 
+          onClick={handleRelatedInfoClick} 
+          variant="contained" 
+          startIcon={<InfoIcon />}
+          sx={{ 
+            borderRadius: 2,
+            textTransform: "none",
+            fontWeight: 500,
+          }}
+        >
+          Related Info
+        </Button>
+        <Button 
+          onClick={onClose} 
+          variant="outlined" 
+          sx={{ borderRadius: 2 }}
+        >
           Close
         </Button>
       </DialogActions>
@@ -408,6 +443,14 @@ const ProjectManagementDetailsModal = ({ project, open, onClose, onRefresh }) =>
         confirmText="Remove"
         cancelText="Cancel"
         confirmVariant="danger"
+      />
+
+      {/* Related Info Modal */}
+      <ProjectRelatedInfoModal
+        project={project}
+        open={showRelatedInfoModal}
+        onClose={handleCloseRelatedInfo}
+        onSuccess={handleRelatedInfoSuccess}
       />
     </Dialog>
   );
