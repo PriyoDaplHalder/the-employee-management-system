@@ -18,8 +18,8 @@ const useAuthRouting = () => {
     }
   }, [user, loading, router]);
 
-  const handleAuthSuccess = (token, userData) => {
-    login(token, userData);
+  const handleAuthSuccess = (token, userData, rememberMe = false) => {
+    login(token, userData, rememberMe);
   };
 
   const handleLogout = () => {

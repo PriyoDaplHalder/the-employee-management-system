@@ -1,5 +1,12 @@
 "use client";
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { 
+  getToken, 
+  getUserData, 
+  storeAuthData, 
+  clearAuthData, 
+  isTokenExpired 
+} from "../utils/storage";
 
 const AuthContext = createContext({});
 
@@ -8,49 +15,71 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in (check localStorage/token)
-    // Only access localStorage after component has mounted
+    // Check if user is logged in (check localStorage/sessionStorage for token)
+    // Only access storage after component has mounted
     if (typeof window === "undefined") {
       setLoading(false);
       return;
     }
 
-    // Get token from localStorage
-    // If token exists, fetch user data from localStorage
-    // If token is invalid or user data is not found, clear localStorage
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const userData = JSON.parse(localStorage.getItem("userData"));
+    const token = getToken();
+    const userData = getUserData();
+
+    if (token && userData) {
+      // Validate token before setting user
+      if (!isTokenExpired(token)) {
         setUser(userData);
-      } catch (error) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("userData");
+      } else {
+        // Token expired, clear storage
+        clearAuthData();
       }
     }
+    
     setLoading(false);
   }, []);
 
   // This function should be called after successful authentication
-  // It saves the token and user data to localStorage and updates the user state
-  const login = (token, userData) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("userData", JSON.stringify(userData));
+  // It saves the token and user data to appropriate storage and updates the user state
+  const login = (token, userData, rememberMe = false) => {
+    storeAuthData(token, userData, rememberMe);
     setUser(userData);
   };
 
-  // This function clears the token and user data from localStorage and updates the user state when logging out
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userData");
+  // This function clears the token and user data from both storages and updates the user state when logging out
+  const logout = useCallback(() => {
+    clearAuthData();
     setUser(null);
-  };
+  }, []);
+
+  // Function to validate and refresh authentication state
+  const validateAuth = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    const token = getToken();
+    
+    if (token && isTokenExpired(token)) {
+      // Token is expired, logout user
+      logout();
+    }
+  }, [logout]);
+
+  // Periodic token validation - check every 5 minutes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const interval = setInterval(() => {
+      validateAuth();
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [validateAuth]);
 
   const value = {
     user,
     login,
     logout,
     loading,
+    validateAuth,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>; // Providing auth context to children

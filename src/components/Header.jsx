@@ -96,7 +96,7 @@ const Header = ({
         </IconButton>
 
         {/* Search Bar */}
-        <Box sx={{ flexGrow: 1, maxWidth: 400, mx: 4 }}>
+        {/* <Box sx={{ flexGrow: 1, maxWidth: 400, mx: 4 }}>
           <TextField
             fullWidth
             variant="outlined"
@@ -128,7 +128,7 @@ const Header = ({
               ),
             }}
           />
-        </Box>
+        </Box> */}
 
         {/* User Profile Section */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>

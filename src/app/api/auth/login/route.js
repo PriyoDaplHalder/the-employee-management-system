@@ -7,7 +7,7 @@ export async function POST(request) {
   try {
     await dbConnect();
 
-    const { email, password } = await request.json();
+    const { email, password, rememberMe } = await request.json();
 
     // Find user
     const user = await User.findOne({ email });
@@ -27,16 +27,17 @@ export async function POST(request) {
       );
     }
 
-    // Generate token
+    // Generate token with appropriate expiration
     const token = signToken({
       userId: user._id,
       email: user.email,
       role: user.role,
-    });
+    }, rememberMe);
 
     return NextResponse.json({
       message: "Login successful",
       token,
+      rememberMe,
       user: {
         id: user._id,
         email: user.email,

@@ -1,10 +1,9 @@
 
-// Helper function to get auth token from localStorage
+import { getToken } from '../utils/storage';
+
+// Helper function to get auth token from localStorage or sessionStorage
 const getAuthToken = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
-  }
-  return null;
+  return getToken();
 };
 
 // Helper function to make authenticated API calls

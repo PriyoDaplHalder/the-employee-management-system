@@ -14,6 +14,8 @@ import {
   CardContent,
   IconButton,
   InputAdornment,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import {
   Visibility as VisibilityIcon,
@@ -24,6 +26,7 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    rememberMe: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -101,7 +104,9 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
 
     try {
       const endpoint = isSignup ? "/api/auth/signup" : "/api/auth/login";
-      const body = isSignup ? { ...formData, role: userType } : formData;
+      const body = isSignup 
+        ? { ...formData, role: userType } 
+        : { email: formData.email, password: formData.password, rememberMe: formData.rememberMe };
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -119,7 +124,7 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
           role: isSignup ? userType : data.user?.role || userType,
           ...data.user,
         };
-        onSubmit(data.token, userData);
+        onSubmit(data.token, userData, isSignup ? false : formData.rememberMe);
       } else {
         setError(data.error || "Something went wrong");
       }
@@ -216,6 +221,28 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                 }}
                 sx={{ mb: 4 }}
               />
+
+              {/* Remember Me Checkbox */}
+              {!isSignup && (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.rememberMe}
+                      onChange={(e) =>
+                        setFormData({ ...formData, rememberMe: e.target.checked })
+                      }
+                      disabled={loading}
+                      color="primary"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" color="text.secondary">
+                      Remember me
+                    </Typography>
+                  }
+                  sx={{ mb: 3, display: 'flex', justifyContent: 'flex-start' }}
+                />
+              )}
 
               <Button
                 type="submit"

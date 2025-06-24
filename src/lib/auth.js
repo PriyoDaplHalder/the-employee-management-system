@@ -2,8 +2,17 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-export function signToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' }); // Token expires in 24 hours
+export function signToken(payload, rememberMe = false) {
+  const expiresIn = rememberMe ? '30d' : '24h';
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
+}
+
+export function signShortToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+}
+
+export function signLongToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
 }
 
 export function verifyToken(token) {

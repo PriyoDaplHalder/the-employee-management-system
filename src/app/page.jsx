@@ -48,8 +48,8 @@ export default function Home() {
     setIsSignup(false);
   };
 
-  const handleSubmit = (token, userData) => {
-    handleAuthSuccess(token, userData);
+  const handleSubmit = (token, userData, rememberMe = false) => {
+    handleAuthSuccess(token, userData, rememberMe);
   };
 
   if (currentView === "login") {
