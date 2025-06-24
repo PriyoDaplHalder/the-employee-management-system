@@ -27,10 +27,46 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // string+@+domain+.+extension
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password) => {
+    const minLength = password.length > 6;
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    
+    return {
+      isValid: minLength && hasLowerCase && hasUpperCase && hasNumber && hasSymbol,
+      errors: {
+        minLength,
+        hasLowerCase,
+        hasUpperCase,
+        hasNumber,
+        hasSymbol
+      }
+    };
+  };
+
+  const handleEmailChange = (e) => {
+    const email = e.target.value;
+    setFormData({ ...formData, email });
+    
+    // Clear previous email error
+    setEmailError("");
+    if (email && !validateEmail(email)) {
+      setEmailError("Please enter a valid email address");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -39,10 +75,28 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
     setError("");
 
     // Client-side validation
-    if (isSignup && formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
+    // Validate email
+    if (!validateEmail(formData.email)) {
+      setError("Please enter a valid email address");
+      setEmailError("Please enter a valid email address");
       setLoading(false);
       return;
+    }
+
+    if (isSignup) {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        const missingRequirements = [];
+        if (!passwordValidation.errors.minLength) missingRequirements.push("6 characters");
+        if (!passwordValidation.errors.hasLowerCase) missingRequirements.push("1 lowercase letter");
+        if (!passwordValidation.errors.hasUpperCase) missingRequirements.push("1 uppercase letter");
+        if (!passwordValidation.errors.hasNumber) missingRequirements.push("1 number");
+        if (!passwordValidation.errors.hasSymbol) missingRequirements.push("1 symbol");
+
+        setError(`Password must contain at least ${missingRequirements.join(", ")}`);
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -125,9 +179,9 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                 variant="outlined"
                 placeholder="Enter your email"
                 value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
+                onChange={handleEmailChange}
+                error={!!emailError}
+                helperText={emailError || "Enter a valid email address"}
                 sx={{ mb: 3 }}
               />
 
@@ -144,7 +198,7 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                   setFormData({ ...formData, password: e.target.value })
                 }
                 helperText={
-                  isSignup ? "Password must be at least 6 characters" : ""
+                  isSignup ? ">6 character, 1(lowercase, uppercase, number, symbol)" : ""
                 }
                 InputProps={{
                   endAdornment: (

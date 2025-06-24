@@ -334,6 +334,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
       setError("Error saving related info");
     } finally {
       setSaveLoading(false);
+      onClose();
     }
   };
 
