@@ -12,7 +12,13 @@ import {
   Divider,
   Card,
   CardContent,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
+import {
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+} from "@mui/icons-material";
 
 const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -21,6 +27,11 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -124,7 +135,7 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                 fullWidth
                 label="Password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 variant="outlined"
                 placeholder="Enter your password"
@@ -135,6 +146,20 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                 helperText={
                   isSignup ? "Password must be at least 6 characters" : ""
                 }
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={togglePasswordVisibility}
+                        edge="end"
+                        disabled={loading}
+                      >
+                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
                 sx={{ mb: 4 }}
               />
 
