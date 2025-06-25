@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { getToken } from "../utils/storage";
 import {
   Box,
@@ -33,6 +33,30 @@ import {
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 
+// Predefined positions for dropdown - moved outside component to prevent recreation
+const PREDEFINED_POSITIONS = [
+  "Human Resource",
+  "Team Leader",
+  "Project Manager",
+  "Senior Developer",
+  "Junior Developer",
+  "Quality Assurance",
+  "Business Analyst",
+  "Data Scientist",
+  "UI/UX Designer",
+  "System Administrator",
+  "Network Engineer",
+  "DevOps Engineer",
+  "Technical Support",
+  "Sales Executive",
+  "Marketing Specialist",
+  "Customer Service",
+  "Trainee",
+  "Student",
+  "Intern",
+  "Others",
+];
+
 const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -55,30 +79,8 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
   const [validationErrors, setValidationErrors] = useState({});
   const [showCustomPosition, setShowCustomPosition] = useState(false);
 
-  // Predefined positions for dropdown
-  const predefinedPositions = [
-    "Human Resource",
-    "Team Leader",
-    "Project Manager",
-    "Senior Developer",
-    "Junior Developer",
-    "Quality Assurance",
-    "Business Analyst",
-    "Data Scientist",
-    "UI/UX Designer",
-    "System Administrator",
-    "Network Engineer",
-    "DevOps Engineer",
-    "Technical Support",
-    "Sales Executive",
-    "Marketing Specialist",
-    "Customer Service",
-    "Trainee",
-    "Student",
-    "Intern",
-    "Others",
-  ]; // Helper function to safely access nested employee data
-  const getEmployeeData = (employee) => {
+  // Helper function to safely access nested employee data
+  const getEmployeeData = useCallback((employee) => {
     // Handle both direct employee object and employee with employeeData wrapper
     const empData = employee?.employeeData || employee;
     const userData = employee?.user || empData?.user || employee;
@@ -132,79 +134,58 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
     };
 
     // Handle custom positions if the position is not in predefined list
-    const predefinedPositions = [
-      "Human Resource",
-      "Team Leader",
-      "Project Manager",
-      "Senior Developer",
-      "Junior Developer",
-      "Quality Assurance",
-      "Business Analyst",
-      "Data Scientist",
-      "UI/UX Designer",
-      "System Administrator",
-      "Network Engineer",
-      "DevOps Engineer",
-      "Technical Support",
-      "Sales Executive",
-      "Marketing Specialist",
-      "Customer Service",
-      "Trainee",
-      "Student",
-      "Intern",
-      "Others",
-    ];
-
     const position = result.position;
-    if (position && !predefinedPositions.includes(position)) {
+    if (position && !PREDEFINED_POSITIONS.includes(position)) {
       result.position = "Others";
       result.customPosition = position;
     }
 
     return result;
-  };
+  }, []);
   useEffect(() => {
     if (employee) {
       const employeeData = getEmployeeData(employee);
       setFormData(employeeData);
       setShowCustomPosition(employeeData.position === "Others");
     }
-  }, [employee]);
-  const handleChange = (e) => {
+  }, [employee, getEmployeeData]);
+
+  const handleChange = useCallback((e) => {
     const { name, value, checked, type } = e.target;
     const newValue = type === "checkbox" ? checked : value;
 
     if (name === "position") {
       setShowCustomPosition(value === "Others");
       if (value !== "Others") {
-        setFormData({
-          ...formData,
+        setFormData(prevData => ({
+          ...prevData,
           [name]: value,
           customPosition: "", // Clear custom position when predefined is selected
-        });
+        }));
       } else {
-        setFormData({
-          ...formData,
+        setFormData(prevData => ({
+          ...prevData,
           [name]: value,
-        });
+        }));
       }
     } else {
-      setFormData({
-        ...formData,
+      setFormData(prevData => ({
+        ...prevData,
         [name]: newValue,
-      });
+      }));
     }
 
-    // Clear field-specific validation error when user starts typing
-    if (validationErrors[name]) {
-      setValidationErrors({
-        ...validationErrors,
-        [name]: "",
-      });
-    }
-  };
+    // Clear field-specific validation error only if it exists
+    setValidationErrors(prevErrors => {
+      if (prevErrors[name]) {
+        const { [name]: removed, ...rest } = prevErrors;
+        return rest;
+      }
+      return prevErrors;
+    });
+  }, []);
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const errors = {};
 
     if (!formData.firstName.trim()) {
@@ -238,7 +219,7 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  };
+  }, [formData]);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -564,7 +545,7 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
                             borderRadius: 2,
                           }}
                         >
-                          {predefinedPositions.map((position) => (
+                          {PREDEFINED_POSITIONS.map((position) => (
                             <MenuItem key={position} value={position}>
                               {position}
                             </MenuItem>
@@ -908,4 +889,4 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
   );
 };
 
-export default ManagementEmployeeEdit;
+export default memo(ManagementEmployeeEdit);

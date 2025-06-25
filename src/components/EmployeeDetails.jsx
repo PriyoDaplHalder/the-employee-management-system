@@ -465,7 +465,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
               {isViewMode ? "Edit" : "Cancel"}
             </Button>
           )}
-          {profileExists && !isManagement && !profileCompleted && (
+          {/* {profileExists && !isManagement && !profileCompleted && (
             <Button
               variant="outlined"
               onClick={() => setIsViewMode(!isViewMode)}
@@ -473,7 +473,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
             >
               {isViewMode ? "Edit Profile" : "Cancel"}
             </Button>
-          )}
+          )} */}
         </Toolbar>
       </AppBar>
 
