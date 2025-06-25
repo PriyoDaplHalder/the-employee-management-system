@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
 import ProjectDetailsModal from "./ProjectDetailsModal";
+import { getToken } from "../utils/storage";
 
 const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
   const [assignments, setAssignments] = useState([]);
@@ -36,7 +37,7 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
 
   const fetchMyProjects = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         setError("No authentication token");
         return;

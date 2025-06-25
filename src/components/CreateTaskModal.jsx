@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getToken } from "../utils/storage";
 import {
   Dialog,
   DialogTitle,
@@ -66,7 +67,7 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/management/tasks", {
         method: "POST",
         headers: {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getToken } from "../utils/storage";
 import {
   Box,
   Container,
@@ -85,7 +86,7 @@ const MailManagement = ({ user, onBack }) => {
 
   const fetchAvailablePositions = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/mail?action=get-positions", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -106,7 +107,7 @@ const MailManagement = ({ user, onBack }) => {
 
   const fetchMailHistory = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/mail", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -168,7 +169,7 @@ const MailManagement = ({ user, onBack }) => {
 
     setSending(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
 
       // Extract position IDs from selected position objects
       const requestData = {

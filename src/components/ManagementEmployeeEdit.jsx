@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getToken } from "../utils/storage";
 import {
   Box,
   Container,
@@ -252,7 +253,7 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         setError("No authentication token found");
         setLoading(false);

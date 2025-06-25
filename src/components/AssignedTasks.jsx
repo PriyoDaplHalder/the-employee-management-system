@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatDueDate, isTaskOverdue } from "../utils/dateUtils";
+import { getToken } from "../utils/storage";
 import {
   Box,
   Container,
@@ -79,7 +80,7 @@ const AssignedTasks = ({ user, onBack, onTaskCountChange }) => {
 
   const fetchTasks = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         setError("No authentication token");
         return;
@@ -116,7 +117,7 @@ const AssignedTasks = ({ user, onBack, onTaskCountChange }) => {
   const handleTaskStatusUpdate = async (taskId, newStatus, comment = "") => {
     setStatusUpdateLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch(`/api/employee/tasks/${taskId}`, {
         method: "PATCH",
         headers: {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getToken } from "../utils/storage";
 import {
   Box,
   Container,
@@ -51,7 +52,7 @@ const InboxManagement = ({ user, onBack }) => {
   const fetchReceivedMails = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/mail/inbox", {
         headers: {
           Authorization: `Bearer ${token}`,

@@ -25,6 +25,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
 import EmployeeDetailsModal from "./EmployeeDetailsModal";
 import ProjectAssignmentModal from "./ProjectAssignmentModal";
+import { getToken } from "../utils/storage";
 
 const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   const [employees, setEmployees] = useState([]);
@@ -140,7 +141,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
         return;
       }
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         setError("No authentication token");
         return;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getToken } from "../utils/storage";
 import {
   Box,
   Container,
@@ -34,7 +35,7 @@ const MyProjects = ({ user, onBack }) => {
 
   const fetchMyProjects = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         setError("No authentication token");
         return;

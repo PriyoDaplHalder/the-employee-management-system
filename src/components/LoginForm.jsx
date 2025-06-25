@@ -117,15 +117,21 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
       });
 
       const data = await response.json();
+      console.log('Login response:', { status: response.status, data });
 
       if (response.ok) {
+        console.log('Login successful, token received:', !!data.token);
+        console.log('User data:', data.user);
+        
         const userData = {
           email: formData.email,
           role: isSignup ? userType : data.user?.role || userType,
           ...data.user,
         };
+        console.log('Final userData:', userData);
         onSubmit(data.token, userData, isSignup ? false : formData.rememberMe);
       } else {
+        console.error('Login failed:', data);
         setError(data.error || "Something went wrong");
       }
     } catch (error) {

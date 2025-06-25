@@ -30,6 +30,8 @@ export const getUserData = () => {
 export const storeAuthData = (token, userData, rememberMe = false) => {
   if (typeof window === 'undefined') return;
 
+  console.log('Storing auth data:', { hasToken: !!token, userData, rememberMe });
+
   const tokenString = token;
   const userDataString = JSON.stringify(userData);
 
@@ -40,6 +42,7 @@ export const storeAuthData = (token, userData, rememberMe = false) => {
     // Clear any existing session storage
     sessionStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
     sessionStorage.removeItem(AUTH_STORAGE_KEYS.USER_DATA);
+    console.log('Stored in localStorage');
   } else {
     // Store in sessionStorage for session only
     sessionStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, tokenString);
@@ -47,6 +50,7 @@ export const storeAuthData = (token, userData, rememberMe = false) => {
     // Clear any existing localStorage
     localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
     localStorage.removeItem(AUTH_STORAGE_KEYS.USER_DATA);
+    console.log('Stored in sessionStorage');
   }
 };
 

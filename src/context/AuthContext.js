@@ -41,8 +41,14 @@ const AuthProvider = ({ children }) => {
   // This function should be called after successful authentication
   // It saves the token and user data to appropriate storage and updates the user state
   const login = (token, userData, rememberMe = false) => {
+    console.log('AuthContext login called with:', { 
+      hasToken: !!token, 
+      userData, 
+      rememberMe 
+    });
     storeAuthData(token, userData, rememberMe);
     setUser(userData);
+    console.log('User state updated:', userData);
   };
 
   // This function clears the token and user data from both storages and updates the user state when logging out

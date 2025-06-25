@@ -68,7 +68,6 @@ async function seedHRUser() {
     console.log('HR user created successfully!');
     console.log('Email:', defaultHRUser.email);
     console.log('Password:', defaultHRUser.password);
-    console.log('IMPORTANT: Please change the default password after first login!');
 
   } catch (error) {
     console.error('Error creating HR user:', error.message);

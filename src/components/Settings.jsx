@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getToken } from "../utils/storage";
 import {
   Box,
   Container,
@@ -78,7 +79,7 @@ const Settings = ({ user, onBack }) => {
   const fetchPositions = async () => {
     try {
       setPositionsLoading(true);
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/management/positions", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -104,7 +105,7 @@ const Settings = ({ user, onBack }) => {
     try {
       setLoading(true); // Always show loading when fetching
       console.log("Fetching position mappings...");
-      const token = localStorage.getItem("token");
+      const token = getToken();
 
       // Add timestamp to prevent caching
       const timestamp = new Date().getTime();
@@ -161,7 +162,7 @@ const Settings = ({ user, onBack }) => {
 
     setActionLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/management/position-emails", {
         method: "POST",
         headers: {
@@ -197,7 +198,7 @@ const Settings = ({ user, onBack }) => {
 
     setActionLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/management/position-emails", {
         method: "PUT",
         headers: {
@@ -233,7 +234,7 @@ const Settings = ({ user, onBack }) => {
     setActionLoading(true);
     try {
       console.log("Deleting mapping:", selectedMapping);
-      const token = localStorage.getItem("token");
+      const token = getToken();
 
       // Optimistically remove from UI first
       const mappingIdToDelete = selectedMapping._id;

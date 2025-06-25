@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { getToken } from "../utils/storage";
 import {
   Dialog,
   DialogTitle,
@@ -95,7 +96,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
     setLoading(true);
     setError("");
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch(`/api/projects/${project._id}/related-info`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -308,7 +309,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
       console.log("Saving formData:", formData);
       console.log("Dynamic boxes:", formData.dynamicBoxes);
       
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch(`/api/projects/${project._id}/related-info`, {
         method: "PUT",
         headers: {

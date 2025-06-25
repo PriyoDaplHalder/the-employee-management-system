@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatDueDate, isTaskOverdue } from "../utils/dateUtils";
+import { getToken } from "../utils/storage";
 import {
   Box,
   Container,
@@ -74,7 +75,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
 
   const fetchTasks = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/management/tasks", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -98,7 +99,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
 
   const fetchProjects = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/projects", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -116,7 +117,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
 
   const fetchEmployees = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/management/users", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -138,7 +139,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
     
     setActionLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch(`/api/management/tasks/${taskId}`, {
         method: "DELETE",
         headers: {
@@ -162,7 +163,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
   const handleTaskStatusUpdate = async (taskId, newStatus, comment = "") => {
     setActionLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch(`/api/management/tasks/${taskId}`, {
         method: "PUT",
         headers: {
@@ -284,7 +285,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
     
     // Fetch detailed task information including activity history
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch(`/api/management/tasks/${task._id}`, {
         headers: {
           Authorization: `Bearer ${token}`,

@@ -19,6 +19,7 @@ import TaskManagement from "./TaskManagement";
 import Settings from "./Settings";
 import MailManagement from "./MailManagement";
 import InboxManagement from "./InboxManagement";
+import { getToken } from "../utils/storage";
 
 const Dashboard = ({ user, title, onLogout }) => {
   const [mounted, setMounted] = useState(false);
@@ -42,7 +43,7 @@ const Dashboard = ({ user, title, onLogout }) => {
     try {
       if (typeof window === "undefined") return;
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) return;
 
       const response = await fetch("/api/stats", {
@@ -66,7 +67,7 @@ const Dashboard = ({ user, title, onLogout }) => {
     try {
       if (typeof window === "undefined") return;
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) return;
 
       const response = await fetch("/api/management/tasks", {

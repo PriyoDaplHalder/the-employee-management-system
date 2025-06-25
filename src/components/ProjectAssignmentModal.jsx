@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getToken } from "../utils/storage";
 import {
   Dialog,
   DialogTitle,
@@ -40,7 +41,7 @@ const ProjectAssignmentModal = ({ employee, open, onClose, onSuccess }) => {
   const fetchProjects = async () => {
     setFetchingProjects(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/projects", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -67,7 +68,7 @@ const ProjectAssignmentModal = ({ employee, open, onClose, onSuccess }) => {
     if (!employee?._id) return;
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/management/projects/assign", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -117,7 +118,7 @@ const ProjectAssignmentModal = ({ employee, open, onClose, onSuccess }) => {
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/management/projects/assign", {
         method: "POST",
         headers: {

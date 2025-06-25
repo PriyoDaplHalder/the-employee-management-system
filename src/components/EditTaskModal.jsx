@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getToken } from "../utils/storage";
 import {
   Dialog,
   DialogTitle,
@@ -95,7 +96,7 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("No authentication token");
 
       // Validation

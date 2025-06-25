@@ -31,6 +31,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
 import EditIcon from "@mui/icons-material/Edit";
 import InfoIcon from "@mui/icons-material/Info";
 import ProjectManagementDetailsModal from "./ProjectManagementDetailsModal";
+import { getToken } from "../utils/storage";
 
 const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
   const [projects, setProjects] = useState([]);
@@ -65,7 +66,7 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
         return;
       }
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const url = showInactive
         ? "/api/projects?showInactive=true"
         : "/api/projects";
@@ -126,7 +127,7 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
         return;
       }
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const url = editingProject
         ? `/api/projects/${editingProject._id}`
         : "/api/projects";
@@ -194,7 +195,7 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
           return;
         }
 
-        const token = localStorage.getItem("token");
+        const token = getToken();
         const response = await fetch(
           `/api/projects/${statusConfirmation.project._id}/toggle-status`,
           {

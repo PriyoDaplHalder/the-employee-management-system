@@ -19,6 +19,7 @@ import AssignedProjects from "./AssignedProjects";
 import AssignedTasks from "./AssignedTasks";
 import MailManagement from "./MailManagement";
 import InboxManagement from "./InboxManagement";
+import { getToken } from "../utils/storage";
 
 const EmployeeDashboard = ({ user, onLogout }) => {
   const [mounted, setMounted] = useState(false);
@@ -46,7 +47,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
     try {
       if (typeof window === "undefined") return;
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) return;
 
       const response = await fetch("/api/stats", {
@@ -70,7 +71,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
     try {
       if (typeof window === "undefined") return;
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) return;
 
       const response = await fetch("/api/employee/projects", {
@@ -93,7 +94,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
     try {
       if (typeof window === "undefined") return;
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) return;
 
       const response = await fetch("/api/employee/tasks", {
@@ -116,7 +117,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
     try {
       if (typeof window === "undefined") return;
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) return;
 
       const response = await fetch("/api/employee/profile", {

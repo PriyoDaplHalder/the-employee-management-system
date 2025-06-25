@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getToken } from "../utils/storage";
 import {
   Dialog,
   DialogTitle,
@@ -59,7 +60,7 @@ const ProjectManagementDetailsModal = ({ project, open, onClose, onRefresh }) =>
     setLoading(true);
     setError("");
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/management/projects/assign", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -102,7 +103,7 @@ const ProjectManagementDetailsModal = ({ project, open, onClose, onRefresh }) =>
     setShowDeleteConfirmation(false);
     
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch(
         `/api/management/projects/assign/${assignmentToDelete._id}`,
         {

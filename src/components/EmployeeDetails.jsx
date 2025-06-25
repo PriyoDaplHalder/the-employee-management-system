@@ -24,6 +24,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import EditIcon from "@mui/icons-material/Edit";
+import { getToken } from "../utils/storage";
 
 const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
   const [formData, setFormData] = useState({
@@ -87,7 +88,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
       // Only access localStorage after component has mounted
       if (typeof window === "undefined") return;
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) return;
 
       const response = await fetch("/api/employee/profile", {
@@ -286,7 +287,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
       // Only access localStorage after component has mounted
       if (typeof window === "undefined") return;
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         setError("No authentication token found");
         setLoading(false);
