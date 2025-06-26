@@ -220,7 +220,7 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                         edge="end"
                         disabled={loading}
                       >
-                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        {showPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
                       </IconButton>
                     </InputAdornment>
                   ),

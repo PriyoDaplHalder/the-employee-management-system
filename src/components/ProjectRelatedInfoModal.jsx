@@ -559,7 +559,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                               edge="end"
                               disabled={saveLoading}
                             >
-                              {showPasswords.githubToken ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                              {showPasswords.githubToken ? <VisibilityIcon /> : <VisibilityOffIcon />}
                             </IconButton>
                           </InputAdornment>
                         ),
@@ -584,7 +584,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                               edge="end"
                               disabled={saveLoading}
                             >
-                              {showPasswords.githubPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                              {showPasswords.githubPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
                             </IconButton>
                           </InputAdornment>
                         ),
@@ -670,7 +670,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                               edge="end"
                               disabled={saveLoading}
                             >
-                              {showPasswords.adminPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                              {showPasswords.adminPassword ?  <VisibilityIcon /> : <VisibilityOffIcon />}
                             </IconButton>
                           </InputAdornment>
                         ),
