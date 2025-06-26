@@ -10,6 +10,7 @@ import {
   TextField,
   Button,
   Grid,
+  Modal,
   Paper,
   Alert,
   AppBar,
@@ -39,6 +40,8 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [editingProject, setEditingProject] = useState(null);
+  const [isCreateProject, setCreateProject] = useState(false);
+  const [isModalOpen, setModalOpen] = useState(false);
   const [statusConfirmation, setStatusConfirmation] = useState({
     isOpen: false,
     project: null,
@@ -254,7 +257,7 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
 
   const getFilteredProjects = () => {
     let filtered = projects;
-    
+
     // Apply status filter (active/inactive/all)
     if (viewFilter === "active") {
       filtered = filtered.filter((p) => p.isActive !== false);
@@ -262,12 +265,12 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
       filtered = filtered.filter((p) => p.isActive === false);
     }
     // 'all' shows everything, no additional filtering needed
-    
+
     // Apply assigned filter if enabled
     if (assignedFilter) {
       filtered = filtered.filter((p) => p.hasAssignments);
     }
-    
+
     return filtered;
   };
 
@@ -305,105 +308,159 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
         {/* Create/Edit Project Form */}
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography
-            variant="h5"
-            component="h3"
-            sx={{ mb: 3, color: "primary.main" }}
-          >
-            {editingProject ? "Edit Project" : "Create New Project"}
-          </Typography>
+        <Button
+          disabled={editingProject ? true : false}
+          variant="contained"
+          sx={{
+            my: 2,
+            "&.Mui-disabled": {
+              backgroundColor: "#17a2b8", // Background when disabled
+              color: "white", // Text color when disabled
+            },
+            borderRadius: 2
+          }}
+          onClick={() => {
+            setCreateProject(!isCreateProject);
+          }}
+        >
+          {editingProject
+            ? "Editing..."
+            : isCreateProject
+            ? "Cancel"
+            : "Create New Project"}
+        </Button>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+        <Modal
+          open={editingProject || isCreateProject}
+          onClose={() => {
+            setCreateProject(false);
+            handleCancelEdit();
+          }}
+          aria-labelledby="modal-modal-title"
+          aria-describedby="modal-modal-description"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Paper sx={{ 
+            p: 3, mb: 3,
+            width: 600,
+            maxWidth: '95vw',
+            borderRadius: 4 
+          }}>
+            <Typography
+              variant="h5"
+              component="h3"
+              sx={{ mb: 3, color: "primary.main" }}
+            >
+              {editingProject ? "Edit Project" : "Create New Project"}
+            </Typography>
 
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {success}
-            </Alert>
-          )}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
 
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{ display: "flex", flexDirection: "column", gap: 3 }}
-          >
-            <TextField
-              fullWidth
-              id="name"
-              name="name"
-              label="Project Name"
-              value={formData.name}
-              onChange={handleInputChange}
-              variant="outlined"
-              required
-              placeholder="Enter project name"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                },
-              }}
-            />
+            {success && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                {success}
+              </Alert>
+            )}
 
-            <TextField
-              fullWidth
-              id="details"
-              name="details"
-              label="Project Details"
-              value={formData.details}
-              onChange={handleInputChange}
-              variant="outlined"
-              multiline
-              rows={4}
-              required
-              placeholder="Enter project details and description"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                },
-              }}
-            />
-
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={loading}
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+            >
+              <TextField
+                fullWidth
+                id="name"
+                name="name"
+                label="Project Name"
+                value={formData.name}
+                onChange={handleInputChange}
+                variant="outlined"
+                required
+                placeholder="Enter project name"
                 sx={{
-                  minWidth: 140,
-                  borderRadius: 2,
-                  fontWeight: 600,
-                  textTransform: "none",
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                  },
                 }}
-              >
-                {loading ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : editingProject ? (
-                  "Update Project"
-                ) : (
-                  "Create Project"
-                )}
-              </Button>
-              {editingProject && (
+              />
+
+              <TextField
+                fullWidth
+                id="details"
+                name="details"
+                label="Project Details"
+                value={formData.details}
+                onChange={handleInputChange}
+                variant="outlined"
+                multiline
+                rows={4}
+                required
+                placeholder="Enter project details and description"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                  },
+                }}
+              />
+
+              <Box sx={{ display: "flex", gap: 2 }}>
                 <Button
-                  type="button"
-                  variant="outlined"
-                  onClick={handleCancelEdit}
+                  type="submit"
+                  variant="contained"
                   disabled={loading}
                   sx={{
+                    minWidth: 140,
                     borderRadius: 2,
+                    fontWeight: 600,
                     textTransform: "none",
                   }}
                 >
-                  Cancel
+                  {loading ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : editingProject ? (
+                    "Update Project"
+                  ) : (
+                    "Create Project"
+                  )}
                 </Button>
-              )}
+                {
+                  isCreateProject && 
+                  <Button 
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 2
+                    }}
+                    onClick={()=>{setCreateProject(false)}}
+                  >
+                    Cancel
+                  </Button>
+                }
+                {editingProject && (
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    onClick={handleCancelEdit}
+                    disabled={loading}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </Box>
             </Box>
-          </Box>
-        </Paper>
+          </Paper>
+        </Modal>
 
         {/* Projects List */}
         <Box>
@@ -670,9 +727,7 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
           }}
         >
           <DialogTitle sx={{ fontWeight: 600 }}>
-            {statusConfirmation.project?.isActive === false
-              ? "Open"
-              : "Close"}{" "}
+            {statusConfirmation.project?.isActive === false ? "Open" : "Close"}{" "}
             Project
           </DialogTitle>
           <DialogContent>
