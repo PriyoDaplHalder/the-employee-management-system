@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography, CircularProgress } from "@mui/material";
-import { PacmanLoader } from "react-spinners";
+import { HashLoader} from "react-spinners";
 
 const LoadingScreen = () => {
   return (
@@ -15,11 +15,10 @@ const LoadingScreen = () => {
       }}
     >
       <Box sx={{ textAlign: "center" }}>
-        <PacmanLoader
-          color="#45b3f1"
-          margin={2}
-          size={35}
-        />
+      <HashLoader
+        color="#26c1f3"
+        size={75}
+      />
       </Box>
     </Box>
   );
