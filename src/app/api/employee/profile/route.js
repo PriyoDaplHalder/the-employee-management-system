@@ -161,7 +161,7 @@ export async function POST(request) {
 
     } else {
       // Generate employee ID if not provided
-      const finalEmployeeId = employeeId || `EMP${Date.now()}`;
+      const finalEmployeeId = employeeId || `DAPL-${Date.now()}`;
 
       // Create new employee profile
       employee = new Employee({
