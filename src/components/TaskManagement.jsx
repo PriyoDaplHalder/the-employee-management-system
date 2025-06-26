@@ -408,7 +408,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
         </Box>
 
         {/* Statistics Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={3} sx={{ mb: 4, textAlign: 'center' }}>
           <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
