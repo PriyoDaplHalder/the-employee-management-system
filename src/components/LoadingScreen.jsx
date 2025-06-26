@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Typography, CircularProgress } from "@mui/material";
+import { PacmanLoader } from "react-spinners";
 
 const LoadingScreen = () => {
   return (
@@ -14,8 +15,11 @@ const LoadingScreen = () => {
       }}
     >
       <Box sx={{ textAlign: "center" }}>
-        <CircularProgress sx={{ mb: 2 }} />
-        <Typography color="text.secondary">Loading...</Typography>
+        <PacmanLoader
+          color="#45b3f1"
+          margin={2}
+          size={35}
+        />
       </Box>
     </Box>
   );
