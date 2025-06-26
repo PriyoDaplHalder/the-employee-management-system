@@ -21,10 +21,22 @@ import {
   Button,
   Tooltip,
   TableSortLabel,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
+import {
+  Visibility as ViewIcon,
+  Person as ProfileIcon,
+  Assignment as ProjectsIcon,
+  Task as TasksIcon,
+  ExpandMore as ExpandMoreIcon,
+} from "@mui/icons-material";
 import EmployeeDetailsModal from "./EmployeeDetailsModal";
 import ProjectAssignmentModal from "./ProjectAssignmentModal";
+import EmployeeProjectsModal from "./EmployeeProjectsModal";
 import { getToken } from "../utils/storage";
 
 const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
@@ -36,12 +48,15 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   const [successMessage, setSuccessMessage] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [assigningEmployee, setAssigningEmployee] = useState(null);
+  const [viewingProjectsEmployee, setViewingProjectsEmployee] = useState(null);
   const [departmentFilter, setDepartmentFilter] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
   });
+  const [viewMenuAnchor, setViewMenuAnchor] = useState(null);
+  const [selectedEmployeeForMenu, setSelectedEmployeeForMenu] = useState(null);
   useEffect(() => {
     fetchEmployees();
   }, []);
@@ -225,6 +240,32 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
     setDepartmentFilter([]);
     setStatusFilter("");
   };
+
+  const handleViewMenuOpen = (event, employee) => {
+    event.stopPropagation();
+    setViewMenuAnchor(event.currentTarget);
+    setSelectedEmployeeForMenu(employee);
+  }; 
+
+  const handleViewMenuClose = () => {
+    setViewMenuAnchor(null);
+    setSelectedEmployeeForMenu(null);
+  }; 
+
+  const handleViewProfile = () => {
+    if (selectedEmployeeForMenu) {
+      setSelectedEmployee(selectedEmployeeForMenu);
+    }
+    handleViewMenuClose();
+  };
+
+  const handleViewProjects = () => {
+    if (selectedEmployeeForMenu) {
+      setViewingProjectsEmployee(selectedEmployeeForMenu);
+    }
+    handleViewMenuClose();
+  };
+
   if (loading) {
     return (
       <Box
@@ -653,19 +694,15 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", gap: 1 }}>
-                        <Tooltip title="View employee details">
                           <Button
                             variant="outlined"
                             size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEmployeeClick(employee);
-                            }}
+                            onClick={(e) => handleViewMenuOpen(e, employee)}
+                            endIcon={<ExpandMoreIcon />}
                             sx={{ minWidth: "auto", px: 2 }}
                           >
                             View
                           </Button>
-                        </Tooltip>
                         <Tooltip title="Assign project">
                           <Button
                             variant="contained"
@@ -687,6 +724,39 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
             </Table>
           </TableContainer>
         )}
+
+        {/* View Options Menu */}
+        <Menu
+          anchorEl={viewMenuAnchor}
+          open={Boolean(viewMenuAnchor)}
+          onClose={handleViewMenuClose}
+          transformOrigin={{ horizontal: "left", vertical: "top" }}
+          anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
+          PaperProps={{
+            elevation: 3,
+            sx: {
+              mt: 1,
+              minWidth: 180,
+              "& .MuiMenuItem-root": {
+                px: 2,
+                py: 1,
+              },
+            },
+          }}
+        >
+          <MenuItem onClick={handleViewProfile}>
+            <ListItemIcon>
+              <ProfileIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Profile</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={handleViewProjects}>
+            <ListItemIcon>
+              <ProjectsIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Projects</ListItemText>
+          </MenuItem>
+        </Menu>
         {selectedEmployee && (
           <EmployeeDetailsModal
             employee={selectedEmployee}
@@ -701,6 +771,13 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
             open={!!assigningEmployee}
             onClose={handleCloseAssignModal}
             onSuccess={handleAssignmentSuccess}
+          />
+        )}
+        {viewingProjectsEmployee && (
+          <EmployeeProjectsModal
+            employee={viewingProjectsEmployee}
+            open={!!viewingProjectsEmployee}
+            onClose={() => setViewingProjectsEmployee(null)}
           />
         )}
       </Container>

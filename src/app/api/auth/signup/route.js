@@ -75,7 +75,7 @@ export async function POST(request) {
         
         // Generate employeeId manually as backup
         const employeeCount = await Employee.countDocuments();
-        const employeeId = `EMP${String(employeeCount + 1).padStart(4, '0')}`;
+        const employeeId = `DAPL-${String(employeeCount + 1).padStart(4, '0')}`;
         
         const employee = new Employee({
           user: user._id,
