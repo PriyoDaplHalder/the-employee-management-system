@@ -24,6 +24,7 @@ import {
   TableSortLabel,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import EmployeeProjectTasksModal from "./EmployeeProjectTasksModal";
 import { getToken } from "../utils/storage";
 
 const EmployeeProjectsModal = ({ employee, open, onClose }) => {
@@ -34,6 +35,8 @@ const EmployeeProjectsModal = ({ employee, open, onClose }) => {
     key: "assignedDate",
     direction: "desc",
   });
+  const [selectedProjectForTasks, setSelectedProjectForTasks] = useState(null);
+  const [showTasksModal, setShowTasksModal] = useState(false);
 
   // Fetch assigned projects when modal opens
   useEffect(() => {
@@ -75,6 +78,18 @@ const EmployeeProjectsModal = ({ employee, open, onClose }) => {
     }
     // If clicking a different column, always start with ascending
     setSortConfig({ key, direction });
+  };
+
+  // Handle opening tasks modal
+  const handleViewTasks = (assignment) => {
+    setSelectedProjectForTasks(assignment.projectId);
+    setShowTasksModal(true);
+  };
+
+  // Handle closing tasks modal
+  const handleCloseTasksModal = () => {
+    setSelectedProjectForTasks(null);
+    setShowTasksModal(false);
   };
 
   // Sort projects based on current sort configuration
@@ -296,6 +311,9 @@ const EmployeeProjectsModal = ({ employee, open, onClose }) => {
                         Notes
                       </TableSortLabel>
                     </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "white", textAlign: "center" }}>
+                      Actions
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -389,6 +407,23 @@ const EmployeeProjectsModal = ({ employee, open, onClose }) => {
                           {assignment.notes || "No notes"}
                         </Typography>
                       </TableCell>
+                      <TableCell sx={{ textAlign: "center" }}>
+                        <Tooltip title="View tasks for this project">
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleViewTasks(assignment)}
+                            sx={{
+                              minWidth: "auto",
+                              px: 2,
+                              textTransform: "none",
+                              fontWeight: 500,
+                            }}
+                          >
+                            Tasks
+                          </Button>
+                        </Tooltip>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -412,6 +447,16 @@ const EmployeeProjectsModal = ({ employee, open, onClose }) => {
           Close
         </Button>
       </DialogActions>
+
+      {/* Tasks Modal */}
+      {showTasksModal && selectedProjectForTasks && (
+        <EmployeeProjectTasksModal
+          employee={employee}
+          project={selectedProjectForTasks}
+          open={showTasksModal}
+          onClose={handleCloseTasksModal}
+        />
+      )}
     </Dialog>
   );
 };
