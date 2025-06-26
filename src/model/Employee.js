@@ -84,7 +84,7 @@ employeeSchema.pre('save', async function(next) {
       // Now this will get the coungt of existing employees and generate a new employee ID
       console.log('Generating employee ID for new employee...');
       const count = await mongoose.model('Employee').countDocuments();
-      this.employeeId = `EMP${String(count + 1).padStart(4, '0')}`;
+      this.employeeId = `DAPL-${String(count + 1).padStart(4, '0')}`;
       console.log('Generated employee ID:', this.employeeId);
     } catch (error) {
       console.error('Error generating employee ID:', error);
