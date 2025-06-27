@@ -129,7 +129,13 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
       case "department":
         return employee.employeeData?.department?.toLowerCase() || "zzz";
       case "position":
-        return employee.employeeData?.position?.toLowerCase() || "zzz";
+        const position = employee.employeeData?.position;
+        if (position === "Others") {
+          const customPosition =
+            employee.employeeData?.customPosition || employee.customPosition;
+          return customPosition?.toLowerCase() || "zzz";
+        }
+        return position?.toLowerCase() || "zzz";
       case "salary":
         return employee.employeeData?.salary || 0; // Numeric sorting
       case "status":
@@ -178,10 +184,12 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
       setEmployees(employeeData);
       setFilteredEmployees(employeeData); // Initialize filtered employees
       setError(""); // Clear any previous errors
-      
+
       // Notify parent component about the updated active employee count
       if (onEmployeeCountChange) {
-        const activeEmployeeCount = employeeData.filter(emp => emp.isActive !== false).length;
+        const activeEmployeeCount = employeeData.filter(
+          (emp) => emp.isActive !== false
+        ).length;
         onEmployeeCountChange(activeEmployeeCount);
       }
     } catch (err) {
@@ -245,12 +253,12 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
     event.stopPropagation();
     setViewMenuAnchor(event.currentTarget);
     setSelectedEmployeeForMenu(employee);
-  }; 
+  };
 
   const handleViewMenuClose = () => {
     setViewMenuAnchor(null);
     setSelectedEmployeeForMenu(null);
-  }; 
+  };
 
   const handleViewProfile = () => {
     if (selectedEmployeeForMenu) {
@@ -659,7 +667,42 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">
-                        {employee.employeeData?.position || "Not assigned"}
+                        {(() => {
+                          const position = employee.employeeData?.position;
+                          if (position === "Others") {
+                            // Check for custom position in employeeData first, then fallback to the employee object
+                            const customPosition =
+                              employee.employeeData?.customPosition ||
+                              employee.customPosition ||
+                              // If position is not in predefined list, it's likely a custom position stored directly
+                              (position !== "Others" &&
+                              ![
+                                "Human Resource",
+                                "Team Leader",
+                                "Project Manager",
+                                "Senior Developer",
+                                "Junior Developer",
+                                "Quality Assurance",
+                                "Business Analyst",
+                                "Data Scientist",
+                                "UI/UX Designer",
+                                "System Administrator",
+                                "Network Engineer",
+                                "DevOps Engineer",
+                                "Technical Support",
+                                "Sales Executive",
+                                "Marketing Specialist",
+                                "Customer Service",
+                                "Trainee",
+                                "Student",
+                                "Intern",
+                              ].includes(position)
+                                ? position
+                                : null);
+                            return customPosition || "Not assigned";
+                          }
+                          return position || "Not assigned";
+                        })()}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -694,15 +737,15 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", gap: 1 }}>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={(e) => handleViewMenuOpen(e, employee)}
-                            endIcon={<ExpandMoreIcon />}
-                            sx={{ minWidth: "auto", px: 2 }}
-                          >
-                            View
-                          </Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={(e) => handleViewMenuOpen(e, employee)}
+                          endIcon={<ExpandMoreIcon />}
+                          sx={{ minWidth: "auto", px: 2 }}
+                        >
+                          View
+                        </Button>
                         <Tooltip title="Assign project">
                           <Button
                             variant="contained"
