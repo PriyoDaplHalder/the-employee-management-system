@@ -38,6 +38,7 @@ import {
   PlayArrow as PlayArrowIcon,
   Pause as PauseIcon,
   RateReview as ReviewIcon,
+  Delete as DeleteIcon,
   Assignment as TaskIcon,
 } from "@mui/icons-material";
 import TaskDetailModal from "./TaskDetailModal";
@@ -671,7 +672,7 @@ const EmployeeProjectTasksModal = ({ employee, project, open, onClose }) => {
                 onClick={() => handleMenuAction("delete")}
                 sx={{ color: "error.main" }}
               >
-                <EditIcon sx={{ mr: 1 }} fontSize="small" />
+                <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
                 Delete Task
               </MenuItem>
             </Menu>
