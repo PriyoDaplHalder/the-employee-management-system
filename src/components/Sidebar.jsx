@@ -29,7 +29,6 @@ import {
   Settings as SettingsIcon,
   ExpandLess,
   ExpandMore,
-  Description as ReportsIcon,
   Schedule as ScheduleIcon,
   Notifications as NotificationsIcon,
   AssignmentInd as AssignmentsIcon,
@@ -161,15 +160,6 @@ const Sidebar = ({
         },
       ],
     },
-    {
-      id: "reports",
-      text: "Reports",
-      icon: <ReportsIcon />,
-      submenu: [
-        { id: "timesheet", text: "Timesheet", view: "timesheet" },
-        { id: "performance", text: "Performance", view: "performance" },
-      ],
-    },
   ];
 
   // Management navigation items
@@ -217,12 +207,6 @@ const Sidebar = ({
           view: "inbox",
         },
       ],
-    },
-    {
-      id: "reports",
-      text: "Reports",
-      icon: <ReportsIcon />,
-      view: "reports",
     },
     {
       id: "settings",

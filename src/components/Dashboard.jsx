@@ -156,8 +156,6 @@ const Dashboard = ({ user, title, onLogout }) => {
         return <AnalyticsPlaceholder type="Productivity" />;
       case "attendance":
         return <AnalyticsPlaceholder type="Attendance" />;
-      case "reports":
-        return <ReportsPlaceholder />;
       case "notifications":
         return <NotificationsPlaceholder />;
       case "settings":
@@ -252,23 +250,6 @@ const AnalyticsPlaceholder = ({ type }) => (
     <Paper sx={{ p: 4, textAlign: "center" }}>
       <Typography variant="h6" color="text.secondary">
         {type} analytics dashboard coming soon
-      </Typography>
-    </Paper>
-  </Container>
-);
-
-const ReportsPlaceholder = () => (
-  <Container maxWidth="lg">
-    <Typography
-      variant="h4"
-      gutterBottom
-      sx={{ fontWeight: 600, color: "primary.main" }}
-    >
-      Reports
-    </Typography>
-    <Paper sx={{ p: 4, textAlign: "center" }}>
-      <Typography variant="h6" color="text.secondary">
-        Comprehensive reporting system coming soon
       </Typography>
     </Paper>
   </Container>
