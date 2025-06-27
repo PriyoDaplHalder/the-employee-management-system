@@ -525,7 +525,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                 color={profileCompleted ? "success" : "warning"}
                 variant="filled"
                 icon={profileCompleted ? <CheckCircleIcon /> : <EditIcon />}
-                sx={{ fontWeight: 600 }}
+                sx={{ fontWeight: 600, pointerEvents: "none" }}
               />
               {profileCompleted && (
                 <Typography variant="body2" color="text.secondary">
@@ -721,7 +721,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           }}
                         >
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {formData.position || "Not assigned"}
+                            {formData.position === "Others" ? formData.customPosition || "Not assigned" : formData.position || "Not assigned"}
                           </Typography>
                         </Paper>
                       </Box>

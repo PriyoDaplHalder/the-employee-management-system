@@ -321,7 +321,19 @@ const EmployeeDetailsModal = ({ employee, user, onClose, onEmployeeUpdate }) => 
                         }}
                       >
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                          {employeeData.position || "Not assigned"}
+                          {(() => {
+                            // Check if we need to show custom position
+                            const position = employeeData.position;
+                            if (position === "Others") {
+                              // Look for custom position in the employee data
+                              // This could be stored in different ways depending on how the data structure is set up
+                              const customPosition = employeeData.customPosition || 
+                                                   employee.customPosition ||
+                                                   (position !== "Others" && !["Human Resource", "Team Leader", "Project Manager", "Senior Developer", "Junior Developer", "Quality Assurance", "Business Analyst", "Data Scientist", "UI/UX Designer", "System Administrator", "Network Engineer", "DevOps Engineer", "Technical Support", "Sales Executive", "Marketing Specialist", "Customer Service", "Trainee", "Student", "Intern"].includes(position) ? position : null);
+                              return customPosition || "Not assigned";
+                            }
+                            return position || "Not assigned";
+                          })()}
                         </Typography>
                       </Paper>
                     </Box>
