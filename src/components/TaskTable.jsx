@@ -254,11 +254,6 @@ const TaskTable = ({
               <TableCell>
                 {task.assignedTo ? (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Avatar 
-                      sx={{ width: 24, height: 24, fontSize: "0.75rem" }}
-                    >
-                      {task.assignedTo.email.charAt(0).toUpperCase()}
-                    </Avatar>
                     <Box>
                       <Typography variant="body2">
                         {task.assignedTo.firstName && task.assignedTo.lastName
