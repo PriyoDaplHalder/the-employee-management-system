@@ -117,12 +117,12 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   const getSortValue = (employee, key) => {
     switch (key) {
       case "employeeId":
-        return employee.employeeData?.employeeId?.toLowerCase() || "zzz"; // Put "Not assigned" at end
+        return employee.employeeData?.employeeId?.toLowerCase() || "zzz";
       case "name":
         const fullName =
           employee.firstName && employee.lastName
             ? `${employee.firstName} ${employee.lastName}`.toLowerCase()
-            : "zzz"; // Put "Name not provided" at end
+            : "zzz";
         return fullName;
       case "email":
         return employee.email?.toLowerCase() || "";
