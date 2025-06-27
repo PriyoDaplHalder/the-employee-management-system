@@ -25,6 +25,13 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  TextField,
+  Card,
+  CardContent,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
 import {
@@ -33,6 +40,10 @@ import {
   Assignment as ProjectsIcon,
   Task as TasksIcon,
   ExpandMore as ExpandMoreIcon,
+  Sort as SortIcon,
+  FilterList as FilterListIcon,
+  Clear as ClearIcon,
+  Search as SearchIcon,
 } from "@mui/icons-material";
 import EmployeeDetailsModal from "./EmployeeDetailsModal";
 import ProjectAssignmentModal from "./ProjectAssignmentModal";
@@ -49,8 +60,13 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [assigningEmployee, setAssigningEmployee] = useState(null);
   const [viewingProjectsEmployee, setViewingProjectsEmployee] = useState(null);
-  const [departmentFilter, setDepartmentFilter] = useState([]);
-  const [statusFilter, setStatusFilter] = useState("");
+  
+  // Enhanced filtering and search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [positionFilter, setPositionFilter] = useState("all");
+  const [salaryRangeFilter, setSalaryRangeFilter] = useState("all");
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -61,21 +77,82 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
     fetchEmployees();
   }, []);
   useEffect(() => {
-    // Filter employees based on department and status
+    // Enhanced filtering with search, department, status, position, and salary range
     let filtered = employees;
 
-    if (departmentFilter.length > 0) {
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((emp) => {
+        const fullName = emp.firstName && emp.lastName 
+          ? `${emp.firstName} ${emp.lastName}`.toLowerCase() 
+          : "";
+        const email = emp.email?.toLowerCase() || "";
+        const employeeId = emp.employeeData?.employeeId?.toLowerCase() || "";
+        const department = emp.employeeData?.department?.toLowerCase() || "";
+        const position = emp.employeeData?.position?.toLowerCase() || "";
+        const customPosition = emp.employeeData?.customPosition?.toLowerCase() || "";
+        
+        return fullName.includes(query) || 
+               email.includes(query) || 
+               employeeId.includes(query) || 
+               department.includes(query) || 
+               position.includes(query) || 
+               customPosition.includes(query);
+      });
+    }
+
+    // Department filter
+    if (departmentFilter !== "all") {
       filtered = filtered.filter(
-        (emp) =>
-          emp.employeeData?.department &&
-          departmentFilter.includes(emp.employeeData.department)
+        (emp) => emp.employeeData?.department === departmentFilter
       );
     }
 
-    if (statusFilter) {
+    // Status filter
+    if (statusFilter !== "all") {
       const isActive = statusFilter === "Active";
       filtered = filtered.filter((emp) => emp.isActive === isActive);
-    } // Apply sorting
+    }
+
+    // Position filter
+    if (positionFilter !== "all") {
+      filtered = filtered.filter((emp) => {
+        const position = emp.employeeData?.position;
+        if (positionFilter === "Others") {
+          return position === "Others" || 
+                 (position && ![
+                   "Human Resource", "Team Leader", "Project Manager", "Senior Developer",
+                   "Junior Developer", "Quality Assurance", "Business Analyst", "Data Scientist",
+                   "UI/UX Designer", "System Administrator", "Network Engineer", "DevOps Engineer",
+                   "Technical Support", "Sales Executive", "Marketing Specialist", "Customer Service",
+                   "Trainee", "Student", "Intern"
+                 ].includes(position));
+        }
+        return position === positionFilter;
+      });
+    }
+
+    // Salary range filter
+    if (salaryRangeFilter !== "all") {
+      filtered = filtered.filter((emp) => {
+        const salary = emp.employeeData?.salary || 0;
+        switch (salaryRangeFilter) {
+          case "0-30k":
+            return salary >= 0 && salary <= 30000;
+          case "30k-60k":
+            return salary > 30000 && salary <= 60000;
+          case "60k-100k":
+            return salary > 60000 && salary <= 100000;
+          case "100k+":
+            return salary > 100000;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply sorting
     if (sortConfig.key) {
       filtered.sort((a, b) => {
         let aValue = getSortValue(a, sortConfig.key);
@@ -113,7 +190,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
     }
 
     setFilteredEmployees(filtered);
-  }, [employees, departmentFilter, statusFilter, sortConfig]); // Helper function to get sortable value from employee object
+  }, [employees, searchQuery, departmentFilter, statusFilter, positionFilter, salaryRangeFilter, sortConfig]); // Helper function to get sortable value from employee object
   const getSortValue = (employee, key) => {
     switch (key) {
       case "employeeId":
@@ -233,20 +310,40 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
     // Could add a success message or refresh data if needed
     setAssigningEmployee(null);
   };
-  const handleDepartmentFilter = (department) => {
-    setDepartmentFilter((prev) =>
-      prev.includes(department)
-        ? prev.filter((d) => d !== department)
-        : [...prev, department]
-    );
+
+  // Enhanced filter functions
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setDepartmentFilter("all");
+    setStatusFilter("all");
+    setPositionFilter("all");
+    setSalaryRangeFilter("all");
   };
 
-  const handleStatusFilter = (status) => {
-    setStatusFilter(statusFilter === status ? "" : status);
+  // Get unique departments for filter dropdown
+  const getUniqueDepartments = () => {
+    const departments = employees
+      .map((emp) => emp.employeeData?.department)
+      .filter(Boolean);
+    return [...new Set(departments)].sort();
   };
-  const clearAllFilters = () => {
-    setDepartmentFilter([]);
-    setStatusFilter("");
+
+  // Get unique positions for filter dropdown
+  const getUniquePositions = () => {
+    const positions = employees
+      .map((emp) => emp.employeeData?.position)
+      .filter(Boolean);
+    return [...new Set(positions)].sort();
+  };
+
+  // Get employee statistics for dashboard cards
+  const getEmployeeStats = () => {
+    const total = filteredEmployees.length;
+    const active = filteredEmployees.filter(emp => emp.isActive).length;
+    const inactive = filteredEmployees.filter(emp => !emp.isActive).length;
+    const departments = new Set(filteredEmployees.map(emp => emp.employeeData?.department).filter(Boolean)).size;
+    
+    return { total, active, inactive, departments };
   };
 
   const handleViewMenuOpen = (event, employee) => {
@@ -344,130 +441,248 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
           gutterBottom
           sx={{ mb: 4, color: "primary.main" }}
         >
-          All Employees ({filteredEmployees.length}
+          Employee Management ({filteredEmployees.length}
           {employees.length !== filteredEmployees.length
             ? ` of ${employees.length}`
             : ""}
           )
         </Typography>
-        {/* Filter Controls */}
-        <Box
-          sx={{
-            mb: 3,
-            display: "flex",
-            gap: 2,
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
-          <Typography
-            variant="subtitle1"
-            sx={{ fontWeight: 600, color: "black" }}
-          >
-            Filters:
-          </Typography>
-          {/* Department Filter */}
-          <Box
-            sx={{
-              display: "flex",
-              gap: 1,
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
-            {departmentFilter.length > 0 && (
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "primary.main",
-                  fontWeight: 500,
-                  mr: 1,
+
+        {/* Statistics Cards */}
+        <Grid container spacing={3} sx={{ mb: 4, textAlign: 'center' }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Total Employees
+                </Typography>
+                <Typography variant="h4">
+                  {getEmployeeStats().total}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Active
+                </Typography>
+                <Typography variant="h4" color="success.main">
+                  {getEmployeeStats().active}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Inactive
+                </Typography>
+                <Typography variant="h4" color="error.main">
+                  {getEmployeeStats().inactive}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Departments
+                </Typography>
+                <Typography variant="h4" color="primary.main">
+                  {getEmployeeStats().departments}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Enhanced Filters */}
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+            <FilterListIcon color="primary" />
+            <Typography variant="h6">Filters & Search</Typography>
+          </Box>
+          
+          <Grid container spacing={2}>
+            {/* Search */}
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Search employees"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Name, email, ID, department..."
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />,
                 }}
+              />
+            </Grid>
+
+            {/* Department Filter */}
+            <Grid item xs={12} sm={6} md={2}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Department</InputLabel>
+                <Select
+                  value={departmentFilter}
+                  onChange={(e) => setDepartmentFilter(e.target.value)}
+                  label="Department"
+                >
+                  <MenuItem value="all">All Departments</MenuItem>
+                  {getUniqueDepartments().map((department) => (
+                    <MenuItem key={department} value={department}>
+                      {department}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Status Filter */}
+            <Grid item xs={12} sm={6} md={2}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  label="Status"
+                >
+                  <MenuItem value="all">All Status</MenuItem>
+                  <MenuItem value="Active">Active</MenuItem>
+                  <MenuItem value="Inactive">Inactive</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Position Filter */}
+            <Grid item xs={12} sm={6} md={2}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Position</InputLabel>
+                <Select
+                  value={positionFilter}
+                  onChange={(e) => setPositionFilter(e.target.value)}
+                  label="Position"
+                >
+                  <MenuItem value="all">All Positions</MenuItem>
+                  {getUniquePositions().map((position) => (
+                    <MenuItem key={position} value={position}>
+                      {position}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Salary Range Filter */}
+            <Grid item xs={12} sm={6} md={2}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Salary Range</InputLabel>
+                <Select
+                  value={salaryRangeFilter}
+                  onChange={(e) => setSalaryRangeFilter(e.target.value)}
+                  label="Salary Range"
+                >
+                  <MenuItem value="all">All Ranges</MenuItem>
+                  <MenuItem value="0-30k">₹0 - ₹30,000</MenuItem>
+                  <MenuItem value="30k-60k">₹30,001 - ₹60,000</MenuItem>
+                  <MenuItem value="60k-100k">₹60,001 - ₹1,00,000</MenuItem>
+                  <MenuItem value="100k+">₹1,00,000+</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Clear Filters Button */}
+            <Grid item xs={12} sm={6} md={1}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={clearAllFilters}
+                startIcon={<ClearIcon />}
+                sx={{ height: "40px" }}
+                disabled={
+                  searchQuery === "" &&
+                  departmentFilter === "all" &&
+                  statusFilter === "all" &&
+                  positionFilter === "all" &&
+                  salaryRangeFilter === "all"
+                }
               >
-                Departments ({departmentFilter.length}):
+                Clear
+              </Button>
+            </Grid>
+          </Grid>
+
+          {/* Active Filters Display */}
+          {(searchQuery || departmentFilter !== "all" || statusFilter !== "all" || 
+            positionFilter !== "all" || salaryRangeFilter !== "all") && (
+            <Box sx={{ mt: 2, display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+              <Typography variant="body2" color="text.secondary">
+                Active filters:
               </Typography>
-            )}
-            {[
-              ...new Set(
-                employees
-                  .map((emp) => emp.employeeData?.department)
-                  .filter(Boolean)
-              ),
-            ].map((department) => (
-              <Chip
-                key={department}
-                label={department}
-                onClick={() => handleDepartmentFilter(department)}
-                color={
-                  departmentFilter.includes(department) ? "primary" : "default"
-                }
-                variant={
-                  departmentFilter.includes(department) ? "filled" : "outlined"
-                }
-                clickable
-                size="small"
-                sx={{
-                  cursor: "pointer",
-                  "&:hover": {
-                    bgcolor: departmentFilter.includes(department)
-                      ? "primary.dark"
-                      : "action.hover",
-                  },
-                }}
-              />
-            ))}
-          </Box>
-          <div>|</div>
-          {/* Status Filter */}
-          <Box sx={{ display: "flex", gap: 1 }}>
-            {["Active", "Inactive"].map((status) => (
-              <Chip
-                key={status}
-                label={status}
-                onClick={() => handleStatusFilter(status)}
-                color={
-                  statusFilter === status
-                    ? status === "Active"
-                      ? "success"
-                      : "error"
-                    : "default"
-                }
-                variant={statusFilter === status ? "filled" : "outlined"}
-                clickable
-                size="small"
-                sx={{
-                  cursor: "pointer",
-                  "&:hover": {
-                    bgcolor:
-                      statusFilter === status
-                        ? status === "Active"
-                          ? "success.dark"
-                          : "error.dark"
-                        : "action.hover",
-                  },
-                }}
-              />
-            ))}
-          </Box>
-          {/* Clear Filters */}
-          {(departmentFilter.length > 0 || statusFilter) && (
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={clearAllFilters}
-              sx={{ ml: 1 }}
-            >
-              Clear Filters
-            </Button>
+              {searchQuery && (
+                <Chip
+                  label={`Search: "${searchQuery}"`}
+                  onDelete={() => setSearchQuery("")}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  sx={{ pointerEvents: "none" }}
+                />
+              )}
+              {departmentFilter !== "all" && (
+                <Chip
+                  label={`Department: ${departmentFilter}`}
+                  onDelete={() => setDepartmentFilter("all")}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  sx={{ pointerEvents: "none" }}
+                />
+              )}
+              {statusFilter !== "all" && (
+                <Chip
+                  label={`Status: ${statusFilter}`}
+                  onDelete={() => setStatusFilter("all")}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  sx={{ pointerEvents: "none" }}
+                />
+              )}
+              {positionFilter !== "all" && (
+                <Chip
+                  label={`Position: ${positionFilter}`}
+                  onDelete={() => setPositionFilter("all")}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  sx={{ pointerEvents: "none" }}
+                />
+              )}
+              {salaryRangeFilter !== "all" && (
+                <Chip
+                  label={`Salary: ${salaryRangeFilter}`}
+                  onDelete={() => setSalaryRangeFilter("all")}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  sx={{ pointerEvents: "none" }}
+                />
+              )}
+            </Box>
           )}
-        </Box>
+        </Paper>
         {filteredEmployees.length === 0 && employees.length > 0 ? (
           <Paper sx={{ p: 6, textAlign: "center" }}>
             <Typography variant="h6" color="text.secondary" gutterBottom>
               No employees match the current filters
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Try adjusting your filter criteria or clear all filters.
+              Try adjusting your search criteria or filter options to see more employees.
             </Typography>
             <Button variant="outlined" onClick={clearAllFilters}>
               Clear All Filters
@@ -647,17 +862,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
                           variant="outlined"
                           size="small"
                           color="primary"
-                          clickable
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDepartmentFilter(
-                              employee.employeeData.department
-                            );
-                          }}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": { bgcolor: "primary.50" },
-                          }}
+                          sx={{ pointerEvents: "none" }}
                         />
                       ) : (
                         <Typography variant="body2" color="text.secondary">
@@ -718,21 +923,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
                         color={employee.isActive ? "success" : "error"}
                         variant="outlined"
                         size="small"
-                        clickable
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusFilter(
-                            employee.isActive ? "Active" : "Inactive"
-                          );
-                        }}
-                        sx={{
-                          cursor: "pointer",
-                          "&:hover": {
-                            bgcolor: employee.isActive
-                              ? "success.50"
-                              : "error.50",
-                          },
-                        }}
+                        sx={{ pointerEvents: "none" }}
                       />
                     </TableCell>
                     <TableCell>
