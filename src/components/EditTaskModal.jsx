@@ -47,6 +47,56 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [projectAssignments, setProjectAssignments] = useState([]);
+  const [availableEmployees, setAvailableEmployees] = useState([]);
+
+  // Fetch project assignments when modal opens
+  useEffect(() => {
+    if (open) {
+      fetchProjectAssignments();
+    }
+  }, [open]);
+
+  // Update available employees when project is selected
+  useEffect(() => {
+    if (formData.projectId && projectAssignments.length > 0) {
+      const assignedEmployeeIds = projectAssignments
+        .filter(assignment => assignment.projectId?._id === formData.projectId)
+        .map(assignment => assignment.employeeId?._id);
+      
+      const filteredEmployees = employees.filter(employee => 
+        assignedEmployeeIds.includes(employee._id)
+      );
+      
+      setAvailableEmployees(filteredEmployees);
+      
+      // Clear assignee if currently selected employee is not assigned to the project
+      if (formData.assignedTo && !assignedEmployeeIds.includes(formData.assignedTo)) {
+        setFormData(prev => ({ ...prev, assignedTo: "" }));
+      }
+    } else {
+      setAvailableEmployees([]);
+    }
+  }, [formData.projectId, projectAssignments, employees, formData.assignedTo]);
+
+  const fetchProjectAssignments = async () => {
+    try {
+      const token = getToken();
+      const response = await fetch("/api/management/projects/assign", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setProjectAssignments(data.assignments || []);
+      }
+    } catch (err) {
+      console.error("Error fetching project assignments:", err);
+    }
+  };
 
   // Populate form when task changes
   useEffect(() => {
@@ -104,10 +154,10 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
         throw new Error("Task title is required");
       }
       if (!formData.assignedTo) {
-        throw new Error("Please assign the task to an employee");
+        throw new Error("Please assign the task to an employee who is assigned to the selected project.");
       }
       if (!formData.projectId) {
-        throw new Error("Please select a project");
+        throw new Error("Please select a project. Tasks must be assigned to a specific project.");
       }
 
       const response = await fetch(`/api/management/tasks/${task._id}`, {
@@ -175,6 +225,13 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
               </Alert>
             )}
 
+            <Alert severity="info" sx={{ mb: 3 }}>
+              <Typography variant="body2">
+                <strong>Note:</strong> Tasks can only be assigned to employees who are already assigned to the selected project. 
+                The employee dropdown will only show employees assigned to the selected project.
+              </Typography>
+            </Alert>
+
             <Grid container spacing={3}>
               {/* Task Title */}
               <Grid item xs={12}>
@@ -234,23 +291,35 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
                   <Grid container spacing={2}>
                     <Grid item sx={{ width: '20vw' }} xs={12} md={6}>
                       <Autocomplete
-                        options={employees}
+                        options={availableEmployees}
                         getOptionLabel={(option) => 
                           option.firstName && option.lastName 
                             ? `${option.firstName} ${option.lastName} (${option.email})`
                             : option.email
                         }
-                        value={employees.find(emp => emp._id === formData.assignedTo) || null}
+                        value={availableEmployees.find(emp => emp._id === formData.assignedTo) || null}
                         onChange={handleEmployeeChange}
-                        disabled={loading}
+                        disabled={loading || !formData.projectId}
                         renderInput={(params) => (
                           <TextField
                             {...params}
                             label="Assign to Employee"
                             required
                             variant="outlined"
+                            helperText={
+                              !formData.projectId 
+                                ? "Select a project first" 
+                                : availableEmployees.length === 0 
+                                ? "No employees assigned to this project" 
+                                : "Select an employee assigned to this project"
+                            }
                           />
                         )}
+                        noOptionsText={
+                          !formData.projectId 
+                            ? "Please select a project first" 
+                            : "No employees assigned to this project"
+                        }
                         renderOption={(props, option) => {
                           const { key, ...otherProps } = props;
                           return (

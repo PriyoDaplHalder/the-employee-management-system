@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Task from "@/model/Task";
+import ProjectAssignment from "@/model/ProjectAssignment";
 import { User } from "@/model/User";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 
@@ -116,6 +117,7 @@ export async function PUT(request, { params }) {
         title,
         description,
         assignedTo,
+        projectId,
         priority,
         dueDate,
         estimatedHours,
@@ -125,10 +127,63 @@ export async function PUT(request, { params }) {
         comment,
       } = body;
 
+      // Validate project-employee assignment if both are being updated
+      if (projectId !== undefined && assignedTo !== undefined) {
+        const assignment = await ProjectAssignment.findOne({
+          projectId,
+          employeeId: assignedTo,
+        });
+
+        if (!assignment) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Employee is not assigned to this project. Only employees assigned to a project can be assigned tasks for that project.",
+            },
+            { status: 400 }
+          );
+        }
+      }
+      // Validate if only assignedTo is being updated but task has a project
+      else if (assignedTo !== undefined && task.projectId) {
+        const assignment = await ProjectAssignment.findOne({
+          projectId: task.projectId,
+          employeeId: assignedTo,
+        });
+
+        if (!assignment) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Employee is not assigned to this project. Only employees assigned to a project can be assigned tasks for that project.",
+            },
+            { status: 400 }
+          );
+        }
+      }
+      // Validate if only projectId is being updated but task has an assignee
+      else if (projectId !== undefined && task.assignedTo) {
+        const assignment = await ProjectAssignment.findOne({
+          projectId,
+          employeeId: task.assignedTo,
+        });
+
+        if (!assignment) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Assigned employee is not assigned to this project. Only employees assigned to a project can be assigned tasks for that project.",
+            },
+            { status: 400 }
+          );
+        }
+      }
+
       // Update fields if provided
       if (title !== undefined) task.title = title.trim();
       if (description !== undefined) task.description = description.trim();
       if (assignedTo !== undefined) task.assignedTo = assignedTo;
+      if (projectId !== undefined) task.projectId = projectId;
       if (priority !== undefined) task.priority = priority;
       if (dueDate !== undefined) {
         const dueDateObj = new Date(dueDate);

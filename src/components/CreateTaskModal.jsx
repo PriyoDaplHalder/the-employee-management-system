@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getToken } from "../utils/storage";
 import {
   Dialog,
@@ -36,6 +36,59 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [projectAssignments, setProjectAssignments] = useState([]);
+  const [availableEmployees, setAvailableEmployees] = useState([]);
+
+  // Fetch project assignments when modal opens
+  useEffect(() => {
+    if (open) {
+      fetchProjectAssignments();
+    }
+  }, [open]);
+
+  // Update available employees when project is selected
+  useEffect(() => {
+    if (formData.projectId && projectAssignments.length > 0) {
+      const assignedEmployeeIds = projectAssignments
+        .filter(assignment => assignment.projectId?._id === formData.projectId)
+        .map(assignment => assignment.employeeId?._id);
+      
+      const filteredEmployees = employees.filter(employee => 
+        assignedEmployeeIds.includes(employee._id)
+      );
+      
+      setAvailableEmployees(filteredEmployees);
+      
+      // Clear assignee if currently selected employee is not assigned to the project
+      if (formData.assignedTo && !assignedEmployeeIds.includes(formData.assignedTo)) {
+        setFormData(prev => ({ ...prev, assignedTo: "" }));
+      }
+    } else if (formData.projectId === "") {
+      // If no project is selected, all employees are available
+      setAvailableEmployees(employees);
+    } else {
+      setAvailableEmployees([]);
+    }
+  }, [formData.projectId, projectAssignments, employees, formData.assignedTo]);
+
+  const fetchProjectAssignments = async () => {
+    try {
+      const token = getToken();
+      const response = await fetch("/api/management/projects/assign", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setProjectAssignments(data.assignments || []);
+      }
+    } catch (err) {
+      console.error("Error fetching project assignments:", err);
+    }
+  };
 
   const handleClose = () => {
     if (loading) return;
@@ -58,8 +111,13 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
       return;
     }
 
+    if (!formData.projectId) {
+      setError("Please select a project. Tasks must be assigned to a specific project.");
+      return;
+    }
+
     if (!formData.assignedTo) {
-      setError("Please assign the task to an employee");
+      setError("Please assign the task to an employee who is assigned to the selected project.");
       return;
     }
 
@@ -126,6 +184,13 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
           </Alert>
         )}
 
+        <Alert severity="info" sx={{ mb: 3 }}>
+          <Typography variant="body2">
+            <strong>Note:</strong> Tasks can only be assigned to employees who are already assigned to the selected project. 
+            Please ensure the employee is assigned to the project before creating the task.
+          </Typography>
+        </Alert>
+
         <Grid container spacing={3} sx={{ mt: 1 }}>
           {/* Title */}
           <Grid item xs={12}>
@@ -153,42 +218,18 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
             />
           </Grid>
 
-          {/* Assignee */}
+          {/* Project - Required and moved before assignee */}
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth sx={{ width: "10vw" }} disabled={loading}>
-              <InputLabel>Assign To *</InputLabel>
-              <Select
-                value={formData.assignedTo}
-                onChange={(e) => handleChange("assignedTo", e.target.value)}
-                label="Assign To *"
-              >
-                {employees.map((employee) => (
-                  <MenuItem key={employee._id} value={employee._id}>
-                    <Box>
-                      <Typography variant="body2">{employee.email}</Typography>
-                      {employee.firstName && employee.lastName && (
-                        <Typography variant="caption" color="text.secondary">
-                          {employee.firstName} {employee.lastName}
-                        </Typography>
-                      )}
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {/* Project */}
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth sx={{ width: "10vw" }} disabled={loading}>
-              <InputLabel>Project</InputLabel>
+              <InputLabel>Project *</InputLabel>
               <Select
                 value={formData.projectId}
                 onChange={(e) => handleChange("projectId", e.target.value)}
-                label="Project"
+                label="Project *"
+                required
               >
                 <MenuItem value="">
-                  <em>No Project</em>
+                  <em>Select a Project</em>
                 </MenuItem>
                 {projects.map((project) => (
                   <MenuItem key={project._id} value={project._id}>
@@ -201,6 +242,45 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
                     </Box>
                   </MenuItem>
                 ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* Assignee */}
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth sx={{ width: "10vw" }} disabled={loading}>
+              <InputLabel>Assign To *</InputLabel>
+              <Select
+                value={formData.assignedTo}
+                onChange={(e) => handleChange("assignedTo", e.target.value)}
+                label="Assign To *"
+              >
+                {formData.projectId && availableEmployees.length === 0 ? (
+                  <MenuItem disabled>
+                    <Typography variant="body2" color="text.secondary">
+                      No employees assigned to this project
+                    </Typography>
+                  </MenuItem>
+                ) : !formData.projectId ? (
+                  <MenuItem disabled>
+                    <Typography variant="body2" color="text.secondary">
+                      Please select a project first
+                    </Typography>
+                  </MenuItem>
+                ) : (
+                  availableEmployees.map((employee) => (
+                    <MenuItem key={employee._id} value={employee._id}>
+                      <Box>
+                        <Typography variant="body2">{employee.email}</Typography>
+                        {employee.firstName && employee.lastName && (
+                          <Typography variant="caption" color="text.secondary">
+                            {employee.firstName} {employee.lastName}
+                          </Typography>
+                        )}
+                      </Box>
+                    </MenuItem>
+                  ))
+                )}
               </Select>
             </FormControl>
           </Grid>
@@ -285,7 +365,7 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={loading || !formData.title.trim() || !formData.assignedTo}
+          disabled={loading || !formData.title.trim() || !formData.projectId || !formData.assignedTo}
         >
           {loading ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

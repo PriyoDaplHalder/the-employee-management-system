@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Task from "@/model/Task";
 import Project from "@/model/Project";
+import ProjectAssignment from "@/model/ProjectAssignment";
 import { User } from "@/model/User";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 
@@ -82,6 +83,24 @@ export async function POST(request) {
         },
         { status: 404 }
       );
+    }
+
+    // Validate that employee is assigned to the project (if project is specified)
+    if (projectId) {
+      const assignment = await ProjectAssignment.findOne({
+        projectId,
+        employeeId: assignedTo,
+      });
+
+      if (!assignment) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Employee is not assigned to this project. Only employees assigned to a project can be assigned tasks for that project.",
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Validate due date (if provided)
