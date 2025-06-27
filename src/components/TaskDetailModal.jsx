@@ -223,7 +223,7 @@ const TaskDetailModal = ({
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth>
-                      <InputLabel>New Status</InputLabel>
+                      <InputLabel sx={{ width: "20vw" }}>New Status</InputLabel>
                       <Select
                         value={selectedStatus}
                         onChange={(e) => setSelectedStatus(e.target.value)}
