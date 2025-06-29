@@ -32,6 +32,7 @@ import {
   TextField,
   Card,
   CardContent,
+  TablePagination,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
 import {
@@ -60,7 +61,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [assigningEmployee, setAssigningEmployee] = useState(null);
   const [viewingProjectsEmployee, setViewingProjectsEmployee] = useState(null);
-  
+
   // Enhanced filtering and search
   const [searchQuery, setSearchQuery] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
@@ -73,6 +74,10 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   });
   const [viewMenuAnchor, setViewMenuAnchor] = useState(null);
   const [selectedEmployeeForMenu, setSelectedEmployeeForMenu] = useState(null);
+
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   useEffect(() => {
     fetchEmployees();
   }, []);
@@ -84,21 +89,25 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter((emp) => {
-        const fullName = emp.firstName && emp.lastName 
-          ? `${emp.firstName} ${emp.lastName}`.toLowerCase() 
-          : "";
+        const fullName =
+          emp.firstName && emp.lastName
+            ? `${emp.firstName} ${emp.lastName}`.toLowerCase()
+            : "";
         const email = emp.email?.toLowerCase() || "";
         const employeeId = emp.employeeData?.employeeId?.toLowerCase() || "";
         const department = emp.employeeData?.department?.toLowerCase() || "";
         const position = emp.employeeData?.position?.toLowerCase() || "";
-        const customPosition = emp.employeeData?.customPosition?.toLowerCase() || "";
-        
-        return fullName.includes(query) || 
-               email.includes(query) || 
-               employeeId.includes(query) || 
-               department.includes(query) || 
-               position.includes(query) || 
-               customPosition.includes(query);
+        const customPosition =
+          emp.employeeData?.customPosition?.toLowerCase() || "";
+
+        return (
+          fullName.includes(query) ||
+          email.includes(query) ||
+          employeeId.includes(query) ||
+          department.includes(query) ||
+          position.includes(query) ||
+          customPosition.includes(query)
+        );
       });
     }
 
@@ -120,14 +129,31 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
       filtered = filtered.filter((emp) => {
         const position = emp.employeeData?.position;
         if (positionFilter === "Others") {
-          return position === "Others" || 
-                 (position && ![
-                   "Human Resource", "Team Leader", "Project Manager", "Senior Developer",
-                   "Junior Developer", "Quality Assurance", "Business Analyst", "Data Scientist",
-                   "UI/UX Designer", "System Administrator", "Network Engineer", "DevOps Engineer",
-                   "Technical Support", "Sales Executive", "Marketing Specialist", "Customer Service",
-                   "Trainee", "Student", "Intern"
-                 ].includes(position));
+          return (
+            position === "Others" ||
+            (position &&
+              ![
+                "Human Resource",
+                "Team Leader",
+                "Project Manager",
+                "Senior Developer",
+                "Junior Developer",
+                "Quality Assurance",
+                "Business Analyst",
+                "Data Scientist",
+                "UI/UX Designer",
+                "System Administrator",
+                "Network Engineer",
+                "DevOps Engineer",
+                "Technical Support",
+                "Sales Executive",
+                "Marketing Specialist",
+                "Customer Service",
+                "Trainee",
+                "Student",
+                "Intern",
+              ].includes(position))
+          );
         }
         return position === positionFilter;
       });
@@ -190,7 +216,27 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
     }
 
     setFilteredEmployees(filtered);
-  }, [employees, searchQuery, departmentFilter, statusFilter, positionFilter, salaryRangeFilter, sortConfig]); // Helper function to get sortable value from employee object
+  }, [
+    employees,
+    searchQuery,
+    departmentFilter,
+    statusFilter,
+    positionFilter,
+    salaryRangeFilter,
+    sortConfig,
+  ]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPage(0);
+  }, [
+    searchQuery,
+    departmentFilter,
+    statusFilter,
+    positionFilter,
+    salaryRangeFilter,
+    sortConfig,
+  ]); // Helper function to get sortable value from employee object
   const getSortValue = (employee, key) => {
     switch (key) {
       case "employeeId":
@@ -318,7 +364,25 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
     setStatusFilter("all");
     setPositionFilter("all");
     setSalaryRangeFilter("all");
+    setSortConfig({ key: "name", direction: "asc" });
+    setPage(0); // Reset pagination when clearing filters
   };
+
+  // Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Get paginated employees
+  const paginatedEmployees = filteredEmployees.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   // Get unique departments for filter dropdown
   const getUniqueDepartments = () => {
@@ -339,10 +403,14 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   // Get employee statistics for dashboard cards
   const getEmployeeStats = () => {
     const total = filteredEmployees.length;
-    const active = filteredEmployees.filter(emp => emp.isActive).length;
-    const inactive = filteredEmployees.filter(emp => !emp.isActive).length;
-    const departments = new Set(filteredEmployees.map(emp => emp.employeeData?.department).filter(Boolean)).size;
-    
+    const active = filteredEmployees.filter((emp) => emp.isActive).length;
+    const inactive = filteredEmployees.filter((emp) => !emp.isActive).length;
+    const departments = new Set(
+      filteredEmployees
+        .map((emp) => emp.employeeData?.department)
+        .filter(Boolean)
+    ).size;
+
     return { total, active, inactive, departments };
   };
 
@@ -449,16 +517,14 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
         </Typography>
 
         {/* Statistics Cards */}
-        <Grid container spacing={3} sx={{ mb: 4, textAlign: 'center' }}>
+        <Grid container spacing={3} sx={{ mb: 4, textAlign: "center" }}>
           <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
                 <Typography color="textSecondary" gutterBottom>
                   Total Employees
                 </Typography>
-                <Typography variant="h4">
-                  {getEmployeeStats().total}
-                </Typography>
+                <Typography variant="h4">{getEmployeeStats().total}</Typography>
               </CardContent>
             </Card>
           </Grid>
@@ -506,7 +572,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
             <FilterListIcon color="primary" />
             <Typography variant="h6">Filters & Search</Typography>
           </Box>
-          
+
           <Grid container spacing={2}>
             {/* Search */}
             <Grid item xs={12} sm={6} md={3}>
@@ -518,7 +584,9 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Name, email, ID, department..."
                 InputProps={{
-                  startAdornment: <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />,
+                  startAdornment: (
+                    <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />
+                  ),
                 }}
               />
             </Grid>
@@ -617,9 +685,20 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
           </Grid>
 
           {/* Active Filters Display */}
-          {(searchQuery || departmentFilter !== "all" || statusFilter !== "all" || 
-            positionFilter !== "all" || salaryRangeFilter !== "all") && (
-            <Box sx={{ mt: 2, display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+          {(searchQuery ||
+            departmentFilter !== "all" ||
+            statusFilter !== "all" ||
+            positionFilter !== "all" ||
+            salaryRangeFilter !== "all") && (
+            <Box
+              sx={{
+                mt: 2,
+                display: "flex",
+                gap: 1,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
               <Typography variant="body2" color="text.secondary">
                 Active filters:
               </Typography>
@@ -682,7 +761,8 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
               No employees match the current filters
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Try adjusting your search criteria or filter options to see more employees.
+              Try adjusting your search criteria or filter options to see more
+              employees.
             </Typography>
             <Button variant="outlined" onClick={clearAllFilters}>
               Clear All Filters
@@ -698,265 +778,285 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
             </Typography>
           </Paper>
         ) : (
-          <TableContainer
-            component={Paper}
-            sx={{ boxShadow: 3, borderRadius: 2 }}
-          >
-            <Table sx={{ minWidth: 650 }} aria-label="employees table">
-              <TableHead>
-                <TableRow sx={{ bgcolor: "primary.main" }}>
-                  <TableCell sx={{ fontWeight: "bold", color: "white" }}>
-                    <TableSortLabel
-                      active={sortConfig.key === "employeeId"}
-                      direction={
-                        sortConfig.key === "employeeId"
-                          ? sortConfig.direction
-                          : "asc"
-                      }
-                      onClick={() => handleSort("employeeId")}
-                      sx={{
-                        color: "white !important",
-                        "&:hover": { color: "white !important" },
-                      }}
-                    >
-                      Employee ID
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: "bold", color: "white" }}>
-                    <TableSortLabel
-                      active={sortConfig.key === "name"}
-                      direction={
-                        sortConfig.key === "name" ? sortConfig.direction : "asc"
-                      }
-                      onClick={() => handleSort("name")}
-                      sx={{
-                        color: "white !important",
-                        "&:hover": { color: "white !important" },
-                      }}
-                    >
-                      Name
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: "bold", color: "white" }}>
-                    <TableSortLabel
-                      active={sortConfig.key === "email"}
-                      direction={
-                        sortConfig.key === "email"
-                          ? sortConfig.direction
-                          : "asc"
-                      }
-                      onClick={() => handleSort("email")}
-                      sx={{
-                        color: "white !important",
-                        "&:hover": { color: "white !important" },
-                      }}
-                    >
-                      Email
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: "bold", color: "white" }}>
-                    <TableSortLabel
-                      active={sortConfig.key === "department"}
-                      direction={
-                        sortConfig.key === "department"
-                          ? sortConfig.direction
-                          : "asc"
-                      }
-                      onClick={() => handleSort("department")}
-                      sx={{
-                        color: "white !important",
-                        "&:hover": { color: "white !important" },
-                      }}
-                    >
-                      Department
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: "bold", color: "white" }}>
-                    <TableSortLabel
-                      active={sortConfig.key === "position"}
-                      direction={
-                        sortConfig.key === "position"
-                          ? sortConfig.direction
-                          : "asc"
-                      }
-                      onClick={() => handleSort("position")}
-                      sx={{
-                        color: "white !important",
-                        "&:hover": { color: "white !important" },
-                      }}
-                    >
-                      Position
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: "bold", color: "white" }}>
-                    <TableSortLabel
-                      active={sortConfig.key === "salary"}
-                      direction={
-                        sortConfig.key === "salary"
-                          ? sortConfig.direction
-                          : "asc"
-                      }
-                      onClick={() => handleSort("salary")}
-                      sx={{
-                        color: "white !important",
-                        "&:hover": { color: "white !important" },
-                      }}
-                    >
-                      Salary
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: "bold", color: "white" }}>
-                    <TableSortLabel
-                      active={sortConfig.key === "status"}
-                      direction={
-                        sortConfig.key === "status"
-                          ? sortConfig.direction
-                          : "asc"
-                      }
-                      onClick={() => handleSort("status")}
-                      sx={{
-                        color: "white !important",
-                        "&:hover": { color: "white !important" },
-                      }}
-                    >
-                      Status
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: "bold", color: "white" }}>
-                    Actions
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredEmployees.map((employee, index) => (
-                  <TableRow
-                    key={employee._id}
-                    sx={{
-                      "&:hover": {
-                        bgcolor: "primary.50",
-                      },
-                      bgcolor: index % 2 === 0 ? "grey.50" : "white",
-                    }}
-                  >
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {employee.employeeData?.employeeId || "Not assigned"}
-                      </Typography>
+          <Box>
+            <TableContainer
+              component={Paper}
+              sx={{ boxShadow: 3, borderRadius: 2 }}
+            >
+              <Table sx={{ minWidth: 650 }} aria-label="employees table">
+                <TableHead>
+                  <TableRow sx={{ bgcolor: "primary.main" }}>
+                    <TableCell sx={{ fontWeight: "bold", color: "white" }}>
+                      <TableSortLabel
+                        active={sortConfig.key === "employeeId"}
+                        direction={
+                          sortConfig.key === "employeeId"
+                            ? sortConfig.direction
+                            : "asc"
+                        }
+                        onClick={() => handleSort("employeeId")}
+                        sx={{
+                          color: "white !important",
+                          "&:hover": { color: "white !important" },
+                        }}
+                      >
+                        Employee ID
+                      </TableSortLabel>
                     </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {employee.firstName && employee.lastName
-                          ? `${employee.firstName} ${employee.lastName}`
-                          : "Name not provided"}
-                      </Typography>
+                    <TableCell sx={{ fontWeight: "bold", color: "white" }}>
+                      <TableSortLabel
+                        active={sortConfig.key === "name"}
+                        direction={
+                          sortConfig.key === "name"
+                            ? sortConfig.direction
+                            : "asc"
+                        }
+                        onClick={() => handleSort("name")}
+                        sx={{
+                          color: "white !important",
+                          "&:hover": { color: "white !important" },
+                        }}
+                      >
+                        Name
+                      </TableSortLabel>
                     </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {employee.email}
-                      </Typography>
+                    <TableCell sx={{ fontWeight: "bold", color: "white" }}>
+                      <TableSortLabel
+                        active={sortConfig.key === "email"}
+                        direction={
+                          sortConfig.key === "email"
+                            ? sortConfig.direction
+                            : "asc"
+                        }
+                        onClick={() => handleSort("email")}
+                        sx={{
+                          color: "white !important",
+                          "&:hover": { color: "white !important" },
+                        }}
+                      >
+                        Email
+                      </TableSortLabel>
                     </TableCell>
-                    <TableCell>
-                      {employee.employeeData?.department ? (
-                        <Chip
-                          label={employee.employeeData.department}
-                          variant="outlined"
-                          size="small"
-                          color="primary"
-                          sx={{ pointerEvents: "none" }}
-                        />
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          Not assigned
-                        </Typography>
-                      )}
+                    <TableCell sx={{ fontWeight: "bold", color: "white" }}>
+                      <TableSortLabel
+                        active={sortConfig.key === "department"}
+                        direction={
+                          sortConfig.key === "department"
+                            ? sortConfig.direction
+                            : "asc"
+                        }
+                        onClick={() => handleSort("department")}
+                        sx={{
+                          color: "white !important",
+                          "&:hover": { color: "white !important" },
+                        }}
+                      >
+                        Department
+                      </TableSortLabel>
                     </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {(() => {
-                          const position = employee.employeeData?.position;
-                          if (position === "Others") {
-                            // Check for custom position in employeeData first, then fallback to the employee object
-                            const customPosition =
-                              employee.employeeData?.customPosition ||
-                              employee.customPosition ||
-                              // If position is not in predefined list, it's likely a custom position stored directly
-                              (position !== "Others" &&
-                              ![
-                                "Human Resource",
-                                "Team Leader",
-                                "Project Manager",
-                                "Senior Developer",
-                                "Junior Developer",
-                                "Quality Assurance",
-                                "Business Analyst",
-                                "Data Scientist",
-                                "UI/UX Designer",
-                                "System Administrator",
-                                "Network Engineer",
-                                "DevOps Engineer",
-                                "Technical Support",
-                                "Sales Executive",
-                                "Marketing Specialist",
-                                "Customer Service",
-                                "Trainee",
-                                "Student",
-                                "Intern",
-                              ].includes(position)
-                                ? position
-                                : null);
-                            return customPosition || "Not assigned";
-                          }
-                          return position || "Not assigned";
-                        })()}
-                      </Typography>
+                    <TableCell sx={{ fontWeight: "bold", color: "white" }}>
+                      <TableSortLabel
+                        active={sortConfig.key === "position"}
+                        direction={
+                          sortConfig.key === "position"
+                            ? sortConfig.direction
+                            : "asc"
+                        }
+                        onClick={() => handleSort("position")}
+                        sx={{
+                          color: "white !important",
+                          "&:hover": { color: "white !important" },
+                        }}
+                      >
+                        Position
+                      </TableSortLabel>
                     </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {employee.employeeData?.salary
-                          ? `₹${employee.employeeData.salary.toLocaleString()}`
-                          : "Not disclosed"}
-                      </Typography>
+                    <TableCell sx={{ fontWeight: "bold", color: "white" }}>
+                      <TableSortLabel
+                        active={sortConfig.key === "salary"}
+                        direction={
+                          sortConfig.key === "salary"
+                            ? sortConfig.direction
+                            : "asc"
+                        }
+                        onClick={() => handleSort("salary")}
+                        sx={{
+                          color: "white !important",
+                          "&:hover": { color: "white !important" },
+                        }}
+                      >
+                        Salary
+                      </TableSortLabel>
                     </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={employee.isActive ? "Active" : "Inactive"}
-                        color={employee.isActive ? "success" : "error"}
-                        variant="outlined"
-                        size="small"
-                        sx={{ pointerEvents: "none" }}
-                      />
+                    <TableCell sx={{ fontWeight: "bold", color: "white" }}>
+                      <TableSortLabel
+                        active={sortConfig.key === "status"}
+                        direction={
+                          sortConfig.key === "status"
+                            ? sortConfig.direction
+                            : "asc"
+                        }
+                        onClick={() => handleSort("status")}
+                        sx={{
+                          color: "white !important",
+                          "&:hover": { color: "white !important" },
+                        }}
+                      >
+                        Status
+                      </TableSortLabel>
                     </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={(e) => handleViewMenuOpen(e, employee)}
-                          endIcon={<ExpandMoreIcon />}
-                          sx={{ minWidth: "auto", px: 2 }}
-                        >
-                          View
-                        </Button>
-                        <Tooltip title="Assign project">
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAssignProject(employee);
-                            }}
-                            sx={{ minWidth: "auto", px: 2 }}
-                          >
-                            Assign
-                          </Button>
-                        </Tooltip>
-                      </Box>
+                    <TableCell sx={{ fontWeight: "bold", color: "white" }}>
+                      Actions
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {paginatedEmployees.map((employee, index) => (
+                    <TableRow
+                      key={employee._id}
+                      sx={{
+                        "&:hover": {
+                          bgcolor: "primary.50",
+                        },
+                        bgcolor: index % 2 === 0 ? "grey.50" : "white",
+                      }}
+                    >
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {employee.employeeData?.employeeId || "Not assigned"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {employee.firstName && employee.lastName
+                            ? `${employee.firstName} ${employee.lastName}`
+                            : "Name not provided"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {employee.email}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        {employee.employeeData?.department ? (
+                          <Chip
+                            label={employee.employeeData.department}
+                            variant="outlined"
+                            size="small"
+                            color="primary"
+                            sx={{ pointerEvents: "none" }}
+                          />
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            Not assigned
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {(() => {
+                            const position = employee.employeeData?.position;
+                            if (position === "Others") {
+                              // Check for custom position in employeeData first, then fallback to the employee object
+                              const customPosition =
+                                employee.employeeData?.customPosition ||
+                                employee.customPosition ||
+                                // If position is not in predefined list, it's likely a custom position stored directly
+                                (position !== "Others" &&
+                                ![
+                                  "Human Resource",
+                                  "Team Leader",
+                                  "Project Manager",
+                                  "Senior Developer",
+                                  "Junior Developer",
+                                  "Quality Assurance",
+                                  "Business Analyst",
+                                  "Data Scientist",
+                                  "UI/UX Designer",
+                                  "System Administrator",
+                                  "Network Engineer",
+                                  "DevOps Engineer",
+                                  "Technical Support",
+                                  "Sales Executive",
+                                  "Marketing Specialist",
+                                  "Customer Service",
+                                  "Trainee",
+                                  "Student",
+                                  "Intern",
+                                ].includes(position)
+                                  ? position
+                                  : null);
+                              return customPosition || "Not assigned";
+                            }
+                            return position || "Not assigned";
+                          })()}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {employee.employeeData?.salary
+                            ? `₹${employee.employeeData.salary.toLocaleString()}`
+                            : "Not disclosed"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={employee.isActive ? "Active" : "Inactive"}
+                          color={employee.isActive ? "success" : "error"}
+                          variant="outlined"
+                          size="small"
+                          sx={{ pointerEvents: "none" }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={(e) => handleViewMenuOpen(e, employee)}
+                            endIcon={<ExpandMoreIcon />}
+                            sx={{ minWidth: "auto", px: 2 }}
+                          >
+                            View
+                          </Button>
+                          <Tooltip title="Assign project">
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAssignProject(employee);
+                              }}
+                              sx={{ minWidth: "auto", px: 2 }}
+                            >
+                              Assign
+                            </Button>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* Pagination */}
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              component="div"
+              count={filteredEmployees.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              sx={{
+                borderTop: 1,
+                borderColor: "divider",
+                bgcolor: "background.paper",
+              }}
+            />
+          </Box>
         )}
 
         {/* View Options Menu */}

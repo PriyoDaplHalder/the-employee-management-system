@@ -22,6 +22,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  TablePagination,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -46,14 +47,14 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  
+
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
-  
+
   // Filters and sorting
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
@@ -61,17 +62,31 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
   const [projectFilter, setProjectFilter] = useState("all");
   const [sortBy, setSortBy] = useState("dueDate");
   const [sortOrder, setSortOrder] = useState("asc");
-  
+
   // View mode
   // const [viewMode, setViewMode] = useState("table"); // Only table view now
 
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   useEffect(() => {
-    Promise.all([
-      fetchTasks(),
-      fetchProjects(),
-      fetchEmployees()
-    ]).finally(() => setLoading(false));
+    Promise.all([fetchTasks(), fetchProjects(), fetchEmployees()]).finally(() =>
+      setLoading(false)
+    );
   }, []);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPage(0);
+  }, [
+    statusFilter,
+    priorityFilter,
+    assigneeFilter,
+    projectFilter,
+    sortBy,
+    sortOrder,
+  ]);
 
   const fetchTasks = async () => {
     try {
@@ -86,7 +101,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
       if (!response.ok) throw new Error("Failed to fetch tasks");
       const data = await response.json();
       setTasks(data.tasks || []);
-      
+
       // Update task count in parent
       if (onTaskCountChange) {
         onTaskCountChange(data.tasks?.length || 0);
@@ -127,7 +142,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
 
       if (!response.ok) throw new Error("Failed to fetch employees");
       const data = await response.json();
-      const employeeUsers = data.filter(user => user.role === "employee");
+      const employeeUsers = data.filter((user) => user.role === "employee");
       setEmployees(employeeUsers);
     } catch (err) {
       console.error("Error fetching employees:", err);
@@ -136,7 +151,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
 
   const handleTaskDelete = async (taskId) => {
     if (!window.confirm("Are you sure you want to delete this task?")) return;
-    
+
     setActionLoading(true);
     try {
       const token = getToken();
@@ -149,8 +164,8 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
       });
 
       if (!response.ok) throw new Error("Failed to delete task");
-      
-      setTasks(prev => prev.filter(task => task._id !== taskId));
+
+      setTasks((prev) => prev.filter((task) => task._id !== taskId));
       setSuccess("Task deleted successfully");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -182,15 +197,15 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
       }
 
       const updatedTask = await response.json();
-      setTasks(prev => prev.map(task => 
-        task._id === taskId ? updatedTask.task : task
-      ));
-      
+      setTasks((prev) =>
+        prev.map((task) => (task._id === taskId ? updatedTask.task : task))
+      );
+
       // Also refresh the selected task if it's being viewed
       if (selectedTask && selectedTask._id === taskId) {
         setSelectedTask(updatedTask.task);
       }
-      
+
       setSuccess("Task updated successfully");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -202,56 +217,84 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Assigned": return "default";
-      case "In Progress": return "primary";
-      case "On Hold": return "warning";
-      case "Under Review": return "info";
-      case "Completed": return "success";
-      default: return "default";
+      case "Assigned":
+        return "default";
+      case "In Progress":
+        return "primary";
+      case "On Hold":
+        return "warning";
+      case "Under Review":
+        return "info";
+      case "Completed":
+        return "success";
+      default:
+        return "default";
     }
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case "Low": return "success";
-      case "Medium": return "warning";
-      case "High": return "error";
-      case "Critical": return "error";
-      default: return "default";
+      case "Low":
+        return "success";
+      case "Medium":
+        return "warning";
+      case "High":
+        return "error";
+      case "Critical":
+        return "error";
+      default:
+        return "default";
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "Assigned": return <TaskIcon />;
-      case "In Progress": return <PlayArrowIcon />;
-      case "On Hold": return <PauseIcon />;
-      case "Under Review": return <ReviewIcon />;
-      case "Completed": return <CheckCircleIcon />;
-      default: return <TaskIcon />;
+      case "Assigned":
+        return <TaskIcon />;
+      case "In Progress":
+        return <PlayArrowIcon />;
+      case "On Hold":
+        return <PauseIcon />;
+      case "Under Review":
+        return <ReviewIcon />;
+      case "Completed":
+        return <CheckCircleIcon />;
+      default:
+        return <TaskIcon />;
     }
   };
 
+  // Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
 
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   const filteredAndSortedTasks = tasks
-    .filter(task => {
+    .filter((task) => {
       if (statusFilter !== "all" && task.status !== statusFilter) return false;
-      if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
-      if (assigneeFilter !== "all" && task.assignedTo?._id !== assigneeFilter) return false;
-      if (projectFilter !== "all" && task.projectId?._id !== projectFilter) return false;
+      if (priorityFilter !== "all" && task.priority !== priorityFilter)
+        return false;
+      if (assigneeFilter !== "all" && task.assignedTo?._id !== assigneeFilter)
+        return false;
+      if (projectFilter !== "all" && task.projectId?._id !== projectFilter)
+        return false;
       return true;
     })
     .sort((a, b) => {
       let aValue, bValue;
-      
+
       switch (sortBy) {
         case "dueDate":
           aValue = a.dueDate ? new Date(a.dueDate) : new Date("9999-12-31");
           bValue = b.dueDate ? new Date(b.dueDate) : new Date("9999-12-31");
           break;
         case "priority":
-          const priorityOrder = { "Critical": 4, "High": 3, "Medium": 2, "Low": 1 };
+          const priorityOrder = { Critical: 4, High: 3, Medium: 2, Low: 1 };
           aValue = priorityOrder[a.priority] || 0;
           bValue = priorityOrder[b.priority] || 0;
           break;
@@ -271,7 +314,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
           aValue = a.createdAt;
           bValue = b.createdAt;
       }
-      
+
       if (sortOrder === "asc") {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -279,10 +322,16 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
       }
     });
 
+  // Get paginated tasks
+  const paginatedTasks = filteredAndSortedTasks.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
   const handleTaskView = async (task) => {
     setSelectedTask(task);
     setShowTaskModal(true);
-    
+
     // Fetch detailed task information including activity history
     try {
       const token = getToken();
@@ -308,9 +357,9 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
       acc[task.status] = (acc[task.status] || 0) + 1;
       return acc;
     }, {});
-    
-    const overdue = tasks.filter(task => isTaskOverdue(task.dueDate)).length;
-    const dueToday = tasks.filter(task => {
+
+    const overdue = tasks.filter((task) => isTaskOverdue(task.dueDate)).length;
+    const dueToday = tasks.filter((task) => {
       if (!task.dueDate) return false;
       const today = new Date();
       const dueDate = new Date(task.dueDate);
@@ -382,13 +431,24 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
         )}
 
         {success && (
-          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess("")}>
+          <Alert
+            severity="success"
+            sx={{ mb: 3 }}
+            onClose={() => setSuccess("")}
+          >
             {success}
           </Alert>
         )}
 
         {/* Header and Stats */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
+        >
           <Typography
             variant="h4"
             component="h2"
@@ -396,7 +456,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
           >
             Task Management
           </Typography>
-          
+
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -408,16 +468,14 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
         </Box>
 
         {/* Statistics Cards */}
-        <Grid container spacing={3} sx={{ mb: 4, textAlign: 'center' }}>
+        <Grid container spacing={3} sx={{ mb: 4, textAlign: "center" }}>
           <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
                 <Typography color="textSecondary" gutterBottom>
                   Total Tasks
                 </Typography>
-                <Typography variant="h4">
-                  {stats.total}
-                </Typography>
+                <Typography variant="h4">{stats.total}</Typography>
               </CardContent>
             </Card>
           </Grid>
@@ -461,7 +519,9 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
 
         {/* Filters */}
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom>Filters</Typography>
+          <Typography variant="h6" gutterBottom>
+            Filters
+          </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6} md={2}>
               <FormControl fullWidth size="small">
@@ -480,7 +540,7 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
                 </Select>
               </FormControl>
             </Grid>
-            
+
             <Grid item xs={12} sm={6} md={2}>
               <FormControl fullWidth size="small">
                 <InputLabel>Priority</InputLabel>
@@ -542,11 +602,11 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
                   onChange={(e) => setSortBy(e.target.value)}
                   label="Sort By"
                 >
-                  <MenuItem value="dueDate">Due Date</MenuItem>
-                  <MenuItem value="priority">Priority</MenuItem>
-                  <MenuItem value="title">Title</MenuItem>
+                  <MenuItem value="title">Task</MenuItem>
                   <MenuItem value="status">Status</MenuItem>
+                  <MenuItem value="priority">Priority</MenuItem>
                   <MenuItem value="assignee">Assignee</MenuItem>
+                  <MenuItem value="dueDate">Due Date</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -555,7 +615,9 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
               <Button
                 fullWidth
                 variant="outlined"
-                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                onClick={() =>
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                }
                 startIcon={<SortIcon />}
                 sx={{ height: "40px" }}
               >
@@ -573,37 +635,56 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
         {filteredAndSortedTasks.length === 0 ? (
           <Paper sx={{ p: 6, textAlign: "center" }}>
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              {tasks.length === 0 ? "No tasks created" : "No tasks match your filters"}
+              {tasks.length === 0
+                ? "No tasks created"
+                : "No tasks match your filters"}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {tasks.length === 0 
+              {tasks.length === 0
                 ? "Create your first task to get started."
-                : "Try adjusting your filter criteria to see more tasks."
-              }
+                : "Try adjusting your filter criteria to see more tasks."}
             </Typography>
           </Paper>
         ) : (
-          <TaskTable
-            tasks={filteredAndSortedTasks}
-            onView={handleTaskView}
-            onEdit={(task) => {
-              setSelectedTask(task);
-              setShowEditModal(true);
-            }}
-            onStatusUpdate={handleTaskStatusUpdate}
-            onDelete={handleTaskDelete}
-            loading={actionLoading}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSort={(field) => {
-              if (sortBy === field) {
-                setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-              } else {
-                setSortBy(field);
-                setSortOrder("asc");
-              }
-            }}
-          />
+          <Box>
+            <TaskTable
+              tasks={paginatedTasks}
+              onView={handleTaskView}
+              onEdit={(task) => {
+                setSelectedTask(task);
+                setShowEditModal(true);
+              }}
+              onStatusUpdate={handleTaskStatusUpdate}
+              onDelete={handleTaskDelete}
+              loading={actionLoading}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={(field) => {
+                if (sortBy === field) {
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                } else {
+                  setSortBy(field);
+                  setSortOrder("asc");
+                }
+              }}
+            />
+
+            {/* Pagination */}
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              component="div"
+              count={filteredAndSortedTasks.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              sx={{
+                borderTop: 1,
+                borderColor: "divider",
+                bgcolor: "background.paper",
+              }}
+            />
+          </Box>
         )}
 
         {/* Create Task Modal */}
@@ -667,4 +748,3 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
 };
 
 export default TaskManagement;
-
