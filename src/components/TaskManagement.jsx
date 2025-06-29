@@ -39,14 +39,18 @@ import CreateTaskModal from "./CreateTaskModal";
 import EditTaskModal from "./EditTaskModal";
 import TaskDetailModal from "./TaskDetailModal";
 import TaskTable from "./TaskTable";
+import CustomSnackbar from "./CustomSnackbar";
 
 const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -108,7 +112,11 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
       }
     } catch (err) {
       console.error("Error fetching tasks:", err);
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     }
   };
 
@@ -166,10 +174,17 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
       if (!response.ok) throw new Error("Failed to delete task");
 
       setTasks((prev) => prev.filter((task) => task._id !== taskId));
-      setSuccess("Task deleted successfully");
-      setTimeout(() => setSuccess(""), 3000);
+      setSnackbar({
+        open: true,
+        message: "Task deleted successfully",
+        severity: "success",
+      });
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setActionLoading(false);
     }
@@ -206,10 +221,17 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
         setSelectedTask(updatedTask.task);
       }
 
-      setSuccess("Task updated successfully");
-      setTimeout(() => setSuccess(""), 3000);
+      setSnackbar({
+        open: true,
+        message: "Task updated successfully",
+        severity: "success",
+      });
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setActionLoading(false);
     }
@@ -424,22 +446,6 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
       </AppBar>
 
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError("")}>
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert
-            severity="success"
-            sx={{ mb: 3 }}
-            onClose={() => setSuccess("")}
-          >
-            {success}
-          </Alert>
-        )}
-
         {/* Header and Stats */}
         <Box
           sx={{
@@ -694,8 +700,11 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
           onSuccess={() => {
             setShowCreateModal(false);
             fetchTasks();
-            setSuccess("Task created successfully");
-            setTimeout(() => setSuccess(""), 3000);
+            setSnackbar({
+              open: true,
+              message: "Task created successfully",
+              severity: "success",
+            });
           }}
           projects={projects}
           employees={employees}
@@ -735,12 +744,22 @@ const TaskManagement = ({ user, onBack, onTaskCountChange }) => {
             setShowEditModal(false);
             setSelectedTask(null);
             fetchTasks();
-            setSuccess("Task updated successfully");
-            setTimeout(() => setSuccess(""), 3000);
+            setSnackbar({
+              open: true,
+              message: "Task updated successfully",
+              severity: "success",
+            });
           }}
           task={selectedTask}
           projects={projects}
           employees={employees}
+        />
+
+        <CustomSnackbar
+          open={snackbar.open}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          message={snackbar.message}
+          severity={snackbar.severity}
         />
       </Container>
     </Box>

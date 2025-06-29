@@ -49,6 +49,7 @@ import {
 import EmployeeDetailsModal from "./EmployeeDetailsModal";
 import ProjectAssignmentModal from "./ProjectAssignmentModal";
 import EmployeeProjectsModal from "./EmployeeProjectsModal";
+import CustomSnackbar from "./CustomSnackbar";
 import { getToken } from "../utils/storage";
 
 const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
@@ -56,8 +57,11 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [assigningEmployee, setAssigningEmployee] = useState(null);
   const [viewingProjectsEmployee, setViewingProjectsEmployee] = useState(null);
@@ -281,13 +285,21 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
     try {
       // Only access localStorage after component has mounted
       if (typeof window === "undefined") {
-        setError("Browser environment required");
+        setSnackbar({
+          open: true,
+          message: "Browser environment required",
+          severity: "error",
+        });
         return;
       }
 
       const token = getToken();
       if (!token) {
-        setError("No authentication token");
+        setSnackbar({
+          open: true,
+          message: "No authentication token",
+          severity: "error",
+        });
         return;
       }
 
@@ -306,7 +318,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
       const employeeData = userData.filter((user) => user.role === "employee");
       setEmployees(employeeData);
       setFilteredEmployees(employeeData); // Initialize filtered employees
-      setError(""); // Clear any previous errors
+      setSnackbar({ open: false, message: "", severity: "info" }); // Clear any previous errors
 
       // Notify parent component about the updated active employee count
       if (onEmployeeCountChange) {
@@ -316,7 +328,11 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
         onEmployeeCountChange(activeEmployeeCount);
       }
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       if (!refreshing) {
         setLoading(false);
@@ -333,13 +349,13 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   const handleEmployeeUpdate = () => {
     // Refresh employee data after an update
     setRefreshing(true);
-    setSuccessMessage("Employee updated successfully!");
+    setSnackbar({
+      open: true,
+      message: "Employee updated successfully!",
+      severity: "success",
+    });
     fetchEmployees().finally(() => {
       setRefreshing(false);
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
     });
     setSelectedEmployee(null);
   };
@@ -498,11 +514,6 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
         </Toolbar>{" "}
       </AppBar>
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
         <Typography
           variant="h4"
           component="h2"
@@ -1114,6 +1125,13 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
             onClose={() => setViewingProjectsEmployee(null)}
           />
         )}
+
+        <CustomSnackbar
+          open={snackbar.open}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          message={snackbar.message}
+          severity={snackbar.severity}
+        />
       </Container>
     </Box>
   );

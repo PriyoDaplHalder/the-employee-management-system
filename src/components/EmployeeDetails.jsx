@@ -9,7 +9,6 @@ import {
   Button,
   Grid,
   Paper,
-  Alert,
   CircularProgress,
   AppBar,
   Toolbar,
@@ -25,6 +24,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import EditIcon from "@mui/icons-material/Edit";
 import { getToken } from "../utils/storage";
+import CustomSnackbar from "./CustomSnackbar";
 
 const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
   const [formData, setFormData] = useState({
@@ -42,8 +42,11 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
     skills: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [isViewMode, setIsViewMode] = useState(false);
   const [profileExists, setProfileExists] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
@@ -55,7 +58,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
 
   const predefinedPositions = [
     "Human Resource",
-    "Team Leader", 
+    "Team Leader",
     "Project Manager",
     "Senior Developer",
     "Junior Developer",
@@ -73,7 +76,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
     "Trainee",
     "Student",
     "Intern",
-    "Others"
+    "Others",
   ];
 
   const isManagement = user?.role === "management";
@@ -100,23 +103,24 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
 
       if (response.ok) {
         const employee = await response.json();
-        
+
         // Check if this is a default profile (created during signup with default values)
-        const isDefaultProfile = (employee.department === 'General' || !employee.department) && 
-                                (employee.position === 'Employee' || !employee.position) && 
-                                (employee.salary === 0 || !employee.salary) && 
-                                !employee.hireDate;
-        
-        console.log('Employee profile debug:', {
+        const isDefaultProfile =
+          (employee.department === "General" || !employee.department) &&
+          (employee.position === "Employee" || !employee.position) &&
+          (employee.salary === 0 || !employee.salary) &&
+          !employee.hireDate;
+
+        console.log("Employee profile debug:", {
           department: employee.department,
           position: employee.position,
           salary: employee.salary,
           hireDate: employee.hireDate,
           profileCompleted: employee.profileCompleted,
           isDefaultProfile,
-          isManagement
+          isManagement,
         });
-        
+
         if (isDefaultProfile) {
           // Treat as first-time creation
           setProfileExists(false);
@@ -134,16 +138,25 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
 
         // Pre-fill form with existing data
         const position = employee.position || "";
-        const isCustomPosition = position && !predefinedPositions.includes(position);
-        
+        const isCustomPosition =
+          position && !predefinedPositions.includes(position);
+
         const employeeData = {
           firstName: employee.user?.firstName || "",
           lastName: employee.user?.lastName || "",
           employeeId: employee.employeeId || "",
-          department: isDefaultProfile ? "" : (employee.department || ""),
-          position: isDefaultProfile ? "" : (isCustomPosition ? "Others" : position),
-          customPosition: isDefaultProfile ? "" : (isCustomPosition ? position : ""),
-          salary: isDefaultProfile ? "" : (employee.salary?.toString() || ""),
+          department: isDefaultProfile ? "" : employee.department || "",
+          position: isDefaultProfile
+            ? ""
+            : isCustomPosition
+            ? "Others"
+            : position,
+          customPosition: isDefaultProfile
+            ? ""
+            : isCustomPosition
+            ? position
+            : "",
+          salary: isDefaultProfile ? "" : employee.salary?.toString() || "",
           hireDate: employee.hireDate
             ? new Date(employee.hireDate).toISOString().split("T")[0]
             : "",
@@ -155,7 +168,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
             ? employee.skills.join(", ")
             : "",
         };
-        
+
         setFormData(employeeData);
         setOriginalData(employeeData);
         setShowCustomPosition(isCustomPosition && !isDefaultProfile);
@@ -168,11 +181,19 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
         setIsViewMode(false);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to fetch employee details");
+        setSnackbar({
+          open: true,
+          message: errorData.error || "Failed to fetch employee details",
+          severity: "error",
+        });
       }
     } catch (error) {
       console.error("Error fetching employee details:", error);
-      setError("Error fetching employee details");
+      setSnackbar({
+        open: true,
+        message: "Error fetching employee details",
+        severity: "error",
+      });
     } finally {
       setFetchLoading(false);
     }
@@ -184,38 +205,42 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
     if (profileCompleted && !isManagement) {
       return false;
     }
-    
+
     // Management can always edit
     if (isManagement) {
       return true;
     }
-    
+
     // Department and salary are not editable by employees
-    if ((fieldName === 'department' || fieldName === 'salary') && !isManagement) {
+    if (
+      (fieldName === "department" || fieldName === "salary") &&
+      !isManagement
+    ) {
       return false;
     }
-    
+
     // If it's first time creation or no profile exists, all fields are editable (except department and salary for employees)
     if (isFirstTimeCreation || !profileExists) {
       return true;
     }
-    
+
     // If profile exists but not completed, check if field is empty or has default values
     const originalValue = originalData[fieldName];
     const isEmptyField = !originalValue || originalValue.trim() === "";
-    const isDefaultValue = (fieldName === 'position' && originalValue === 'Employee');
-    
+    const isDefaultValue =
+      fieldName === "position" && originalValue === "Employee";
+
     return isEmptyField || isDefaultValue;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     // If profile is completed, prevent any changes
     if (profileCompleted) {
       return;
     }
-    
+
     // If profile exists but not completed, only allow editing empty fields
     if (profileExists && !isFirstTimeCreation) {
       const originalValue = originalData[name];
@@ -224,19 +249,19 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
         return;
       }
     }
-    
-    if (name === 'position') {
-      setShowCustomPosition(value === 'Others');
-      if (value !== 'Others') {
+
+    if (name === "position") {
+      setShowCustomPosition(value === "Others");
+      if (value !== "Others") {
         setFormData({
           ...formData,
           [name]: value,
-          customPosition: '' // Clear custom position when predefined is selected
+          customPosition: "", // Clear custom position when predefined is selected
         });
       } else {
         setFormData({
           ...formData,
-          [name]: value
+          [name]: value,
         });
       }
     } else {
@@ -250,8 +275,6 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
   const handleSubmit = async (e, completeProfile = false) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess("");
 
     // If it's a first-time creation, validate required fields
     if (isFirstTimeCreation || !profileExists) {
@@ -262,22 +285,31 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
         "position",
         "hireDate",
       ];
-      
+
       // Check for custom position when "Others" is selected
       if (formData.position === "Others" && !formData.customPosition.trim()) {
-        setError("Please enter a custom position title when 'Others' is selected");
+        setSnackbar({
+          open: true,
+          message:
+            "Please enter a custom position title when 'Others' is selected",
+          severity: "error",
+        });
         setLoading(false);
         return;
       }
-      
+
       const missingFields = requiredFields.filter(
         (field) => !formData[field].trim()
       );
 
       if (missingFields.length > 0) {
-        setError(
-          `Please fill in all required fields: ${missingFields.join(", ")}`
-        );
+        setSnackbar({
+          open: true,
+          message: `Please fill in all required fields: ${missingFields.join(
+            ", "
+          )}`,
+          severity: "error",
+        });
         setLoading(false);
         return;
       }
@@ -289,7 +321,11 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
 
       const token = getToken();
       if (!token) {
-        setError("No authentication token found");
+        setSnackbar({
+          open: true,
+          message: "No authentication token found",
+          severity: "error",
+        });
         setLoading(false);
         return;
       }
@@ -301,7 +337,10 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
         .filter((skill) => skill);
 
       // Use custom position if "Others" is selected, otherwise use the selected position
-      const finalPosition = formData.position === 'Others' ? formData.customPosition : formData.position;
+      const finalPosition =
+        formData.position === "Others"
+          ? formData.customPosition
+          : formData.position;
 
       const submissionData = {
         ...formData,
@@ -321,13 +360,21 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
       });
 
       const data = await response.json();
-
       if (response.ok) {
         if (completeProfile) {
-          setSuccess("Profile submitted successfully! Your profile is now locked for editing. Contact management for any changes.");
+          setSnackbar({
+            open: true,
+            message:
+              "Profile submitted successfully! Your profile is now locked for editing. Contact management for any changes.",
+            severity: "success",
+          });
           setProfileCompleted(true);
         } else {
-          setSuccess("Employee details saved successfully!");
+          setSnackbar({
+            open: true,
+            message: "Employee details saved successfully!",
+            severity: "success",
+          });
         }
         setProfileExists(true);
         setIsViewMode(true);
@@ -338,11 +385,20 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
           fetchEmployeeDetails();
         }, 1000);
       } else {
-        setError(data.error || "Failed to save employee details");
+        const data = await response.json();
+        setSnackbar({
+          open: true,
+          message: data.error || "Failed to save employee details",
+          severity: "error",
+        });
       }
     } catch (error) {
       console.error("Error saving employee details:", error);
-      setError("Error saving employee details");
+      setSnackbar({
+        open: true,
+        message: "Error saving employee details",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -351,8 +407,8 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
   const renderSkills = () => {
     if (!existingSkills || existingSkills.length === 0) {
       return (
-        <Typography 
-          variant="body1" 
+        <Typography
+          variant="body1"
           sx={{
             color: "text.secondary",
             fontStyle: "italic",
@@ -377,7 +433,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
               fontWeight: 500,
               fontSize: "0.875rem",
               pointerEvents: "none",
-              
+
               "&:hover": {
                 bgcolor: "primary.100",
               },
@@ -478,30 +534,34 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
       </AppBar>
 
       <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" sx={{ mb: 3 }}>
-            {success}
-          </Alert>
-        )}
-
         {profileExists && !isManagement && (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            {profileCompleted 
-              ? "Your profile is completed and locked for editing. Contact management for any changes."
-              : "You can only fill empty fields. Once you complete your profile, it will be locked."}
-          </Alert>
+          <Paper
+            elevation={1}
+            sx={{
+              p: 2,
+              mb: 3,
+              bgcolor: "info.50",
+              border: "1px solid",
+              borderColor: "info.200",
+              borderRadius: 2,
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{ color: "info.main", fontWeight: 500 }}
+            >
+              ℹ️{" "}
+              {profileCompleted
+                ? "Your profile is completed and locked for editing. Contact management for any changes."
+                : "You can only fill empty fields. Once you complete your profile, it will be locked."}
+            </Typography>
+          </Paper>
         )}
 
-        <Paper 
+        <Paper
           elevation={3}
-          sx={{ 
-            p: 4, 
+          sx={{
+            p: 4,
             borderRadius: 3,
             bgcolor: "white",
             border: "1px solid",
@@ -521,7 +581,9 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
           {profileExists && (
             <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2 }}>
               <Chip
-                label={profileCompleted ? "Profile Completed" : "Profile In Progress"}
+                label={
+                  profileCompleted ? "Profile Completed" : "Profile In Progress"
+                }
                 color={profileCompleted ? "success" : "warning"}
                 variant="filled"
                 icon={profileCompleted ? <CheckCircleIcon /> : <EditIcon />}
@@ -721,7 +783,9 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           }}
                         >
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {formData.position === "Others" ? formData.customPosition || "Not assigned" : formData.position || "Not assigned"}
+                            {formData.position === "Others"
+                              ? formData.customPosition || "Not assigned"
+                              : formData.position || "Not assigned"}
                           </Typography>
                         </Paper>
                       </Box>
@@ -746,9 +810,9 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                             borderColor: "grey.200",
                           }}
                         >
-                          <Typography 
-                            variant="body1" 
-                            sx={{ 
+                          <Typography
+                            variant="body1"
+                            sx={{
                               fontWeight: 500,
                               color: "text.primary",
                             }}
@@ -782,11 +846,14 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                         >
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
                             {formData.hireDate
-                              ? new Date(formData.hireDate).toLocaleDateString("en-US", {
-                                  year: "numeric",
-                                  month: "long",
-                                  day: "numeric",
-                                })
+                              ? new Date(formData.hireDate).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  }
+                                )
                               : "Not provided"}
                           </Typography>
                         </Paper>
@@ -971,11 +1038,17 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           variant="outlined"
                           required
                           disabled={!isFieldEditable("firstName")}
-                          helperText={!isFieldEditable("firstName") && formData.firstName ? "Field already filled and cannot be changed" : ""}
+                          helperText={
+                            !isFieldEditable("firstName") && formData.firstName
+                              ? "Field already filled and cannot be changed"
+                              : ""
+                          }
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
-                              bgcolor: !isFieldEditable("firstName") ? "grey.100" : "white",
+                              bgcolor: !isFieldEditable("firstName")
+                                ? "grey.100"
+                                : "white",
                             },
                           }}
                         />
@@ -991,11 +1064,17 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           variant="outlined"
                           required
                           disabled={!isFieldEditable("lastName")}
-                          helperText={!isFieldEditable("lastName") && formData.lastName ? "Field already filled and cannot be changed" : ""}
+                          helperText={
+                            !isFieldEditable("lastName") && formData.lastName
+                              ? "Field already filled and cannot be changed"
+                              : ""
+                          }
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
-                              bgcolor: !isFieldEditable("lastName") ? "grey.100" : "white",
+                              bgcolor: !isFieldEditable("lastName")
+                                ? "grey.100"
+                                : "white",
                             },
                           }}
                         />
@@ -1010,12 +1089,19 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           onChange={handleChange}
                           variant="outlined"
                           disabled={!isFieldEditable("employeeId")}
-                          helperText={!isFieldEditable("employeeId") && formData.employeeId ? "Field already assigned and cannot be changed" : "Auto-generated if empty"}
+                          helperText={
+                            !isFieldEditable("employeeId") &&
+                            formData.employeeId
+                              ? "Field already assigned and cannot be changed"
+                              : "Auto-generated if empty"
+                          }
                           placeholder="Auto-generated if empty"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
-                              bgcolor: !isFieldEditable("employeeId") ? "grey.100" : "white",
+                              bgcolor: !isFieldEditable("employeeId")
+                                ? "grey.100"
+                                : "white",
                             },
                           }}
                         />
@@ -1062,18 +1148,31 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           variant="outlined"
                           required
                           disabled={!isFieldEditable("department")}
-                          helperText={!isManagement ? "Department is assigned by management" : (!isFieldEditable("department") && formData.department ? "Field already filled and cannot be changed" : "")}
+                          helperText={
+                            !isManagement
+                              ? "Department is assigned by management"
+                              : !isFieldEditable("department") &&
+                                formData.department
+                              ? "Field already filled and cannot be changed"
+                              : ""
+                          }
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
-                              bgcolor: !isFieldEditable("department") ? "grey.100" : "white",
+                              bgcolor: !isFieldEditable("department")
+                                ? "grey.100"
+                                : "white",
                             },
                           }}
                         />
                       </Grid>
 
                       <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth required disabled={!isFieldEditable("position")}>
+                        <FormControl
+                          fullWidth
+                          required
+                          disabled={!isFieldEditable("position")}
+                        >
                           <InputLabel>Position *</InputLabel>
                           <Select
                             name="position"
@@ -1082,7 +1181,9 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                             label="Position *"
                             sx={{
                               borderRadius: 2,
-                              bgcolor: !isFieldEditable("position") ? "grey.100" : "white",
+                              bgcolor: !isFieldEditable("position")
+                                ? "grey.100"
+                                : "white",
                             }}
                           >
                             {predefinedPositions.map((position) => (
@@ -1091,11 +1192,16 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                               </MenuItem>
                             ))}
                           </Select>
-                          {!isFieldEditable("position") && formData.position && (
-                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1 }}>
-                              Field already filled and cannot be changed
-                            </Typography>
-                          )}
+                          {!isFieldEditable("position") &&
+                            formData.position && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ mt: 0.5, ml: 1 }}
+                              >
+                                Field already filled and cannot be changed
+                              </Typography>
+                            )}
                         </FormControl>
                       </Grid>
 
@@ -1111,12 +1217,19 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                             variant="outlined"
                             required
                             disabled={!isFieldEditable("customPosition")}
-                            helperText={!isFieldEditable("customPosition") && formData.customPosition ? "Field already filled and cannot be changed" : "Enter custom position title"}
+                            helperText={
+                              !isFieldEditable("customPosition") &&
+                              formData.customPosition
+                                ? "Field already filled and cannot be changed"
+                                : "Enter custom position title"
+                            }
                             placeholder="Enter custom position title"
                             sx={{
                               "& .MuiOutlinedInput-root": {
                                 borderRadius: 2,
-                                bgcolor: !isFieldEditable("customPosition") ? "grey.100" : "white",
+                                bgcolor: !isFieldEditable("customPosition")
+                                  ? "grey.100"
+                                  : "white",
                               },
                             }}
                           />
@@ -1133,7 +1246,13 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           onChange={handleChange}
                           variant="outlined"
                           disabled={!isFieldEditable("salary")}
-                          helperText={!isManagement ? "Salary is assigned by management" : (!isFieldEditable("salary") && formData.salary ? "Field already filled and cannot be changed" : "")}
+                          helperText={
+                            !isManagement
+                              ? "Salary is assigned by management"
+                              : !isFieldEditable("salary") && formData.salary
+                              ? "Field already filled and cannot be changed"
+                              : ""
+                          }
                           InputProps={{
                             startAdornment: (
                               <Typography sx={{ mr: 1 }}>₹</Typography>
@@ -1142,7 +1261,9 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
-                              bgcolor: !isFieldEditable("salary") ? "grey.100" : "white",
+                              bgcolor: !isFieldEditable("salary")
+                                ? "grey.100"
+                                : "white",
                             },
                           }}
                         />
@@ -1162,11 +1283,17 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           }}
                           required
                           disabled={!isFieldEditable("hireDate")}
-                          helperText={!isFieldEditable("hireDate") && formData.hireDate ? "Field already filled and cannot be changed" : ""}
+                          helperText={
+                            !isFieldEditable("hireDate") && formData.hireDate
+                              ? "Field already filled and cannot be changed"
+                              : ""
+                          }
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
-                              bgcolor: !isFieldEditable("hireDate") ? "grey.100" : "white",
+                              bgcolor: !isFieldEditable("hireDate")
+                                ? "grey.100"
+                                : "white",
                             },
                           }}
                         />
@@ -1212,12 +1339,18 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           onChange={handleChange}
                           variant="outlined"
                           disabled={!isFieldEditable("phone")}
-                          helperText={!isFieldEditable("phone") && formData.phone ? "Field already filled and cannot be changed" : ""}
+                          helperText={
+                            !isFieldEditable("phone") && formData.phone
+                              ? "Field already filled and cannot be changed"
+                              : ""
+                          }
                           placeholder="e.g., +91 9876543210"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
-                              bgcolor: !isFieldEditable("phone") ? "grey.100" : "white",
+                              bgcolor: !isFieldEditable("phone")
+                                ? "grey.100"
+                                : "white",
                             },
                           }}
                         />
@@ -1232,12 +1365,19 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           onChange={handleChange}
                           variant="outlined"
                           disabled={!isFieldEditable("emergencyContact")}
-                          helperText={!isFieldEditable("emergencyContact") && formData.emergencyContact ? "Field already filled and cannot be changed" : ""}
+                          helperText={
+                            !isFieldEditable("emergencyContact") &&
+                            formData.emergencyContact
+                              ? "Field already filled and cannot be changed"
+                              : ""
+                          }
                           placeholder="e.g., +91 9876543210"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
-                              bgcolor: !isFieldEditable("emergencyContact") ? "grey.100" : "white",
+                              bgcolor: !isFieldEditable("emergencyContact")
+                                ? "grey.100"
+                                : "white",
                             },
                           }}
                         />
@@ -1254,12 +1394,18 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           multiline
                           rows={2}
                           disabled={!isFieldEditable("address")}
-                          helperText={!isFieldEditable("address") && formData.address ? "Field already filled and cannot be changed" : ""}
+                          helperText={
+                            !isFieldEditable("address") && formData.address
+                              ? "Field already filled and cannot be changed"
+                              : ""
+                          }
                           placeholder="Street address"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
-                              bgcolor: !isFieldEditable("address") ? "grey.100" : "white",
+                              bgcolor: !isFieldEditable("address")
+                                ? "grey.100"
+                                : "white",
                             },
                           }}
                         />
@@ -1274,14 +1420,20 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           onChange={handleChange}
                           variant="outlined"
                           disabled={!isFieldEditable("skills")}
-                          helperText={!isFieldEditable("skills") && formData.skills ? "Field already filled and cannot be changed" : "Enter skills separated by commas"}
+                          helperText={
+                            !isFieldEditable("skills") && formData.skills
+                              ? "Field already filled and cannot be changed"
+                              : "Enter skills separated by commas"
+                          }
                           placeholder="e.g., JavaScript, React, Node.js, Python"
                           multiline
                           rows={2}
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
-                              bgcolor: !isFieldEditable("skills") ? "grey.100" : "white",
+                              bgcolor: !isFieldEditable("skills")
+                                ? "grey.100"
+                                : "white",
                             },
                           }}
                         />
@@ -1292,13 +1444,13 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
 
                 <Grid item xs={12}>
                   <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
-                    {(isFirstTimeCreation || !profileExists) ? (
+                    {isFirstTimeCreation || !profileExists ? (
                       <Button
                         type="submit"
                         variant="contained"
                         disabled={loading}
                         onClick={(e) => handleSubmit(e, true)}
-                        sx={{ 
+                        sx={{
                           minWidth: 120,
                           borderRadius: 2,
                           fontWeight: 600,
@@ -1325,7 +1477,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           variant="contained"
                           disabled={loading}
                           onClick={(e) => handleSubmit(e, true)}
-                          sx={{ 
+                          sx={{
                             minWidth: 120,
                             borderRadius: 2,
                             fontWeight: 600,
@@ -1352,7 +1504,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                             variant="outlined"
                             disabled={loading}
                             onClick={(e) => handleSubmit(e, false)}
-                            sx={{ 
+                            sx={{
                               minWidth: 120,
                               borderRadius: 2,
                               fontWeight: 600,
@@ -1376,7 +1528,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                             variant="contained"
                             disabled={loading}
                             onClick={(e) => handleSubmit(e, true)}
-                            sx={{ 
+                            sx={{
                               minWidth: 120,
                               borderRadius: 2,
                               fontWeight: 600,
@@ -1425,6 +1577,13 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
           )}
         </Paper>
       </Container>
+
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Box>
   );
 };

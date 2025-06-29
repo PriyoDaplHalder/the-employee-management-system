@@ -15,10 +15,10 @@ import {
   TextField,
   Typography,
   Box,
-  Alert,
   CircularProgress,
   Divider,
 } from "@mui/material";
+import CustomSnackbar from "./CustomSnackbar";
 
 const ProjectAssignmentModal = ({ employee, open, onClose, onSuccess }) => {
   const [projects, setProjects] = useState([]);
@@ -27,7 +27,12 @@ const ProjectAssignmentModal = ({ employee, open, onClose, onSuccess }) => {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingProjects, setFetchingProjects] = useState(false);
-  const [error, setError] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
+
   useEffect(() => {
     if (open) {
       fetchProjects();
@@ -35,7 +40,6 @@ const ProjectAssignmentModal = ({ employee, open, onClose, onSuccess }) => {
       // Reset form
       setSelectedProject("");
       setNotes("");
-      setError("");
     }
   }, [open, employee?._id]);
   const fetchProjects = async () => {
@@ -55,10 +59,16 @@ const ProjectAssignmentModal = ({ employee, open, onClose, onSuccess }) => {
 
       const data = await response.json();
       // Filter to only include active projects for assignment
-      const activeProjects = (data.projects || []).filter(project => project.isActive !== false);
+      const activeProjects = (data.projects || []).filter(
+        (project) => project.isActive !== false
+      );
       setProjects(activeProjects);
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setFetchingProjects(false);
     }
@@ -110,12 +120,15 @@ const ProjectAssignmentModal = ({ employee, open, onClose, onSuccess }) => {
 
   const handleAssign = async () => {
     if (!selectedProject) {
-      setError("Please select a project");
+      setSnackbar({
+        open: true,
+        message: "Please select a project",
+        severity: "error",
+      });
       return;
     }
 
     setLoading(true);
-    setError("");
 
     try {
       const token = getToken();
@@ -138,10 +151,19 @@ const ProjectAssignmentModal = ({ employee, open, onClose, onSuccess }) => {
         throw new Error(data.error || "Failed to assign project");
       }
 
+      setSnackbar({
+        open: true,
+        message: "Project assigned successfully!",
+        severity: "success",
+      });
       onSuccess();
-      onClose();
+      setTimeout(() => onClose(), 1500);
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -175,12 +197,6 @@ const ProjectAssignmentModal = ({ employee, open, onClose, onSuccess }) => {
         </Box>
 
         <Divider sx={{ my: 2 }} />
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
 
         <FormControl fullWidth sx={{ mb: 3 }}>
           <InputLabel>Select Project</InputLabel>
@@ -264,6 +280,13 @@ const ProjectAssignmentModal = ({ employee, open, onClose, onSuccess }) => {
           )}
         </Button>
       </DialogActions>
+
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Dialog>
   );
 };

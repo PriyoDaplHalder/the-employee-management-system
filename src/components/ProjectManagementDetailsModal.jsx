@@ -19,7 +19,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Alert,
   CircularProgress,
   IconButton,
   Tooltip,
@@ -27,6 +26,7 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
+import CustomSnackbar from "./CustomSnackbar";
 import {
   Close as CloseIcon,
   Assignment as AssignmentIcon,
@@ -49,8 +49,11 @@ const ProjectManagementDetailsModal = ({
 }) => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [actionLoading, setActionLoading] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [assigningEmployee, setAssigningEmployee] = useState(null);
@@ -66,7 +69,6 @@ const ProjectManagementDetailsModal = ({
 
   const fetchProjectAssignments = async () => {
     setLoading(true);
-    setError("");
     try {
       const token = getToken();
       const response = await fetch("/api/management/projects/assign", {
@@ -91,7 +93,11 @@ const ProjectManagementDetailsModal = ({
       setAssignments(projectAssignments);
     } catch (err) {
       console.error("Error fetching project assignments:", err);
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -106,8 +112,6 @@ const ProjectManagementDetailsModal = ({
     if (!assignmentToDelete) return;
 
     setActionLoading(true);
-    setError("");
-    setSuccess("");
     setShowDeleteConfirmation(false);
 
     try {
@@ -123,17 +127,28 @@ const ProjectManagementDetailsModal = ({
       );
 
       if (response.ok) {
-        setSuccess("Employee removed from project successfully!");
+        setSnackbar({
+          open: true,
+          message: "Employee removed from project successfully!",
+          severity: "success",
+        });
         fetchProjectAssignments(); // Refresh assignments
         if (onRefresh) onRefresh(); // Refresh parent data
-        setTimeout(() => setSuccess(""), 3000);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to remove assignment");
+        setSnackbar({
+          open: true,
+          message: errorData.error || "Failed to remove assignment",
+          severity: "error",
+        });
       }
     } catch (err) {
       console.error("Error removing assignment:", err);
-      setError("Error removing assignment");
+      setSnackbar({
+        open: true,
+        message: "Error removing assignment",
+        severity: "error",
+      });
     } finally {
       setActionLoading(false);
       setAssignmentToDelete(null);
@@ -216,27 +231,6 @@ const ProjectManagementDetailsModal = ({
       </DialogTitle>
 
       <DialogContent sx={{ p: 0 }}>
-        {/* Alerts */}
-        {error && (
-          <Alert
-            severity="error"
-            sx={{ m: 3, mb: 0 }}
-            onClose={() => setError("")}
-          >
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert
-            severity="success"
-            sx={{ m: 3, mb: 0 }}
-            onClose={() => setSuccess("")}
-          >
-            {success}
-          </Alert>
-        )}
-
         {/* Project Information Section */}
         <Box sx={{ p: 3, bgcolor: "grey.50" }}>
           <Typography
@@ -486,12 +480,12 @@ const ProjectManagementDetailsModal = ({
                 variant="contained"
                 size="medium"
                 onClick={handleAssignEmployee}
-                sx={{ 
-                  minWidth: "auto", 
+                sx={{
+                  minWidth: "auto",
                   px: 3,
                   borderRadius: 2,
                   textTransform: "none",
-                  fontWeight: 500
+                  fontWeight: 500,
                 }}
               >
                 Assign Employee
@@ -557,6 +551,13 @@ const ProjectManagementDetailsModal = ({
         open={showEmployeeAssignModal}
         onClose={handleCloseEmployeeAssignModal}
         onSuccess={handleEmployeeAssignmentSuccess}
+      />
+
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
       />
     </Dialog>
   );

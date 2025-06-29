@@ -7,7 +7,6 @@ import {
   Container,
   Typography,
   Paper,
-  Alert,
   CircularProgress,
   Card,
   CardContent,
@@ -18,15 +17,19 @@ import {
   AppBar,
   Toolbar,
   IconButton,
-  Chip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
 import ProjectDetailsModal from "./ProjectDetailsModal";
+import CustomSnackbar from "./CustomSnackbar";
 
 const MyProjects = ({ user, onBack }) => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [selectedProject, setSelectedProject] = useState(null);
 
   useEffect(() => {
@@ -37,7 +40,11 @@ const MyProjects = ({ user, onBack }) => {
     try {
       const token = getToken();
       if (!token) {
-        setError("No authentication token");
+        setSnackbar({
+          open: true,
+          message: "No authentication token",
+          severity: "error",
+        });
         return;
       }
 
@@ -55,7 +62,11 @@ const MyProjects = ({ user, onBack }) => {
       const data = await response.json();
       setAssignments(data.assignments || []);
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -122,12 +133,6 @@ const MyProjects = ({ user, onBack }) => {
       </AppBar>
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
         <Typography
           variant="h4"
           component="h2"
@@ -181,9 +186,10 @@ const MyProjects = ({ user, onBack }) => {
                         gutterBottom
                         sx={{
                           fontWeight: 600,
-                          color: assignment.projectId?.isActive === false 
-                            ? "text.secondary" 
-                            : "primary.main",
+                          color:
+                            assignment.projectId?.isActive === false
+                              ? "text.secondary"
+                              : "primary.main",
                           mb: 0,
                           flex: 1,
                         }}
@@ -192,10 +198,14 @@ const MyProjects = ({ user, onBack }) => {
                       </Typography>
                       <Chip
                         label={
-                          assignment.projectId?.isActive === false ? "Inactive" : "Active"
+                          assignment.projectId?.isActive === false
+                            ? "Inactive"
+                            : "Active"
                         }
                         color={
-                          assignment.projectId?.isActive === false ? "default" : "success"
+                          assignment.projectId?.isActive === false
+                            ? "default"
+                            : "success"
                         }
                         size="small"
                         sx={{ ml: 1, fontWeight: 500 }}
@@ -287,6 +297,12 @@ const MyProjects = ({ user, onBack }) => {
           />
         )}
       </Container>
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Box>
   );
 };

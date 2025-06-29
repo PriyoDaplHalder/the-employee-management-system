@@ -7,7 +7,6 @@ import {
   TextField,
   Button,
   Typography,
-  Alert,
   CircularProgress,
   Divider,
   Card,
@@ -21,6 +20,7 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from "@mui/icons-material";
+import CustomSnackbar from "./CustomSnackbar";
 
 const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -29,7 +29,11 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
     rememberMe: false,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [emailError, setEmailError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -48,23 +52,24 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
     const hasUpperCase = /[A-Z]/.test(password);
     const hasNumber = /\d/.test(password);
     const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-    
+
     return {
-      isValid: minLength && hasLowerCase && hasUpperCase && hasNumber && hasSymbol,
+      isValid:
+        minLength && hasLowerCase && hasUpperCase && hasNumber && hasSymbol,
       errors: {
         minLength,
         hasLowerCase,
         hasUpperCase,
         hasNumber,
-        hasSymbol
-      }
+        hasSymbol,
+      },
     };
   };
 
   const handleEmailChange = (e) => {
     const email = e.target.value;
     setFormData({ ...formData, email });
-    
+
     // Clear previous email error
     setEmailError("");
     if (email && !validateEmail(email)) {
@@ -75,12 +80,15 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     // Client-side validation
     // Validate email
     if (!validateEmail(formData.email)) {
-      setError("Please enter a valid email address");
+      setSnackbar({
+        open: true,
+        message: "Please enter a valid email address",
+        severity: "error",
+      });
       setEmailError("Please enter a valid email address");
       setLoading(false);
       return;
@@ -90,13 +98,24 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
       const passwordValidation = validatePassword(formData.password);
       if (!passwordValidation.isValid) {
         const missingRequirements = [];
-        if (!passwordValidation.errors.minLength) missingRequirements.push("6 characters");
-        if (!passwordValidation.errors.hasLowerCase) missingRequirements.push("1 lowercase letter");
-        if (!passwordValidation.errors.hasUpperCase) missingRequirements.push("1 uppercase letter");
-        if (!passwordValidation.errors.hasNumber) missingRequirements.push("1 number");
-        if (!passwordValidation.errors.hasSymbol) missingRequirements.push("1 symbol");
+        if (!passwordValidation.errors.minLength)
+          missingRequirements.push("6 characters");
+        if (!passwordValidation.errors.hasLowerCase)
+          missingRequirements.push("1 lowercase letter");
+        if (!passwordValidation.errors.hasUpperCase)
+          missingRequirements.push("1 uppercase letter");
+        if (!passwordValidation.errors.hasNumber)
+          missingRequirements.push("1 number");
+        if (!passwordValidation.errors.hasSymbol)
+          missingRequirements.push("1 symbol");
 
-        setError(`Password must contain at least ${missingRequirements.join(", ")}`);
+        setSnackbar({
+          open: true,
+          message: `Password must contain at least ${missingRequirements.join(
+            ", "
+          )}`,
+          severity: "error",
+        });
         setLoading(false);
         return;
       }
@@ -104,9 +123,13 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
 
     try {
       const endpoint = isSignup ? "/api/auth/signup" : "/api/auth/login";
-      const body = isSignup 
-        ? { ...formData, role: userType } 
-        : { email: formData.email, password: formData.password, rememberMe: formData.rememberMe };
+      const body = isSignup
+        ? { ...formData, role: userType }
+        : {
+            email: formData.email,
+            password: formData.password,
+            rememberMe: formData.rememberMe,
+          };
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -117,25 +140,33 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
       });
 
       const data = await response.json();
-      console.log('Login response:', { status: response.status, data });
+      console.log("Login response:", { status: response.status, data });
 
       if (response.ok) {
-        console.log('Login successful, token received:', !!data.token);
-        console.log('User data:', data.user);
-        
+        console.log("Login successful, token received:", !!data.token);
+        console.log("User data:", data.user);
+
         const userData = {
           email: formData.email,
           role: isSignup ? userType : data.user?.role || userType,
           ...data.user,
         };
-        console.log('Final userData:', userData);
+        console.log("Final userData:", userData);
         onSubmit(data.token, userData, isSignup ? false : formData.rememberMe);
       } else {
-        console.error('Login failed:', data);
-        setError(data.error || "Something went wrong");
+        console.error("Login failed:", data);
+        setSnackbar({
+          open: true,
+          message: data.error || "Something went wrong",
+          severity: "error",
+        });
       }
     } catch (error) {
-      setError("Network error. Please try again.");
+      setSnackbar({
+        open: true,
+        message: "Network error. Please try again.",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -173,12 +204,6 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                 {userType} Portal
               </Typography>
             </Box>
-            {/* Error Alert */}
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
-              </Alert>
-            )}
             {/* Form */}
             <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
               <TextField
@@ -209,7 +234,9 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                   setFormData({ ...formData, password: e.target.value })
                 }
                 helperText={
-                  isSignup ? ">6 character, 1(lowercase, uppercase, number, symbol)" : ""
+                  isSignup
+                    ? ">6 character, 1(lowercase, uppercase, number, symbol)"
+                    : ""
                 }
                 InputProps={{
                   endAdornment: (
@@ -220,7 +247,11 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                         edge="end"
                         disabled={loading}
                       >
-                        {showPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                        {showPassword ? (
+                          <VisibilityIcon />
+                        ) : (
+                          <VisibilityOffIcon />
+                        )}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -235,7 +266,10 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                     <Checkbox
                       checked={formData.rememberMe}
                       onChange={(e) =>
-                        setFormData({ ...formData, rememberMe: e.target.checked })
+                        setFormData({
+                          ...formData,
+                          rememberMe: e.target.checked,
+                        })
                       }
                       disabled={loading}
                       color="primary"
@@ -246,7 +280,7 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                       Remember me
                     </Typography>
                   }
-                  sx={{ mb: 3, display: 'flex', justifyContent: 'flex-start' }}
+                  sx={{ mb: 3, display: "flex", justifyContent: "flex-start" }}
                 />
               )}
 
@@ -314,7 +348,14 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
             </Box>{" "}
           </CardContent>
         </Card>
-      </Container>{" "}
+      </Container>
+
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Box>
   );
 };

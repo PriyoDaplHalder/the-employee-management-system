@@ -34,8 +34,16 @@ import {
 } from "@mui/icons-material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import CustomSnackbar from "./CustomSnackbar";
 
-const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) => {
+const EditTaskModal = ({
+  open,
+  onClose,
+  onSuccess,
+  task,
+  projects,
+  employees,
+}) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -46,7 +54,11 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
     projectId: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [projectAssignments, setProjectAssignments] = useState([]);
   const [availableEmployees, setAvailableEmployees] = useState([]);
 
@@ -61,18 +73,23 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
   useEffect(() => {
     if (formData.projectId && projectAssignments.length > 0) {
       const assignedEmployeeIds = projectAssignments
-        .filter(assignment => assignment.projectId?._id === formData.projectId)
-        .map(assignment => assignment.employeeId?._id);
-      
-      const filteredEmployees = employees.filter(employee => 
+        .filter(
+          (assignment) => assignment.projectId?._id === formData.projectId
+        )
+        .map((assignment) => assignment.employeeId?._id);
+
+      const filteredEmployees = employees.filter((employee) =>
         assignedEmployeeIds.includes(employee._id)
       );
-      
+
       setAvailableEmployees(filteredEmployees);
-      
+
       // Clear assignee if currently selected employee is not assigned to the project
-      if (formData.assignedTo && !assignedEmployeeIds.includes(formData.assignedTo)) {
-        setFormData(prev => ({ ...prev, assignedTo: "" }));
+      if (
+        formData.assignedTo &&
+        !assignedEmployeeIds.includes(formData.assignedTo)
+      ) {
+        setFormData((prev) => ({ ...prev, assignedTo: "" }));
       }
     } else {
       setAvailableEmployees([]);
@@ -115,35 +132,35 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
 
   const handleClose = () => {
     if (loading) return;
-    setError("");
+    setSnackbar({ open: false, message: "", severity: "info" });
     onClose();
   };
 
   const handleChange = (field) => (event) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: event.target.value
+      [field]: event.target.value,
     }));
   };
 
   const handleDateChange = (date) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      dueDate: date
+      dueDate: date,
     }));
   };
 
   const handleEmployeeChange = (event, newValue) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      assignedTo: newValue?._id || ""
+      assignedTo: newValue?._id || "",
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setSnackbar({ open: false, message: "", severity: "info" });
 
     try {
       const token = getToken();
@@ -154,10 +171,14 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
         throw new Error("Task title is required");
       }
       if (!formData.assignedTo) {
-        throw new Error("Please assign the task to an employee who is assigned to the selected project.");
+        throw new Error(
+          "Please assign the task to an employee who is assigned to the selected project."
+        );
       }
       if (!formData.projectId) {
-        throw new Error("Please select a project. Tasks must be assigned to a specific project.");
+        throw new Error(
+          "Please select a project. Tasks must be assigned to a specific project."
+        );
       }
 
       const response = await fetch(`/api/management/tasks/${task._id}`, {
@@ -183,10 +204,19 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
       }
 
       const result = await response.json();
+      setSnackbar({
+        open: true,
+        message: "Task updated successfully!",
+        severity: "success",
+      });
       onSuccess(result.task);
-      handleClose();
+      setTimeout(() => handleClose(), 1500);
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -194,17 +224,23 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Dialog 
-        open={open} 
-        onClose={handleClose} 
-        maxWidth="md" 
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="md"
         fullWidth
         PaperProps={{
-          sx: { minHeight: '70vh' }
+          sx: { minHeight: "70vh" },
         }}
       >
         <DialogTitle>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <TaskIcon color="primary" />
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -216,19 +252,15 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
             </IconButton>
           </Box>
         </DialogTitle>
-        
+
         <form onSubmit={handleSubmit}>
           <DialogContent dividers>
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
-              </Alert>
-            )}
-
             <Alert severity="info" sx={{ mb: 3 }}>
               <Typography variant="body2">
-                <strong>Note:</strong> Tasks can only be assigned to employees who are already assigned to the selected project. 
-                The employee dropdown will only show employees assigned to the selected project.
+                <strong>Note:</strong> Tasks can only be assigned to employees
+                who are already assigned to the selected project. The employee
+                dropdown will only show employees assigned to the selected
+                project.
               </Typography>
             </Alert>
 
@@ -236,7 +268,14 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
               {/* Task Title */}
               <Grid item xs={12}>
                 <Paper variant="outlined" sx={{ p: 3, mb: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 2,
+                    }}
+                  >
                     <TaskIcon fontSize="small" color="action" />
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                       Task Information
@@ -258,7 +297,14 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
               {/* Description */}
               <Grid item xs={12}>
                 <Paper variant="outlined" sx={{ p: 3, mb: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 2,
+                    }}
+                  >
                     <DescriptionIcon fontSize="small" color="action" />
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                       Description
@@ -268,7 +314,7 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
                     label="Task Description"
                     value={formData.description}
                     onChange={handleChange("description")}
-                    sx={{ width: '30vw' }}
+                    sx={{ width: "30vw" }}
                     multiline
                     rows={4}
                     disabled={loading}
@@ -281,23 +327,34 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
               {/* Assignment Details */}
               <Grid item xs={12}>
                 <Paper variant="outlined" sx={{ p: 3, mb: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 2,
+                    }}
+                  >
                     <PersonIcon fontSize="small" color="action" />
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                       Assignment Details
                     </Typography>
                   </Box>
-                  
+
                   <Grid container spacing={2}>
-                    <Grid item sx={{ width: '20vw' }} xs={12} md={6}>
+                    <Grid item sx={{ width: "20vw" }} xs={12} md={6}>
                       <Autocomplete
                         options={availableEmployees}
-                        getOptionLabel={(option) => 
-                          option.firstName && option.lastName 
+                        getOptionLabel={(option) =>
+                          option.firstName && option.lastName
                             ? `${option.firstName} ${option.lastName} (${option.email})`
                             : option.email
                         }
-                        value={availableEmployees.find(emp => emp._id === formData.assignedTo) || null}
+                        value={
+                          availableEmployees.find(
+                            (emp) => emp._id === formData.assignedTo
+                          ) || null
+                        }
                         onChange={handleEmployeeChange}
                         disabled={loading || !formData.projectId}
                         renderInput={(params) => (
@@ -307,17 +364,17 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
                             required
                             variant="outlined"
                             helperText={
-                              !formData.projectId 
-                                ? "Select a project first" 
-                                : availableEmployees.length === 0 
-                                ? "No employees assigned to this project" 
+                              !formData.projectId
+                                ? "Select a project first"
+                                : availableEmployees.length === 0
+                                ? "No employees assigned to this project"
                                 : "Select an employee assigned to this project"
                             }
                           />
                         )}
                         noOptionsText={
-                          !formData.projectId 
-                            ? "Please select a project first" 
+                          !formData.projectId
+                            ? "Please select a project first"
                             : "No employees assigned to this project"
                         }
                         renderOption={(props, option) => {
@@ -326,12 +383,14 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
                             <Box component="li" key={key} {...otherProps}>
                               <Box>
                                 <Typography variant="body2">
-                                  {option.firstName && option.lastName 
+                                  {option.firstName && option.lastName
                                     ? `${option.firstName} ${option.lastName}`
-                                    : option.email
-                                  }
+                                    : option.email}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
                                   {option.email}
                                 </Typography>
                               </Box>
@@ -342,7 +401,11 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
                     </Grid>
 
                     <Grid item xs={12} md={6}>
-                      <FormControl sx={{ width: '20vw' }} disabled={loading} required>
+                      <FormControl
+                        sx={{ width: "20vw" }}
+                        disabled={loading}
+                        required
+                      >
                         <InputLabel>Project</InputLabel>
                         <Select
                           value={formData.projectId}
@@ -352,8 +415,13 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
                           {projects.map((project) => (
                             <MenuItem key={project._id} value={project._id}>
                               <Box>
-                                <Typography variant="body2">{project.name}</Typography>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography variant="body2">
+                                  {project.name}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
                                   {project.details}
                                 </Typography>
                               </Box>
@@ -369,13 +437,20 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
               {/* Task Properties */}
               <Grid item xs={12}>
                 <Paper variant="outlined" sx={{ p: 3 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 2,
+                    }}
+                  >
                     <PriorityIcon fontSize="small" color="action" />
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                       Task Properties
                     </Typography>
                   </Box>
-                  
+
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={4}>
                       <FormControl fullWidth disabled={loading}>
@@ -386,19 +461,39 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
                           label="Priority"
                         >
                           <MenuItem value="Low">
-                            <Chip label="Low" color="success" size="small" sx={{ mr: 1, pointerEvents: "none" }} />
+                            <Chip
+                              label="Low"
+                              color="success"
+                              size="small"
+                              sx={{ mr: 1, pointerEvents: "none" }}
+                            />
                             Low Priority
                           </MenuItem>
                           <MenuItem value="Medium">
-                            <Chip label="Medium" color="warning" size="small" sx={{ mr: 1 }} />
+                            <Chip
+                              label="Medium"
+                              color="warning"
+                              size="small"
+                              sx={{ mr: 1 }}
+                            />
                             Medium Priority
                           </MenuItem>
                           <MenuItem value="High">
-                            <Chip label="High" color="error" size="small" sx={{ mr: 1 }} />
+                            <Chip
+                              label="High"
+                              color="error"
+                              size="small"
+                              sx={{ mr: 1 }}
+                            />
                             High Priority
                           </MenuItem>
                           <MenuItem value="Critical">
-                            <Chip label="Critical" color="error" size="small" sx={{ mr: 1 }} />
+                            <Chip
+                              label="Critical"
+                              color="error"
+                              size="small"
+                              sx={{ mr: 1 }}
+                            />
                             Critical Priority
                           </MenuItem>
                         </Select>
@@ -414,23 +509,48 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
                           label="Status"
                         >
                           <MenuItem value="Assigned">
-                            <Chip label="Assigned" color="default" size="small" sx={{ mr: 1 }} />
+                            <Chip
+                              label="Assigned"
+                              color="default"
+                              size="small"
+                              sx={{ mr: 1 }}
+                            />
                             Assigned
                           </MenuItem>
                           <MenuItem value="In Progress">
-                            <Chip label="In Progress" color="primary" size="small" sx={{ mr: 1 }} />
+                            <Chip
+                              label="In Progress"
+                              color="primary"
+                              size="small"
+                              sx={{ mr: 1 }}
+                            />
                             In Progress
                           </MenuItem>
                           <MenuItem value="On Hold">
-                            <Chip label="On Hold" color="warning" size="small" sx={{ mr: 1 }} />
+                            <Chip
+                              label="On Hold"
+                              color="warning"
+                              size="small"
+                              sx={{ mr: 1 }}
+                            />
                             On Hold
                           </MenuItem>
                           <MenuItem value="Under Review">
-                            <Chip label="Under Review" color="info" size="small" sx={{ mr: 1, pointerEvents: "none" }} />
+                            <Chip
+                              label="Under Review"
+                              color="info"
+                              size="small"
+                              sx={{ mr: 1, pointerEvents: "none" }}
+                            />
                             Under Review
                           </MenuItem>
                           <MenuItem value="Completed">
-                            <Chip label="Completed" color="success" size="small" sx={{ mr: 1 }} />
+                            <Chip
+                              label="Completed"
+                              color="success"
+                              size="small"
+                              sx={{ mr: 1 }}
+                            />
                             Completed
                           </MenuItem>
                         </Select>
@@ -444,7 +564,7 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
                         onChange={handleDateChange}
                         disabled={loading}
                         slotProps={{
-                          textField: { fullWidth: true, required: true }
+                          textField: { fullWidth: true, required: true },
                         }}
                         minDate={new Date()}
                       />
@@ -459,17 +579,26 @@ const EditTaskModal = ({ open, onClose, onSuccess, task, projects, employees }) 
             <Button onClick={handleClose} disabled={loading}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              variant="contained" 
+            <Button
+              type="submit"
+              variant="contained"
               disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} /> : <EditIcon />}
+              startIcon={
+                loading ? <CircularProgress size={20} /> : <EditIcon />
+              }
             >
               {loading ? "Updating..." : "Update Task"}
             </Button>
           </DialogActions>
         </form>
       </Dialog>
+
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </LocalizationProvider>
   );
 };

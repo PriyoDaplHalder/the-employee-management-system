@@ -10,7 +10,6 @@ import {
   Button,
   Grid,
   Paper,
-  Alert,
   CircularProgress,
   AppBar,
   Toolbar,
@@ -28,6 +27,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
+import CustomSnackbar from "./CustomSnackbar";
 import {
   Close as CloseIcon,
   ArrowBack as ArrowBackIcon,
@@ -74,8 +74,11 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
     isActive: true,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [validationErrors, setValidationErrors] = useState({});
   const [showCustomPosition, setShowCustomPosition] = useState(false);
 
@@ -157,26 +160,26 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
     if (name === "position") {
       setShowCustomPosition(value === "Others");
       if (value !== "Others") {
-        setFormData(prevData => ({
+        setFormData((prevData) => ({
           ...prevData,
           [name]: value,
           customPosition: "", // Clear custom position when predefined is selected
         }));
       } else {
-        setFormData(prevData => ({
+        setFormData((prevData) => ({
           ...prevData,
           [name]: value,
         }));
       }
     } else {
-      setFormData(prevData => ({
+      setFormData((prevData) => ({
         ...prevData,
         [name]: newValue,
       }));
     }
 
     // Clear field-specific validation error only if it exists
-    setValidationErrors(prevErrors => {
+    setValidationErrors((prevErrors) => {
       if (prevErrors[name]) {
         const { [name]: removed, ...rest } = prevErrors;
         return rest;
@@ -223,12 +226,14 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess("");
 
     // Validate form
     if (!validateForm()) {
-      setError("Please correct the errors below");
+      setSnackbar({
+        open: true,
+        message: "Please correct the errors below",
+        severity: "error",
+      });
       setLoading(false);
       return;
     }
@@ -236,7 +241,11 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
     try {
       const token = getToken();
       if (!token) {
-        setError("No authentication token found");
+        setSnackbar({
+          open: true,
+          message: "No authentication token found",
+          severity: "error",
+        });
         setLoading(false);
         return;
       }
@@ -265,7 +274,11 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
       const employeeId = employeeData.employeeId;
 
       if (!employeeId) {
-        setError("Employee ID not found");
+        setSnackbar({
+          open: true,
+          message: "Employee ID not found",
+          severity: "error",
+        });
         setLoading(false);
         return;
       }
@@ -282,17 +295,29 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess("Employee details updated successfully!");
+        setSnackbar({
+          open: true,
+          message: "Employee details updated successfully!",
+          severity: "success",
+        });
         setTimeout(() => {
           onSave(data.employee);
           onClose();
         }, 1500);
       } else {
-        setError(data.error || "Failed to update employee details");
+        setSnackbar({
+          open: true,
+          message: data.error || "Failed to update employee details",
+          severity: "error",
+        });
       }
     } catch (error) {
       console.error("Error updating employee details:", error);
-      setError("Error updating employee details. Please try again.");
+      setSnackbar({
+        open: true,
+        message: "Error updating employee details. Please try again.",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -351,33 +376,6 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
       </DialogTitle>{" "}
       <DialogContent sx={{ p: 0, bgcolor: "grey.50" }}>
         <Container maxWidth="lg" sx={{ py: 4, px: 3 }}>
-          {error && (
-            <Alert
-              severity="error"
-              sx={{
-                mb: 3,
-                borderRadius: 2,
-                "& .MuiAlert-message": { fontWeight: 500 },
-              }}
-              onClose={() => setError("")}
-            >
-              {error}
-            </Alert>
-          )}
-
-          {success && (
-            <Alert
-              severity="success"
-              sx={{
-                mb: 3,
-                borderRadius: 2,
-                "& .MuiAlert-message": { fontWeight: 500 },
-              }}
-            >
-              {success}
-            </Alert>
-          )}
-
           <Box component="form" onSubmit={handleSubmit}>
             <Grid container spacing={4}>
               {/* Basic Information Section */}
@@ -885,6 +883,12 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
           </Button>
         </Box>
       </DialogActions>
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Dialog>
   );
 };

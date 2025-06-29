@@ -15,29 +15,41 @@ import {
   Paper,
   Chip,
   CircularProgress,
-  Alert,
   AppBar,
   Toolbar,
 } from "@mui/material";
 import { API_ROUTES } from "../lib/routes";
+import CustomSnackbar from "./CustomSnackbar";
 
 const UsersList = ({ user }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         // Only access localStorage after component has mounted
         if (typeof window === "undefined") {
-          setError("Browser environment required");
+          setSnackbar({
+            open: true,
+            message: "Browser environment required",
+            severity: "error",
+          });
           return;
         }
 
         const token = getToken();
         if (!token) {
-          setError("No authentication token");
+          setSnackbar({
+            open: true,
+            message: "No authentication token",
+            severity: "error",
+          });
           return;
         }
 
@@ -55,7 +67,11 @@ const UsersList = ({ user }) => {
         const userData = await response.json();
         setUsers(userData);
       } catch (err) {
-        setError(err.message);
+        setSnackbar({
+          open: true,
+          message: err.message,
+          severity: "error",
+        });
       } finally {
         setLoading(false);
       }
@@ -66,7 +82,11 @@ const UsersList = ({ user }) => {
       fetchUsers();
     } else {
       setLoading(false);
-      setError("Access denied");
+      setSnackbar({
+        open: true,
+        message: "Access denied",
+        severity: "error",
+      });
     }
   }, [user]);
   if (loading) {
@@ -131,7 +151,9 @@ const UsersList = ({ user }) => {
           </Toolbar>
         </AppBar>
         <Container maxWidth="lg" sx={{ py: 4 }}>
-          <Alert severity="error">Error: {error}</Alert>
+          <Typography variant="h6" color="error">
+            Access denied or error occurred. Please check your permissions.
+          </Typography>
         </Container>
       </Box>
     );
@@ -226,6 +248,13 @@ const UsersList = ({ user }) => {
           )}
         </TableContainer>
       </Container>
+
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Box>
   );
 };

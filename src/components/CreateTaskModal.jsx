@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import CustomSnackbar from "./CustomSnackbar";
 
 const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
   const [formData, setFormData] = useState({
@@ -35,7 +36,11 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
     projectId: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [projectAssignments, setProjectAssignments] = useState([]);
   const [availableEmployees, setAvailableEmployees] = useState([]);
 
@@ -50,18 +55,23 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
   useEffect(() => {
     if (formData.projectId && projectAssignments.length > 0) {
       const assignedEmployeeIds = projectAssignments
-        .filter(assignment => assignment.projectId?._id === formData.projectId)
-        .map(assignment => assignment.employeeId?._id);
-      
-      const filteredEmployees = employees.filter(employee => 
+        .filter(
+          (assignment) => assignment.projectId?._id === formData.projectId
+        )
+        .map((assignment) => assignment.employeeId?._id);
+
+      const filteredEmployees = employees.filter((employee) =>
         assignedEmployeeIds.includes(employee._id)
       );
-      
+
       setAvailableEmployees(filteredEmployees);
-      
+
       // Clear assignee if currently selected employee is not assigned to the project
-      if (formData.assignedTo && !assignedEmployeeIds.includes(formData.assignedTo)) {
-        setFormData(prev => ({ ...prev, assignedTo: "" }));
+      if (
+        formData.assignedTo &&
+        !assignedEmployeeIds.includes(formData.assignedTo)
+      ) {
+        setFormData((prev) => ({ ...prev, assignedTo: "" }));
       }
     } else if (formData.projectId === "") {
       // If no project is selected, all employees are available
@@ -101,28 +111,42 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
       assignedTo: "",
       projectId: "",
     });
-    setError("");
+    setSnackbar({ open: false, message: "", severity: "info" });
     onClose();
   };
 
   const handleSubmit = async () => {
     if (!formData.title.trim()) {
-      setError("Task title is required");
+      setSnackbar({
+        open: true,
+        message: "Task title is required",
+        severity: "error",
+      });
       return;
     }
 
     if (!formData.projectId) {
-      setError("Please select a project. Tasks must be assigned to a specific project.");
+      setSnackbar({
+        open: true,
+        message:
+          "Please select a project. Tasks must be assigned to a specific project.",
+        severity: "error",
+      });
       return;
     }
 
     if (!formData.assignedTo) {
-      setError("Please assign the task to an employee who is assigned to the selected project.");
+      setSnackbar({
+        open: true,
+        message:
+          "Please assign the task to an employee who is assigned to the selected project.",
+        severity: "error",
+      });
       return;
     }
 
     setLoading(true);
-    setError("");
+    setSnackbar({ open: false, message: "", severity: "info" });
 
     try {
       const token = getToken();
@@ -137,12 +161,14 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
           description: formData.description.trim() || undefined,
           priority: formData.priority,
           status: formData.status,
-          dueDate: formData.dueDate ? (() => {
-            const date = new Date(formData.dueDate);
-            // Set to end of day to avoid timing issues with today's date
-            date.setHours(23, 59, 59, 999);
-            return date.toISOString();
-          })() : undefined,
+          dueDate: formData.dueDate
+            ? (() => {
+                const date = new Date(formData.dueDate);
+                // Set to end of day to avoid timing issues with today's date
+                date.setHours(23, 59, 59, 999);
+                return date.toISOString();
+              })()
+            : undefined,
           assignedTo: formData.assignedTo,
           projectId: formData.projectId || undefined,
         }),
@@ -154,40 +180,42 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
       }
 
       const result = await response.json();
+      setSnackbar({
+        open: true,
+        message: "Task created successfully!",
+        severity: "success",
+      });
       onSuccess(result.task);
-      handleClose();
+      setTimeout(() => handleClose(), 1500);
     } catch (err) {
       console.error("Error creating task:", err);
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        Create New Task
-      </DialogTitle>
-      
-      <DialogContent>
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+      <DialogTitle>Create New Task</DialogTitle>
 
+      <DialogContent>
         <Alert severity="info" sx={{ mb: 3 }}>
           <Typography variant="body2">
-            <strong>Note:</strong> Tasks can only be assigned to employees who are already assigned to the selected project. 
-            Please ensure the employee is assigned to the project before creating the task.
+            <strong>Note:</strong> Tasks can only be assigned to employees who
+            are already assigned to the selected project. Please ensure the
+            employee is assigned to the project before creating the task.
           </Typography>
         </Alert>
 
@@ -271,7 +299,9 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
                   availableEmployees.map((employee) => (
                     <MenuItem key={employee._id} value={employee._id}>
                       <Box>
-                        <Typography variant="body2">{employee.email}</Typography>
+                        <Typography variant="body2">
+                          {employee.email}
+                        </Typography>
                         {employee.firstName && employee.lastName && (
                           <Typography variant="caption" color="text.secondary">
                             {employee.firstName} {employee.lastName}
@@ -348,8 +378,8 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
                 slotProps={{
                   textField: {
                     fullWidth: true,
-                    helperText: "Select a deadline for this task"
-                  }
+                    helperText: "Select a deadline for this task",
+                  },
                 }}
                 minDate={new Date()}
               />
@@ -365,7 +395,12 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={loading || !formData.title.trim() || !formData.projectId || !formData.assignedTo}
+          disabled={
+            loading ||
+            !formData.title.trim() ||
+            !formData.projectId ||
+            !formData.assignedTo
+          }
         >
           {loading ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -377,6 +412,13 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
           )}
         </Button>
       </DialogActions>
+
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Dialog>
   );
 };

@@ -32,13 +32,17 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
 import EditIcon from "@mui/icons-material/Edit";
 import InfoIcon from "@mui/icons-material/Info";
 import ProjectManagementDetailsModal from "./ProjectManagementDetailsModal";
+import CustomSnackbar from "./CustomSnackbar";
 import { getToken } from "../utils/storage";
 
 const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [editingProject, setEditingProject] = useState(null);
   const [isCreateProject, setCreateProject] = useState(false);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -65,7 +69,11 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
     try {
       // Only access localStorage after component has mounted
       if (typeof window === "undefined") {
-        setError("Browser environment required");
+        setSnackbar({
+          open: true,
+          message: "Browser environment required",
+          severity: "error",
+        });
         return;
       }
 
@@ -93,11 +101,19 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
         }
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to fetch projects");
+        setSnackbar({
+          open: true,
+          message: errorData.error || "Failed to fetch projects",
+          severity: "error",
+        });
       }
     } catch (error) {
       console.error("Error fetching projects:", error);
-      setError("Error fetching projects");
+      setSnackbar({
+        open: true,
+        message: "Error fetching projects",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -112,12 +128,14 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
     setLoading(true);
 
     if (!formData.name.trim() || !formData.details.trim()) {
-      setError("Please fill in all required fields");
+      setSnackbar({
+        open: true,
+        message: "Please fill in all required fields",
+        severity: "error",
+      });
       setLoading(false);
       return;
     }
@@ -125,7 +143,11 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
     try {
       // Only access localStorage after component has mounted
       if (typeof window === "undefined") {
-        setError("Browser environment required");
+        setSnackbar({
+          open: true,
+          message: "Browser environment required",
+          severity: "error",
+        });
         setLoading(false);
         return;
       }
@@ -150,21 +172,31 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setSuccess(
-          editingProject
+        setSnackbar({
+          open: true,
+          message: editingProject
             ? "Project updated successfully!"
-            : "Project created successfully!"
-        );
+            : "Project created successfully!",
+          severity: "success",
+        });
         setFormData({ name: "", details: "" });
         setEditingProject(null);
         fetchProjects(); // Refresh projects list for both new and updated projects
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to save project");
+        setSnackbar({
+          open: true,
+          message: errorData.error || "Failed to save project",
+          severity: "error",
+        });
       }
     } catch (error) {
       console.error("Error saving project:", error);
-      setError("Error saving project");
+      setSnackbar({
+        open: true,
+        message: "Error saving project",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -176,8 +208,6 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
       name: project.name,
       details: project.details,
     });
-    setError("");
-    setSuccess("");
   };
 
   const handleToggleStatus = (project) => {
@@ -193,7 +223,11 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
       try {
         // Only access localStorage after component has mounted
         if (typeof window === "undefined") {
-          setError("Browser environment required");
+          setSnackbar({
+            open: true,
+            message: "Browser environment required",
+            severity: "error",
+          });
           setLoading(false);
           return;
         }
@@ -211,15 +245,27 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
 
         if (response.ok) {
           const data = await response.json();
-          setSuccess(data.message);
+          setSnackbar({
+            open: true,
+            message: data.message,
+            severity: "success",
+          });
           fetchProjects(); // Refresh projects list
         } else {
           const errorData = await response.json();
-          setError(errorData.error || "Failed to toggle project status");
+          setSnackbar({
+            open: true,
+            message: errorData.error || "Failed to toggle project status",
+            severity: "error",
+          });
         }
       } catch (error) {
         console.error("Error toggling project status:", error);
-        setError("Error toggling project status");
+        setSnackbar({
+          open: true,
+          message: "Error toggling project status",
+          severity: "error",
+        });
       } finally {
         setLoading(false);
         setStatusConfirmation({ isOpen: false, project: null });
@@ -234,8 +280,6 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
   const handleCancelEdit = () => {
     setEditingProject(null);
     setFormData({ name: "", details: "" });
-    setError("");
-    setSuccess("");
   };
 
   const handleViewFilterChange = (event, newFilter) => {
@@ -317,7 +361,7 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
               backgroundColor: "#17a2b8", // Background when disabled
               color: "white", // Text color when disabled
             },
-            borderRadius: 2
+            borderRadius: 2,
           }}
           onClick={() => {
             setCreateProject(!isCreateProject);
@@ -339,17 +383,20 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
           aria-labelledby="modal-modal-title"
           aria-describedby="modal-modal-description"
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          <Paper sx={{ 
-            p: 3, mb: 3,
-            width: 600,
-            maxWidth: '95vw',
-            borderRadius: 4 
-          }}>
+          <Paper
+            sx={{
+              p: 3,
+              mb: 3,
+              width: 600,
+              maxWidth: "95vw",
+              borderRadius: 4,
+            }}
+          >
             <Typography
               variant="h5"
               component="h3"
@@ -357,18 +404,6 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
             >
               {editingProject ? "Edit Project" : "Create New Project"}
             </Typography>
-
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-
-            {success && (
-              <Alert severity="success" sx={{ mb: 2 }}>
-                {success}
-              </Alert>
-            )}
 
             <Box
               component="form"
@@ -431,18 +466,19 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
                     "Create Project"
                   )}
                 </Button>
-                {
-                  isCreateProject && 
-                  <Button 
+                {isCreateProject && (
+                  <Button
                     variant="outlined"
                     sx={{
-                      borderRadius: 2
+                      borderRadius: 2,
                     }}
-                    onClick={()=>{setCreateProject(false)}}
+                    onClick={() => {
+                      setCreateProject(false);
+                    }}
                   >
                     Cancel
                   </Button>
-                }
+                )}
                 {editingProject && (
                   <Button
                     type="button"
@@ -780,6 +816,13 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
           onRefresh={fetchProjects}
         />
       </Container>
+
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Box>
   );
 };

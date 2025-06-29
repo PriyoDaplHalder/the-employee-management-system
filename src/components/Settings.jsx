@@ -42,13 +42,17 @@ import {
   Email as EmailIcon,
   Refresh as RefreshIcon,
 } from "@mui/icons-material";
+import CustomSnackbar from "./CustomSnackbar";
 
 const Settings = ({ user, onBack }) => {
   const [mounted, setMounted] = useState(false);
   const [positionMappings, setPositionMappings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [actionLoading, setActionLoading] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Add refresh trigger
 
@@ -95,7 +99,11 @@ const Settings = ({ user, onBack }) => {
       setPositions(data.positions || []);
     } catch (err) {
       console.error("Error fetching positions:", err);
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setPositionsLoading(false);
     }
@@ -131,7 +139,11 @@ const Settings = ({ user, onBack }) => {
       setPositionMappings(data.mappings || []);
     } catch (err) {
       console.error("Error fetching position mappings:", err);
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -156,7 +168,11 @@ const Settings = ({ user, onBack }) => {
 
   const handleAddMapping = async () => {
     if (!formData.position || !formData.employeeName || !formData.email) {
-      setError("Position, employee name, and email are required");
+      setSnackbar({
+        open: true,
+        message: "Position, employee name, and email are required",
+        severity: "error",
+      });
       return;
     }
 
@@ -175,16 +191,27 @@ const Settings = ({ user, onBack }) => {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess("Position email mapping created successfully");
+        setSnackbar({
+          open: true,
+          message: "Position email mapping created successfully",
+          severity: "success",
+        });
         setShowAddModal(false);
         resetForm();
         setRefreshTrigger((prev) => prev + 1); // Trigger refresh
-        setTimeout(() => setSuccess(""), 3000);
       } else {
-        setError(data.error || "Failed to create position email mapping");
+        setSnackbar({
+          open: true,
+          message: data.error || "Failed to create position email mapping",
+          severity: "error",
+        });
       }
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setActionLoading(false);
     }
@@ -192,7 +219,11 @@ const Settings = ({ user, onBack }) => {
 
   const handleEditMapping = async () => {
     if (!formData.position || !formData.employeeName || !formData.email) {
-      setError("Position, employee name, and email are required");
+      setSnackbar({
+        open: true,
+        message: "Position, employee name, and email are required",
+        severity: "error",
+      });
       return;
     }
 
@@ -214,17 +245,28 @@ const Settings = ({ user, onBack }) => {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess("Position email mapping updated successfully");
+        setSnackbar({
+          open: true,
+          message: "Position email mapping updated successfully",
+          severity: "success",
+        });
         setShowEditModal(false);
         setSelectedMapping(null);
         resetForm();
         setRefreshTrigger((prev) => prev + 1); // Trigger refresh
-        setTimeout(() => setSuccess(""), 3000);
       } else {
-        setError(data.error || "Failed to update position email mapping");
+        setSnackbar({
+          open: true,
+          message: data.error || "Failed to update position email mapping",
+          severity: "error",
+        });
       }
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setActionLoading(false);
     }
@@ -261,28 +303,37 @@ const Settings = ({ user, onBack }) => {
       console.log("Delete response data:", responseData);
 
       if (response.ok) {
-        setSuccess("Position email mapping deleted successfully");
+        setSnackbar({
+          open: true,
+          message: "Position email mapping deleted successfully",
+          severity: "success",
+        });
         setShowDeleteDialog(false);
         setSelectedMapping(null);
 
         // Force refresh from server to ensure consistency
         console.log("Triggering refresh after successful delete...");
         setRefreshTrigger((prev) => prev + 1);
-
-        setTimeout(() => setSuccess(""), 3000);
       } else {
         console.error("Delete failed:", responseData);
         // Revert optimistic update on failure
         setRefreshTrigger((prev) => prev + 1);
-        setError(
-          responseData.error || "Failed to delete position email mapping"
-        );
+        setSnackbar({
+          open: true,
+          message:
+            responseData.error || "Failed to delete position email mapping",
+          severity: "error",
+        });
       }
     } catch (err) {
       console.error("Delete error:", err);
       // Revert optimistic update on error
       setRefreshTrigger((prev) => prev + 1);
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setActionLoading(false);
     }
@@ -304,8 +355,6 @@ const Settings = ({ user, onBack }) => {
     setSelectedMapping(mapping);
     setShowDeleteDialog(true);
   };
-
-  const clearError = () => setError("");
 
   if (!mounted) {
     return null;
@@ -357,20 +406,6 @@ const Settings = ({ user, onBack }) => {
       </AppBar>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* Error Alert */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Success Alert */}
-        {success && (
-          <Alert severity="success" sx={{ mb: 3 }}>
-            {success}
-          </Alert>
-        )}
-
         {/* Position Mappings Table */}
         <Paper elevation={2} sx={{ borderRadius: 3 }}>
           <Box sx={{ p: 3 }}>
@@ -543,9 +578,7 @@ const Settings = ({ user, onBack }) => {
                         const selectedValue = e.target.value;
                         const selectedEmployee = positions
                           .find((p) => p.position === formData.position)
-                          ?.employees.find(
-                            (emp) => emp.name === selectedValue
-                          );
+                          ?.employees.find((emp) => emp.name === selectedValue);
 
                         setFormData((prev) => ({
                           ...prev,
@@ -753,6 +786,13 @@ const Settings = ({ user, onBack }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Box>
   );
 };

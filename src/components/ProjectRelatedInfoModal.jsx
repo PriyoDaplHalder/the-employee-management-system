@@ -13,13 +13,13 @@ import {
   Box,
   Grid,
   Paper,
-  Alert,
   CircularProgress,
   IconButton,
   Divider,
   Chip,
   InputAdornment,
 } from "@mui/material";
+import CustomSnackbar from "./CustomSnackbar";
 import {
   Close as CloseIcon,
   Info as InfoIcon,
@@ -38,14 +38,17 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
 } from "@mui/icons-material";
-import DynamicBox from './DynamicBox';
-import DebouncedTextField from './DebouncedTextField';
+import DynamicBox from "./DynamicBox";
+import DebouncedTextField from "./DebouncedTextField";
 
 const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccessMessage] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [showPasswords, setShowPasswords] = useState({
     githubPassword: false,
     githubToken: false,
@@ -84,7 +87,10 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
   });
 
   // Memoize dynamic boxes to reduce re-renders
-  const memoizedDynamicBoxes = useMemo(() => formData.dynamicBoxes, [formData.dynamicBoxes]);
+  const memoizedDynamicBoxes = useMemo(
+    () => formData.dynamicBoxes,
+    [formData.dynamicBoxes]
+  );
 
   useEffect(() => {
     if (open && project) {
@@ -94,20 +100,22 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
 
   const fetchRelatedInfo = async () => {
     setLoading(true);
-    setError("");
     try {
       const token = getToken();
-      const response = await fetch(`/api/projects/${project._id}/related-info`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `/api/projects/${project._id}/related-info`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
         if (data.relatedInfo) {
           // Merge with default values to ensure all fields are defined
-          setFormData(prev => ({
+          setFormData((prev) => ({
             mondayBoardLink: data.relatedInfo.mondayBoardLink || "",
             ganttChartLink: data.relatedInfo.ganttChartLink || "",
             issueListLink: data.relatedInfo.issueListLink || "",
@@ -135,11 +143,19 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
         }
       } else if (response.status !== 404) {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to fetch related info");
+        setSnackbar({
+          open: true,
+          message: errorData.error || "Failed to fetch related info",
+          severity: "error",
+        });
       }
     } catch (err) {
       console.error("Error fetching related info:", err);
-      setError("Error fetching related info");
+      setSnackbar({
+        open: true,
+        message: "Error fetching related info",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -147,7 +163,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
 
   const handleInputChange = useCallback((field, value, subField = null) => {
     if (subField) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         [field]: {
           ...prev[field],
@@ -155,7 +171,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
         },
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         [field]: value,
       }));
@@ -163,7 +179,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
   }, []);
 
   const togglePasswordVisibility = (passwordField) => {
-    setShowPasswords(prev => ({
+    setShowPasswords((prev) => ({
       ...prev,
       [passwordField]: !prev[passwordField],
     }));
@@ -199,140 +215,161 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
     const newBox = {
       id: Date.now().toString(),
       name: "New Box",
-      fields: []
+      fields: [],
     };
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      dynamicBoxes: [...prev.dynamicBoxes, newBox]
+      dynamicBoxes: [...prev.dynamicBoxes, newBox],
     }));
     setEditingBoxId(newBox.id);
   }, []);
 
   const updateBoxName = useCallback((boxId, newName) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      dynamicBoxes: prev.dynamicBoxes.map(box =>
+      dynamicBoxes: prev.dynamicBoxes.map((box) =>
         box.id === boxId ? { ...box, name: newName } : box
-      )
+      ),
     }));
   }, []);
 
-  const deleteBox = useCallback((boxId) => {
-    const box = formData.dynamicBoxes.find(b => b.id === boxId);
-    const boxName = box?.name || "this box";
-    
-    showConfirmDialog(
-      "Delete Box",
-      `Are you sure you want to delete "${boxName}"? This will also delete all fields within this box. This action cannot be undone once clicked on save changes.`,
-      () => {
-        setFormData(prev => ({
-          ...prev,
-          dynamicBoxes: prev.dynamicBoxes.filter(box => box.id !== boxId)
-        }));
-      }
-    );
-  }, [formData.dynamicBoxes, showConfirmDialog]);
+  const deleteBox = useCallback(
+    (boxId) => {
+      const box = formData.dynamicBoxes.find((b) => b.id === boxId);
+      const boxName = box?.name || "this box";
+
+      showConfirmDialog(
+        "Delete Box",
+        `Are you sure you want to delete "${boxName}"? This will also delete all fields within this box. This action cannot be undone once clicked on save changes.`,
+        () => {
+          setFormData((prev) => ({
+            ...prev,
+            dynamicBoxes: prev.dynamicBoxes.filter((box) => box.id !== boxId),
+          }));
+        }
+      );
+    },
+    [formData.dynamicBoxes, showConfirmDialog]
+  );
 
   const addFieldToBox = useCallback((boxId) => {
     const newField = {
       id: Date.now().toString(),
       label: "New Field",
-      value: ""
+      value: "",
     };
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      dynamicBoxes: prev.dynamicBoxes.map(box =>
+      dynamicBoxes: prev.dynamicBoxes.map((box) =>
         box.id === boxId ? { ...box, fields: [...box.fields, newField] } : box
-      )
+      ),
     }));
   }, []);
 
   const updateFieldLabel = useCallback((boxId, fieldId, newLabel) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      dynamicBoxes: prev.dynamicBoxes.map(box =>
+      dynamicBoxes: prev.dynamicBoxes.map((box) =>
         box.id === boxId
           ? {
               ...box,
-              fields: box.fields.map(field =>
+              fields: box.fields.map((field) =>
                 field.id === fieldId ? { ...field, label: newLabel } : field
-              )
+              ),
             }
           : box
-      )
+      ),
     }));
   }, []);
 
   const updateFieldValue = useCallback((boxId, fieldId, newValue) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      dynamicBoxes: prev.dynamicBoxes.map(box =>
+      dynamicBoxes: prev.dynamicBoxes.map((box) =>
         box.id === boxId
           ? {
               ...box,
-              fields: box.fields.map(field =>
+              fields: box.fields.map((field) =>
                 field.id === fieldId ? { ...field, value: newValue } : field
-              )
+              ),
             }
           : box
-      )
+      ),
     }));
   }, []);
 
-  const deleteField = useCallback((boxId, fieldId) => {
-    const box = formData.dynamicBoxes.find(b => b.id === boxId);
-    const field = box?.fields.find(f => f.id === fieldId);
-    const fieldLabel = field?.label || "this field";
-    
-    showConfirmDialog(
-      "Delete Field",
-      `Are you sure you want to delete the field "${fieldLabel}"? This action cannot be undone once clicked on saved changes.`,
-      () => {
-        setFormData(prev => ({
-          ...prev,
-          dynamicBoxes: prev.dynamicBoxes.map(box =>
-            box.id === boxId
-              ? { ...box, fields: box.fields.filter(field => field.id !== fieldId) }
-              : box
-          )
-        }));
-      }
-    );
-  }, [formData.dynamicBoxes, showConfirmDialog]);
+  const deleteField = useCallback(
+    (boxId, fieldId) => {
+      const box = formData.dynamicBoxes.find((b) => b.id === boxId);
+      const field = box?.fields.find((f) => f.id === fieldId);
+      const fieldLabel = field?.label || "this field";
+
+      showConfirmDialog(
+        "Delete Field",
+        `Are you sure you want to delete the field "${fieldLabel}"? This action cannot be undone once clicked on saved changes.`,
+        () => {
+          setFormData((prev) => ({
+            ...prev,
+            dynamicBoxes: prev.dynamicBoxes.map((box) =>
+              box.id === boxId
+                ? {
+                    ...box,
+                    fields: box.fields.filter((field) => field.id !== fieldId),
+                  }
+                : box
+            ),
+          }));
+        }
+      );
+    },
+    [formData.dynamicBoxes, showConfirmDialog]
+  );
 
   const handleSave = async () => {
     setSaveLoading(true);
-    setError("");
-    setSuccessMessage("");
 
     try {
       console.log("Saving formData:", formData);
       console.log("Dynamic boxes:", formData.dynamicBoxes);
-      
+
       const token = getToken();
-      const response = await fetch(`/api/projects/${project._id}/related-info`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ relatedInfo: formData }),
-      });
+      const response = await fetch(
+        `/api/projects/${project._id}/related-info`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ relatedInfo: formData }),
+        }
+      );
 
       if (response.ok) {
         const responseData = await response.json();
         console.log("Save response:", responseData);
-        setSuccessMessage("Related info saved successfully!");
+        setSnackbar({
+          open: true,
+          message: "Related info saved successfully!",
+          severity: "success",
+        });
         if (onSuccess) onSuccess();
-        setTimeout(() => setSuccessMessage(""), 3000);
       } else {
         const errorData = await response.json();
         console.error("Save error:", errorData);
-        setError(errorData.error || "Failed to save related info");
+        setSnackbar({
+          open: true,
+          message: errorData.error || "Failed to save related info",
+          severity: "error",
+        });
       }
     } catch (err) {
       console.error("Error saving related info:", err);
-      setError("Error saving related info");
+      setSnackbar({
+        open: true,
+        message: "Error saving related info",
+        severity: "error",
+      });
     } finally {
       setSaveLoading(false);
       onClose();
@@ -341,8 +378,6 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
 
   const handleClose = () => {
     if (saveLoading) return;
-    setError("");
-    setSuccessMessage("");
     setShowPasswords({
       githubPassword: false,
       githubToken: false,
@@ -354,26 +389,28 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleClose} 
-      maxWidth="md" 
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="md"
       fullWidth
       PaperProps={{
         sx: {
           borderRadius: 3,
           maxHeight: "90vh",
-        }
+        },
       }}
     >
-      <DialogTitle sx={{ 
-        pb: 2, 
-        borderBottom: "1px solid", 
-        borderColor: "divider",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center"
-      }}>
+      <DialogTitle
+        sx={{
+          pb: 2,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <InfoIcon color="primary" />
           <Box>
@@ -391,19 +428,6 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
       </DialogTitle>
 
       <DialogContent sx={{ p: 3 }}>
-        {/* Alerts */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError("")}>
-            {error}
-          </Alert>
-        )}
-        
-        {success && (
-          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage("")}>
-            {success}
-          </Alert>
-        )}
-
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
@@ -413,24 +437,36 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
             {/* Project Management Tools */}
             <Grid item xs={12}>
               <Paper variant="outlined" sx={{ p: 3 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
+                >
                   <DashboardIcon fontSize="small" color="primary" />
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.main" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 600, color: "primary.main" }}
+                  >
                     Project Management Tools
                   </Typography>
                 </Box>
-                
+
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
                     <DebouncedTextField
                       fullWidth
                       label="Monday Board Link"
                       value={formData.mondayBoardLink}
-                      onChange={(value) => handleInputChange("mondayBoardLink", value)}
+                      onChange={(value) =>
+                        handleInputChange("mondayBoardLink", value)
+                      }
                       placeholder="https://company.monday.com/boards/..."
                       disabled={saveLoading}
                       InputProps={{
-                        startAdornment: <LinkIcon fontSize="small" sx={{ mr: 1, color: "action.active" }} />,
+                        startAdornment: (
+                          <LinkIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "action.active" }}
+                          />
+                        ),
                       }}
                     />
                   </Grid>
@@ -439,11 +475,18 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       fullWidth
                       label="Gantt Chart Link"
                       value={formData.ganttChartLink}
-                      onChange={(value) => handleInputChange("ganttChartLink", value)}
+                      onChange={(value) =>
+                        handleInputChange("ganttChartLink", value)
+                      }
                       placeholder="https://gantt.example.com/..."
                       disabled={saveLoading}
                       InputProps={{
-                        startAdornment: <ScheduleIcon fontSize="small" sx={{ mr: 1, color: "action.active" }} />,
+                        startAdornment: (
+                          <ScheduleIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "action.active" }}
+                          />
+                        ),
                       }}
                     />
                   </Grid>
@@ -452,11 +495,18 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       fullWidth
                       label="Issue List Link"
                       value={formData.issueListLink}
-                      onChange={(value) => handleInputChange("issueListLink", value)}
+                      onChange={(value) =>
+                        handleInputChange("issueListLink", value)
+                      }
                       placeholder="https://issues.example.com/..."
                       disabled={saveLoading}
                       InputProps={{
-                        startAdornment: <BugReportIcon fontSize="small" sx={{ mr: 1, color: "action.active" }} />,
+                        startAdornment: (
+                          <BugReportIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "action.active" }}
+                          />
+                        ),
                       }}
                     />
                   </Grid>
@@ -465,11 +515,18 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       fullWidth
                       label="Time Sheet Link"
                       value={formData.timeSheetLink}
-                      onChange={(value) => handleInputChange("timeSheetLink", value)}
+                      onChange={(value) =>
+                        handleInputChange("timeSheetLink", value)
+                      }
                       placeholder="https://timesheet.example.com/..."
                       disabled={saveLoading}
                       InputProps={{
-                        startAdornment: <ScheduleIcon fontSize="small" sx={{ mr: 1, color: "action.active" }} />,
+                        startAdornment: (
+                          <ScheduleIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "action.active" }}
+                          />
+                        ),
                       }}
                     />
                   </Grid>
@@ -478,11 +535,18 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       fullWidth
                       label="Sample Excel Sheet Link"
                       value={formData.sampleExcelSheetLink}
-                      onChange={(value) => handleInputChange("sampleExcelSheetLink", value)}
+                      onChange={(value) =>
+                        handleInputChange("sampleExcelSheetLink", value)
+                      }
                       placeholder="https://example.com/sample-sheet.xlsx"
                       disabled={saveLoading}
                       InputProps={{
-                        startAdornment: <TableChartIcon fontSize="small" sx={{ mr: 1, color: "action.active" }} />,
+                        startAdornment: (
+                          <TableChartIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "action.active" }}
+                          />
+                        ),
                       }}
                     />
                   </Grid>
@@ -493,20 +557,27 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
             {/* GitHub Information */}
             <Grid item xs={12}>
               <Paper variant="outlined" sx={{ p: 3 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
+                >
                   <GitHubIcon fontSize="small" color="primary" />
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.main" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 600, color: "primary.main" }}
+                  >
                     GitHub Repository Information
                   </Typography>
                 </Box>
-                
+
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
                     <DebouncedTextField
                       fullWidth
                       label="Backend Repository Link"
                       value={formData.github.backendLink}
-                      onChange={(value) => handleInputChange("github", value, "backendLink")}
+                      onChange={(value) =>
+                        handleInputChange("github", value, "backendLink")
+                      }
                       placeholder="https://github.com/user/backend-repo"
                       disabled={saveLoading}
                     />
@@ -516,7 +587,9 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       fullWidth
                       label="Frontend Repository Link"
                       value={formData.github.frontendLink}
-                      onChange={(value) => handleInputChange("github", value, "frontendLink")}
+                      onChange={(value) =>
+                        handleInputChange("github", value, "frontendLink")
+                      }
                       placeholder="https://github.com/user/frontend-repo"
                       disabled={saveLoading}
                     />
@@ -526,7 +599,9 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       fullWidth
                       label="GitHub Email"
                       value={formData.github.email}
-                      onChange={(value) => handleInputChange("github", value, "email")}
+                      onChange={(value) =>
+                        handleInputChange("github", value, "email")
+                      }
                       placeholder="github@example.com"
                       disabled={saveLoading}
                     />
@@ -536,7 +611,9 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       fullWidth
                       label="GitHub UID"
                       value={formData.github.uid}
-                      onChange={(value) => handleInputChange("github", value, "uid")}
+                      onChange={(value) =>
+                        handleInputChange("github", value, "uid")
+                      }
                       placeholder="GitHub User ID"
                       disabled={saveLoading}
                     />
@@ -547,7 +624,9 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       label="GitHub Token"
                       type={showPasswords.githubToken ? "text" : "password"}
                       value={formData.github.token}
-                      onChange={(value) => handleInputChange("github", value, "token")}
+                      onChange={(value) =>
+                        handleInputChange("github", value, "token")
+                      }
                       placeholder="GitHub Personal Access Token"
                       disabled={saveLoading}
                       InputProps={{
@@ -555,11 +634,17 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                           <InputAdornment position="end">
                             <IconButton
                               aria-label="toggle token visibility"
-                              onClick={() => togglePasswordVisibility("githubToken")}
+                              onClick={() =>
+                                togglePasswordVisibility("githubToken")
+                              }
                               edge="end"
                               disabled={saveLoading}
                             >
-                              {showPasswords.githubToken ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                              {showPasswords.githubToken ? (
+                                <VisibilityIcon />
+                              ) : (
+                                <VisibilityOffIcon />
+                              )}
                             </IconButton>
                           </InputAdornment>
                         ),
@@ -572,7 +657,9 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       label="GitHub Password"
                       type={showPasswords.githubPassword ? "text" : "password"}
                       value={formData.github.password}
-                      onChange={(value) => handleInputChange("github", value, "password")}
+                      onChange={(value) =>
+                        handleInputChange("github", value, "password")
+                      }
                       placeholder="GitHub Password"
                       disabled={saveLoading}
                       InputProps={{
@@ -580,11 +667,17 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                           <InputAdornment position="end">
                             <IconButton
                               aria-label="toggle password visibility"
-                              onClick={() => togglePasswordVisibility("githubPassword")}
+                              onClick={() =>
+                                togglePasswordVisibility("githubPassword")
+                              }
                               edge="end"
                               disabled={saveLoading}
                             >
-                              {showPasswords.githubPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                              {showPasswords.githubPassword ? (
+                                <VisibilityIcon />
+                              ) : (
+                                <VisibilityOffIcon />
+                              )}
                             </IconButton>
                           </InputAdornment>
                         ),
@@ -596,7 +689,9 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       fullWidth
                       label="Main Branch"
                       value={formData.github.mainBranch}
-                      onChange={(value) => handleInputChange("github", value, "mainBranch")}
+                      onChange={(value) =>
+                        handleInputChange("github", value, "mainBranch")
+                      }
                       placeholder="main"
                       disabled={saveLoading}
                     />
@@ -608,24 +703,36 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
             {/* Website & Admin Links */}
             <Grid item xs={12}>
               <Paper variant="outlined" sx={{ p: 3 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
+                >
                   <HomeIcon fontSize="small" color="primary" />
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.main" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 600, color: "primary.main" }}
+                  >
                     Website & Admin Access
                   </Typography>
                 </Box>
-                
+
                 <Grid container spacing={2}>
                   <Grid item xs={12}>
                     <DebouncedTextField
                       fullWidth
                       label="Home Page Link"
                       value={formData.homePageLink}
-                      onChange={(value) => handleInputChange("homePageLink", value)}
+                      onChange={(value) =>
+                        handleInputChange("homePageLink", value)
+                      }
                       placeholder="https://projectname.com"
                       disabled={saveLoading}
                       InputProps={{
-                        startAdornment: <HomeIcon fontSize="small" sx={{ mr: 1, color: "action.active" }} />,
+                        startAdornment: (
+                          <HomeIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "action.active" }}
+                          />
+                        ),
                       }}
                     />
                   </Grid>
@@ -634,11 +741,18 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       fullWidth
                       label="Admin Panel Link"
                       value={formData.adminPanel.link}
-                      onChange={(value) => handleInputChange("adminPanel", value, "link")}
+                      onChange={(value) =>
+                        handleInputChange("adminPanel", value, "link")
+                      }
                       placeholder="https://admin.projectname.com"
                       disabled={saveLoading}
                       InputProps={{
-                        startAdornment: <AdminIcon fontSize="small" sx={{ mr: 1, color: "action.active" }} />,
+                        startAdornment: (
+                          <AdminIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "action.active" }}
+                          />
+                        ),
                       }}
                     />
                   </Grid>
@@ -647,7 +761,9 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       fullWidth
                       label="Admin Email"
                       value={formData.adminPanel.email}
-                      onChange={(value) => handleInputChange("adminPanel", value, "email")}
+                      onChange={(value) =>
+                        handleInputChange("adminPanel", value, "email")
+                      }
                       placeholder="admin@projectname.com"
                       disabled={saveLoading}
                     />
@@ -658,7 +774,9 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                       label="Admin Password"
                       type={showPasswords.adminPassword ? "text" : "password"}
                       value={formData.adminPanel.password}
-                      onChange={(value) => handleInputChange("adminPanel", value, "password")}
+                      onChange={(value) =>
+                        handleInputChange("adminPanel", value, "password")
+                      }
                       placeholder="Admin Panel Password"
                       disabled={saveLoading}
                       InputProps={{
@@ -666,11 +784,17 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                           <InputAdornment position="end">
                             <IconButton
                               aria-label="toggle password visibility"
-                              onClick={() => togglePasswordVisibility("adminPassword")}
+                              onClick={() =>
+                                togglePasswordVisibility("adminPassword")
+                              }
                               edge="end"
                               disabled={saveLoading}
                             >
-                              {showPasswords.adminPassword ?  <VisibilityIcon /> : <VisibilityOffIcon />}
+                              {showPasswords.adminPassword ? (
+                                <VisibilityIcon />
+                              ) : (
+                                <VisibilityOffIcon />
+                              )}
                             </IconButton>
                           </InputAdornment>
                         ),
@@ -684,7 +808,10 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
             {/* Additional Notes */}
             <Grid item xs={12}>
               <Paper variant="outlined" sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.main", mb: 2 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 600, color: "primary.main", mb: 2 }}
+                >
                   Additional Notes
                 </Typography>
                 <DebouncedTextField
@@ -725,7 +852,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                   startIcon={<AddIcon />}
                   onClick={addNewBox}
                   disabled={saveLoading}
-                  sx={{ 
+                  sx={{
                     borderRadius: 3,
                     px: 4,
                     py: 1.5,
@@ -735,7 +862,7 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
                     "&:hover": {
                       backgroundColor: "primary.50",
                       borderStyle: "solid",
-                    }
+                    },
                   }}
                 >
                   Add Another Box
@@ -746,24 +873,28 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
         )}
       </DialogContent>
 
-      <DialogActions sx={{ 
-        p: 3, 
-        borderTop: "1px solid", 
-        borderColor: "divider",
-        gap: 2
-      }}>
-        <Button 
-          onClick={handleClose} 
-          variant="outlined" 
+      <DialogActions
+        sx={{
+          p: 3,
+          borderTop: "1px solid",
+          borderColor: "divider",
+          gap: 2,
+        }}
+      >
+        <Button
+          onClick={handleClose}
+          variant="outlined"
           disabled={saveLoading}
           sx={{ borderRadius: 2 }}
         >
           Cancel
         </Button>
-        <Button 
-          onClick={handleSave} 
-          variant="contained" 
-          startIcon={saveLoading ? <CircularProgress size={16} /> : <SaveIcon />}
+        <Button
+          onClick={handleSave}
+          variant="contained"
+          startIcon={
+            saveLoading ? <CircularProgress size={16} /> : <SaveIcon />
+          }
           disabled={saveLoading || loading}
           sx={{ borderRadius: 2, minWidth: 120 }}
         >
@@ -778,7 +909,10 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-description"
       >
-        <DialogTitle id="confirm-dialog-title" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <DialogTitle
+          id="confirm-dialog-title"
+          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+        >
           <DeleteIcon color="error" />
           {confirmDialog.title}
         </DialogTitle>
@@ -788,12 +922,16 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2, gap: 1 }}>
-          <Button onClick={handleConfirmClose} variant="outlined" sx={{ borderRadius: 2 }}>
+          <Button
+            onClick={handleConfirmClose}
+            variant="outlined"
+            sx={{ borderRadius: 2 }}
+          >
             Cancel
           </Button>
-          <Button 
-            onClick={handleConfirmAction} 
-            variant="contained" 
+          <Button
+            onClick={handleConfirmAction}
+            variant="contained"
             color="error"
             startIcon={<DeleteIcon />}
             sx={{ borderRadius: 2 }}
@@ -802,6 +940,13 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Dialog>
   );
 };

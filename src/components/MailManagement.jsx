@@ -44,6 +44,7 @@ import {
   History as HistoryIcon,
   Info as InfoIcon,
 } from "@mui/icons-material";
+import CustomSnackbar from "./CustomSnackbar";
 
 const MailManagement = ({ user, onBack }) => {
   const [mounted, setMounted] = useState(false);
@@ -52,8 +53,11 @@ const MailManagement = ({ user, onBack }) => {
   const [mailHistory, setMailHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
   // Form states
   const [formData, setFormData] = useState({
@@ -101,7 +105,11 @@ const MailManagement = ({ user, onBack }) => {
       const data = await response.json();
       setAvailablePositions(data.positions || []);
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     }
   };
 
@@ -122,7 +130,11 @@ const MailManagement = ({ user, onBack }) => {
       const data = await response.json();
       setMailHistory(data.mails || []);
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -201,15 +213,26 @@ const MailManagement = ({ user, onBack }) => {
             successMessage += ` Warning: Email delivery failed for ${failed} recipient(s).`;
           }
         }
-        setSuccess(successMessage);
+        setSnackbar({
+          open: true,
+          message: successMessage,
+          severity: "success",
+        });
         resetForm();
         fetchMailHistory();
-        setTimeout(() => setSuccess(""), 7000);
       } else {
-        setError(data.error || "Failed to send mail");
+        setSnackbar({
+          open: true,
+          message: data.error || "Failed to send mail",
+          severity: "error",
+        });
       }
     } catch (err) {
-      setError(err.message);
+      setSnackbar({
+        open: true,
+        message: err.message,
+        severity: "error",
+      });
     } finally {
       setSending(false);
     }
@@ -228,8 +251,6 @@ const MailManagement = ({ user, onBack }) => {
     setSelectedMail(null);
     setShowDetailModal(false);
   };
-
-  const clearError = () => setError("");
 
   if (!mounted) {
     return null;
@@ -266,20 +287,6 @@ const MailManagement = ({ user, onBack }) => {
       </AppBar>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* Error Alert */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Success Alert */}
-        {success && (
-          <Alert severity="success" sx={{ mb: 3 }}>
-            {success}
-          </Alert>
-        )}
-
         {/* Tabs */}
         <Paper elevation={2} sx={{ mb: 3 }}>
           <Tabs
@@ -379,7 +386,9 @@ const MailManagement = ({ user, onBack }) => {
                 <Autocomplete
                   multiple
                   options={availablePositions.filter(
-                    (pos) => !formData.selectedPosition || pos._id !== formData.selectedPosition._id
+                    (pos) =>
+                      !formData.selectedPosition ||
+                      pos._id !== formData.selectedPosition._id
                   )}
                   getOptionLabel={(option) => option.position}
                   value={formData.ccPositions}
@@ -533,7 +542,13 @@ const MailManagement = ({ user, onBack }) => {
                                 gap: 0.5,
                               }}
                             >
-                              {[...new Set(mail.recipients.map(recipient => recipient.position))].map((position, index) => (
+                              {[
+                                ...new Set(
+                                  mail.recipients.map(
+                                    (recipient) => recipient.position
+                                  )
+                                ),
+                              ].map((position, index) => (
                                 <Chip
                                   key={index}
                                   sx={{
@@ -554,9 +569,13 @@ const MailManagement = ({ user, onBack }) => {
                                     sx={{ mt: 0.5 }}
                                   >
                                     CC:{" "}
-                                    {[...new Set(mail.ccRecipients
-                                      .map((cc) => cc.position))]
-                                      .join(", ")}
+                                    {[
+                                      ...new Set(
+                                        mail.ccRecipients.map(
+                                          (cc) => cc.position
+                                        )
+                                      ),
+                                    ].join(", ")}
                                   </Typography>
                                 )}
                             </Box>
@@ -576,7 +595,13 @@ const MailManagement = ({ user, onBack }) => {
                             />
                           </TableCell>
                           <TableCell>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 0.5,
+                              }}
+                            >
                               <Chip
                                 label={mail.status}
                                 color={
@@ -589,9 +614,13 @@ const MailManagement = ({ user, onBack }) => {
                                 <Chip
                                   label={`Email: ${mail.emailStatus}`}
                                   color={
-                                    mail.emailStatus === "Sent" ? "success" :
-                                    mail.emailStatus === "Partially Sent" ? "warning" :
-                                    mail.emailStatus === "Failed" ? "error" : "default"
+                                    mail.emailStatus === "Sent"
+                                      ? "success"
+                                      : mail.emailStatus === "Partially Sent"
+                                      ? "warning"
+                                      : mail.emailStatus === "Failed"
+                                      ? "error"
+                                      : "default"
                                   }
                                   size="small"
                                   variant="outlined"
@@ -684,7 +713,13 @@ const MailManagement = ({ user, onBack }) => {
                   <Box
                     sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1 }}
                   >
-                    {[...new Set(selectedMail.recipients?.map(recipient => recipient.position) || [])].map((position, index) => (
+                    {[
+                      ...new Set(
+                        selectedMail.recipients?.map(
+                          (recipient) => recipient.position
+                        ) || []
+                      ),
+                    ].map((position, index) => (
                       <Chip
                         key={index}
                         label={position}
@@ -717,7 +752,11 @@ const MailManagement = ({ user, onBack }) => {
                           mt: 1,
                         }}
                       >
-                        {[...new Set(selectedMail.ccRecipients.map(cc => cc.position))].map((position, index) => (
+                        {[
+                          ...new Set(
+                            selectedMail.ccRecipients.map((cc) => cc.position)
+                          ),
+                        ].map((position, index) => (
                           <Chip
                             key={index}
                             label={position}
@@ -753,6 +792,13 @@ const MailManagement = ({ user, onBack }) => {
           <Button onClick={closeMailDetail}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Box>
   );
 };
