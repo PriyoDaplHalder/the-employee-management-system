@@ -29,27 +29,45 @@ const getEmailsForPosition = async (positionTitle) => {
     isActive: true 
   }).populate('user', 'email firstName lastName');
 
+  // Filter employees to only include those with valid email addresses
+  const employeesWithValidEmails = employees.filter(emp => 
+    emp.user?.email && 
+    emp.user.email !== 'no-email@company.com' && 
+    emp.user.email.includes('@') && 
+    emp.user.email.trim() !== ''
+  );
+
   if (positionMappings && positionMappings.length > 0) {
-    // Use mapped emails for this position
+    // Create a set of mapped employee names for quick lookup
+    const mappedEmployeeNames = new Set(positionMappings.map(mapping => mapping.employeeName.toLowerCase().trim()));
+    
+    // Filter personal emails to only include employees who DON'T have mapped emails
+    // An employee should be excluded if their name matches any mapped employee name for this position
+    const employeesWithoutMappedEmails = employeesWithValidEmails.filter(emp => {
+      const empName = `${emp.user?.firstName || ''} ${emp.user?.lastName || ''}`.trim() || emp.name || 'Unknown Employee';
+      const empNameLower = empName.toLowerCase().trim();
+      return !mappedEmployeeNames.has(empNameLower);
+    });
+
     return {
       mappedEmails: positionMappings.map(mapping => ({
         email: mapping.email,
         employeeName: mapping.employeeName,
         isMapped: true
       })),
-      personalEmails: employees.map(emp => ({
-        email: emp.user?.email || 'no-email@company.com',
+      personalEmails: employeesWithoutMappedEmails.map(emp => ({
+        email: emp.user.email,
         employeeName: `${emp.user?.firstName || ''} ${emp.user?.lastName || ''}`.trim() || emp.name || 'Unknown Employee',
         isMapped: false
       }))
     };
   }
 
-  // No mapped emails, use personal emails only
+  // No mapped emails, use personal emails only (but only valid ones)
   return {
     mappedEmails: [],
-    personalEmails: employees.map(emp => ({
-      email: emp.user?.email || 'no-email@company.com',
+    personalEmails: employeesWithValidEmails.map(emp => ({
+      email: emp.user.email,
       employeeName: `${emp.user?.firstName || ''} ${emp.user?.lastName || ''}`.trim() || emp.name || 'Unknown Employee',
       isMapped: false
     }))
@@ -258,6 +276,11 @@ export async function POST(request) {
       const employeeDetails = await getEmployeeDetailsForPosition(positionTitle);
       const emailData = await getEmailsForPosition(positionTitle);
       
+      console.log(`=== PROCESSING POSITION: ${positionTitle} ===`);
+      console.log('Employee details:', employeeDetails);
+      console.log('Email data - mapped emails:', emailData.mappedEmails);
+      console.log('Email data - personal emails:', emailData.personalEmails);
+      
       // For database storage (keep existing functionality)
       if (employeeDetails.length === 0) {
         recipients.push({
@@ -276,8 +299,9 @@ export async function POST(request) {
       }
 
       // For email sending (new functionality)
+      // Use all mapped emails for this position
       if (emailData.mappedEmails && emailData.mappedEmails.length > 0) {
-        // Use all mapped emails for this position
+        console.log(`Using ${emailData.mappedEmails.length} mapped emails for position: ${positionTitle}`);
         emailData.mappedEmails.forEach(mappedEmail => {
           emailRecipients.push({
             email: mappedEmail.email,
@@ -286,8 +310,11 @@ export async function POST(request) {
             type: 'TO'
           });
         });
-      } else if (emailData.personalEmails.length > 0) {
-        // Use personal emails if no mapped emails
+      }
+      
+      // Use personal emails for employees who don't have mapped emails
+      if (emailData.personalEmails.length > 0) {
+        console.log(`Using ${emailData.personalEmails.length} unmapped personal emails for position: ${positionTitle}`);
         emailData.personalEmails.forEach(personalEmail => {
           emailRecipients.push({
             email: personalEmail.email,
@@ -296,6 +323,10 @@ export async function POST(request) {
             type: 'TO'
           });
         });
+      }
+      
+      if (emailRecipients.filter(r => r.position === positionTitle).length === 0) {
+        console.log(`No valid emails found for position: ${positionTitle}`);
       }
     }
 
@@ -308,6 +339,11 @@ export async function POST(request) {
       for (const positionTitle of ccPositionTitles) {
         const employeeDetails = await getEmployeeDetailsForPosition(positionTitle);
         const emailData = await getEmailsForPosition(positionTitle);
+        
+        console.log(`=== PROCESSING CC POSITION: ${positionTitle} ===`);
+        console.log('CC Employee details:', employeeDetails);
+        console.log('CC Email data - mapped emails:', emailData.mappedEmails);
+        console.log('CC Email data - personal emails:', emailData.personalEmails);
         
         // For database storage (keep existing functionality)
         if (employeeDetails.length === 0) {
@@ -327,8 +363,9 @@ export async function POST(request) {
         }
 
         // For email sending (new functionality)
+        // Use all mapped emails for this position
         if (emailData.mappedEmails && emailData.mappedEmails.length > 0) {
-          // Use all mapped emails for this position
+          console.log(`Using ${emailData.mappedEmails.length} mapped emails for CC position: ${positionTitle}`);
           emailData.mappedEmails.forEach(mappedEmail => {
             emailCcRecipients.push({
               email: mappedEmail.email,
@@ -337,8 +374,11 @@ export async function POST(request) {
               type: 'CC'
             });
           });
-        } else if (emailData.personalEmails.length > 0) {
-          // Use personal emails if no mapped emails
+        }
+        
+        // Use personal emails for employees who don't have mapped emails
+        if (emailData.personalEmails.length > 0) {
+          console.log(`Using ${emailData.personalEmails.length} unmapped personal emails for CC position: ${positionTitle}`);
           emailData.personalEmails.forEach(personalEmail => {
             emailCcRecipients.push({
               email: personalEmail.email,
@@ -347,6 +387,10 @@ export async function POST(request) {
               type: 'CC'
             });
           });
+        }
+        
+        if (emailCcRecipients.filter(r => r.position === positionTitle).length === 0) {
+          console.log(`No valid emails found for CC position: ${positionTitle}`);
         }
       }
     }
@@ -375,14 +419,21 @@ export async function POST(request) {
     let emailResults = { sent: [], failed: [] };
     
     try {
+      console.log('=== MAIL ROUTE: Starting email sending process ===');
+      
       // Get sender email information
       const senderEmailInfo = await getSenderEmail(user);
       const fromEmail = `"${senderEmailInfo.name}" <${senderEmailInfo.email}>`;
+      
+      console.log('Sender email info:', senderEmailInfo);
+      console.log('Email recipients count:', emailRecipients.length);
+      console.log('CC recipients count:', emailCcRecipients.length);
 
       // Combine TO and CC recipients for email sending
       const allEmailRecipients = [...emailRecipients, ...emailCcRecipients];
       
       if (allEmailRecipients.length > 0) {
+        console.log('=== GENERATING EMAIL TEMPLATE ===');
         // Generate email template
         const { html, text } = generateEmailTemplate({
           senderName: senderEmailInfo.name,
@@ -396,11 +447,18 @@ export async function POST(request) {
         // Group recipients by type (TO/CC) for separate emails
         const toRecipients = allEmailRecipients.filter(r => r.type === 'TO');
         const ccOnlyRecipients = allEmailRecipients.filter(r => r.type === 'CC');
+        
+        console.log('TO recipients:', toRecipients.length);
+        console.log('CC only recipients:', ccOnlyRecipients.length);
 
         // Send to TO recipients (if any)
         if (toRecipients.length > 0) {
+          console.log('=== SENDING TO RECIPIENTS ===');
           const toEmails = toRecipients.map(r => r.email);
           const ccEmails = ccOnlyRecipients.length > 0 ? ccOnlyRecipients.map(r => r.email) : null;
+          
+          console.log('TO emails:', toEmails);
+          console.log('CC emails:', ccEmails);
           
           const { html: toHtml, text: toText } = generateEmailTemplate({
             senderName: senderEmailInfo.name,
@@ -420,6 +478,8 @@ export async function POST(request) {
             html: toHtml,
             text: toText
           });
+          
+          console.log('Email send result:', emailResult);
 
           if (emailResult.success) {
             emailResults.sent.push({
@@ -486,9 +546,16 @@ export async function POST(request) {
             });
           }
         }
+      } else {
+        console.log('=== NO EMAIL RECIPIENTS FOUND ===');
+        console.log('Email recipients:', emailRecipients);
+        console.log('CC recipients:', emailCcRecipients);
       }
     } catch (emailError) {
+      console.error('=== MAIL ROUTE EMAIL ERROR ===');
       console.error('Error sending emails:', emailError);
+      console.error('Error stack:', emailError.stack);
+      console.error('=== END MAIL ROUTE EMAIL ERROR ===');
       emailResults.failed.push({
         type: 'SYSTEM_ERROR',
         error: emailError.message
