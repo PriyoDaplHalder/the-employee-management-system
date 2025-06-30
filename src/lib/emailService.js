@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 
 // Create reusable transporter object using SMTP transport
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT) || 587,
     secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
@@ -16,9 +16,23 @@ const createTransporter = () => {
 // Send email function
 export const sendEmail = async ({ to, cc, from, subject, html, text }) => {
   try {
+    console.log('=== EMAIL SEND ATTEMPT ===');
+    console.log('SMTP Config:', {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.SMTP_SECURE,
+      user: process.env.SMTP_USER ? process.env.SMTP_USER.substring(0, 5) + '***' : 'NOT_SET',
+      pass: process.env.SMTP_PASS ? '***SET***' : 'NOT_SET'
+    });
+    
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      throw new Error('SMTP credentials not configured. Please check SMTP_USER and SMTP_PASS environment variables.');
+    }
+
     const transporter = createTransporter();
 
     // Verify transporter configuration
+    console.log('Verifying SMTP connection...');
     await transporter.verify();
     console.log('Email server is ready to take our messages');
 
@@ -31,11 +45,24 @@ export const sendEmail = async ({ to, cc, from, subject, html, text }) => {
       text,
     };
 
+    console.log('Mail options:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      cc: mailOptions.cc,
+      subject: mailOptions.subject
+    });
+
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent successfully:', info.messageId);
+    console.log('=== EMAIL SEND SUCCESS ===');
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('=== EMAIL SEND ERROR ===');
+    console.error('Error type:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Full error:', error);
+    console.error('=== END EMAIL ERROR ===');
     return { success: false, error: error.message };
   }
 };

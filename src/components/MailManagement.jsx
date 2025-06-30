@@ -206,11 +206,11 @@ const MailManagement = ({ user, onBack }) => {
         if (data.emailResults) {
           const { sent = 0, failed = 0 } = data.emailResults;
           if (sent > 0 && failed === 0) {
-            successMessage += ` Email delivered to ${sent} recipient(s).`;
+            successMessage += ` Email delivered to ${sent} role(s).`;
           } else if (sent > 0 && failed > 0) {
-            successMessage += ` Email delivered to ${sent} recipient(s), ${failed} failed.`;
+            successMessage += ` Email delivered to ${sent} role(s), ${failed} failed.`;
           } else if (failed > 0) {
-            successMessage += ` Warning: Email delivery failed for ${failed} recipient(s).`;
+            successMessage += ` Warning: Email delivery failed for ${failed} role(s).`;
           }
         }
         setSnackbar({
