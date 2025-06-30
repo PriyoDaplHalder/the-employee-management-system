@@ -61,6 +61,13 @@ const theme = createTheme({
     MuiDrawer: {
       defaultProps: {
         // Used to prevent scrollbar issues with drawer now it has a fixed width
+        disableScrollLock: true,
+      },
+    },
+    MuiPopover: {
+      defaultProps: {
+        // Prevent body scroll lock for dropdowns/menus
+        disableScrollLock: true,
       },
     },
   },
