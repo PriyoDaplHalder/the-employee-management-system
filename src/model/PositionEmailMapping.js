@@ -4,7 +4,6 @@ const positionEmailMappingSchema = new mongoose.Schema({
   position: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
   },
   employeeName: {
@@ -40,6 +39,12 @@ const positionEmailMappingSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Create compound unique index for position + email combination (only for active records)
+// This allows multiple employees in the same position, but prevents duplicate email mappings
+positionEmailMappingSchema.index(
+  { position: 1, email: 1 }, 
+  { unique: true, partialFilterExpression: { isActive: true } }
+);
 positionEmailMappingSchema.index({ position: 1 });
 positionEmailMappingSchema.index({ isActive: 1 });
 

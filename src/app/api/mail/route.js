@@ -16,10 +16,10 @@ const getAuthenticatedUser = (request) => {
   return verifyToken(token);
 };
 
-// Helper function to get the appropriate email for a position (mapped email or personal emails)
+// Helper function to get the appropriate email for a position (mapped emails or personal emails)
 const getEmailsForPosition = async (positionTitle) => {
-  // First check if there's a mapped email for this position
-  const positionMapping = await PositionEmailMapping.findOne({
+  // First check if there are mapped emails for this position
+  const positionMappings = await PositionEmailMapping.find({
     position: positionTitle,
     isActive: true
   });
@@ -29,14 +29,14 @@ const getEmailsForPosition = async (positionTitle) => {
     isActive: true 
   }).populate('user', 'email firstName lastName');
 
-  if (positionMapping) {
-    // Use mapped email for this position
+  if (positionMappings && positionMappings.length > 0) {
+    // Use mapped emails for this position
     return {
-      mappedEmail: {
-        email: positionMapping.email,
-        employeeName: positionMapping.employeeName,
+      mappedEmails: positionMappings.map(mapping => ({
+        email: mapping.email,
+        employeeName: mapping.employeeName,
         isMapped: true
-      },
+      })),
       personalEmails: employees.map(emp => ({
         email: emp.user?.email || 'no-email@company.com',
         employeeName: `${emp.user?.firstName || ''} ${emp.user?.lastName || ''}`.trim() || emp.name || 'Unknown Employee',
@@ -45,9 +45,9 @@ const getEmailsForPosition = async (positionTitle) => {
     };
   }
 
-  // No mapped email, use personal emails only
+  // No mapped emails, use personal emails only
   return {
-    mappedEmail: null,
+    mappedEmails: [],
     personalEmails: employees.map(emp => ({
       email: emp.user?.email || 'no-email@company.com',
       employeeName: `${emp.user?.firstName || ''} ${emp.user?.lastName || ''}`.trim() || emp.name || 'Unknown Employee',
@@ -62,16 +62,32 @@ const getSenderEmail = async (user) => {
   const employee = await Employee.findOne({ user: user._id, isActive: true });
   
   if (employee && employee.position) {
-    // Check if there's a mapped email for the sender's position
-    const positionMapping = await PositionEmailMapping.findOne({
+    // Check if there are mapped emails for the sender's position
+    const positionMappings = await PositionEmailMapping.find({
       position: employee.position,
       isActive: true
     });
     
-    if (positionMapping) {
+    // If multiple mappings exist, try to find one that matches the user's actual email
+    if (positionMappings.length > 0) {
+      // First, try to find a mapping that matches the user's email
+      const matchingMapping = positionMappings.find(mapping => 
+        mapping.email.toLowerCase() === user.email.toLowerCase()
+      );
+      
+      if (matchingMapping) {
+        return {
+          email: matchingMapping.email,
+          name: matchingMapping.employeeName,
+          isMapped: true
+        };
+      }
+      
+      // If no exact match, use the first mapping
+      const firstMapping = positionMappings[0];
       return {
-        email: positionMapping.email,
-        name: positionMapping.employeeName,
+        email: firstMapping.email,
+        name: firstMapping.employeeName,
         isMapped: true
       };
     }
@@ -260,16 +276,18 @@ export async function POST(request) {
       }
 
       // For email sending (new functionality)
-      if (emailData.mappedEmail) {
-        // Use mapped email first
-        emailRecipients.push({
-          email: emailData.mappedEmail.email,
-          employeeName: emailData.mappedEmail.employeeName,
-          position: positionTitle,
-          type: 'TO'
+      if (emailData.mappedEmails && emailData.mappedEmails.length > 0) {
+        // Use all mapped emails for this position
+        emailData.mappedEmails.forEach(mappedEmail => {
+          emailRecipients.push({
+            email: mappedEmail.email,
+            employeeName: mappedEmail.employeeName,
+            position: positionTitle,
+            type: 'TO'
+          });
         });
       } else if (emailData.personalEmails.length > 0) {
-        // Use personal emails if no mapped email
+        // Use personal emails if no mapped emails
         emailData.personalEmails.forEach(personalEmail => {
           emailRecipients.push({
             email: personalEmail.email,
@@ -309,16 +327,18 @@ export async function POST(request) {
         }
 
         // For email sending (new functionality)
-        if (emailData.mappedEmail) {
-          // Use mapped email first
-          emailCcRecipients.push({
-            email: emailData.mappedEmail.email,
-            employeeName: emailData.mappedEmail.employeeName,
-            position: positionTitle,
-            type: 'CC'
+        if (emailData.mappedEmails && emailData.mappedEmails.length > 0) {
+          // Use all mapped emails for this position
+          emailData.mappedEmails.forEach(mappedEmail => {
+            emailCcRecipients.push({
+              email: mappedEmail.email,
+              employeeName: mappedEmail.employeeName,
+              position: positionTitle,
+              type: 'CC'
+            });
           });
         } else if (emailData.personalEmails.length > 0) {
-          // Use personal emails if no mapped email
+          // Use personal emails if no mapped emails
           emailData.personalEmails.forEach(personalEmail => {
             emailCcRecipients.push({
               email: personalEmail.email,
