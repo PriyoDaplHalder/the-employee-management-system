@@ -25,6 +25,7 @@ import {
   Grid,
   Card,
   CardContent,
+  Alert,
 } from "@mui/material";
 import CustomSnackbar from "./CustomSnackbar";
 import {
@@ -54,6 +55,7 @@ const ProjectManagementDetailsModal = ({
     message: "",
     severity: "info",
   });
+  const [success, setSuccess] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [assigningEmployee, setAssigningEmployee] = useState(null);
@@ -231,6 +233,12 @@ const ProjectManagementDetailsModal = ({
       </DialogTitle>
 
       <DialogContent sx={{ p: 0 }}>
+        {success && (
+          <Alert severity="success" sx={{ m: 3, mb: 0 }} onClose={() => setSuccess("")}>
+            {success}
+          </Alert>
+        )}
+        
         {/* Project Information Section */}
         <Box sx={{ p: 3, bgcolor: "grey.50" }}>
           <Typography
