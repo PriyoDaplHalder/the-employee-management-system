@@ -161,8 +161,7 @@ export const generateEmailTemplate = ({
           </div>
           
           <div class="footer">
-            <p>This email was sent from the Employee Management System. 
-            ${recipientType === 'CC' ? 'You received this as a CC recipient.' : 'This request was sent to your position.'}</p>
+            <p>This email was sent from the Employee Management System.</p>
             <p>Please respond to this request through the Employee Management System portal.</p>
           </div>
         </div>
@@ -184,7 +183,6 @@ export const generateEmailTemplate = ({
     ${message}
     
     This email was sent from the Employee Management System.
-    ${recipientType === 'CC' ? 'You received this as a CC recipient.' : 'This request was sent to your position.'}
     Please respond to this request through the Employee Management System portal.
   `;
 
