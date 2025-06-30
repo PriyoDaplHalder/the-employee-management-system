@@ -53,16 +53,12 @@ export const sendEmail = async ({ to, cc, from, subject, html, text }) => {
     });
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
-    console.log('=== EMAIL SEND SUCCESS ===');
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('=== EMAIL SEND ERROR ===');
     console.error('Error type:', error.name);
     console.error('Error message:', error.message);
     console.error('Error code:', error.code);
     console.error('Full error:', error);
-    console.error('=== END EMAIL ERROR ===');
     return { success: false, error: error.message };
   }
 };

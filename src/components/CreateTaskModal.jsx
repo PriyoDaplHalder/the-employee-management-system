@@ -344,7 +344,7 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
                 </MenuItem>
                 <MenuItem value="Critical">
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Chip label="Critical" color="error" size="small" />
+                    <Chip label="Critical" color="error" size="small" sx={{ pointerEvents: 'none' }} />
                     <Typography variant="body2">Critical Priority</Typography>
                   </Box>
                 </MenuItem>
