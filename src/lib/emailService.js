@@ -118,14 +118,6 @@ export const generateEmailTemplate = ({
           font-weight: bold;
           background-color: ${priorityColor[priority] || '#6c757d'};
         }
-        .recipient-type {
-          background-color: ${recipientType === 'CC' ? '#6f42c1' : '#28a745'};
-          color: white;
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-size: 10px;
-          margin-left: 10px;
-        }
         .message-content {
           background-color: #f8f9fa;
           padding: 15px;
@@ -146,10 +138,10 @@ export const generateEmailTemplate = ({
       <div class="email-container">
         <div class="email-header">
           <h2>Employee Management System</h2>
-          <p>New ${requestType} Request</p>
+          <p>${requestType} request</p>
         </div>
         <div class="email-content">
-          <h3>${subject} <span class="recipient-type">${recipientType}</span></h3>
+          <h3>Subject: ${subject}</h3>
           
           <div style="margin: 15px 0;">
             <strong>Priority:</strong> <span class="priority-badge">${priority}</span>
@@ -179,6 +171,7 @@ export const generateEmailTemplate = ({
     </html>
   `;
 
+  // Generate plain text version
   const text = `
     Employee Management System - New ${requestType} Request
     
