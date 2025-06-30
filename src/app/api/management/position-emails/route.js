@@ -88,19 +88,45 @@ export async function POST(request) {
       );
     }
 
-    // Check if position already exists
+    // Check if this specific combination of position + email already exists
     const existingMapping = await PositionEmailMapping.findOne({
       position: position.trim(),
-      isActive: true,
+      email: email.trim().toLowerCase(),
     });
+    
     if (existingMapping) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Position email mapping already exists for this position",
-        },
-        { status: 409 }
-      );
+      if (existingMapping.isActive) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "An email mapping already exists for this position and email combination",
+          },
+          { status: 409 }
+        );
+      } else {
+        // Reactivate the existing mapping instead of creating a new one
+        existingMapping.employeeName = employeeName.trim();
+        existingMapping.description = description?.trim() || "";
+        existingMapping.isActive = true;
+        existingMapping.updatedBy = decoded.userId;
+        
+        await existingMapping.save();
+        
+        // Populate mapping data for response
+        await existingMapping.populate([
+          { path: "createdBy", select: "firstName lastName email" },
+          { path: "updatedBy", select: "firstName lastName email" },
+        ]);
+        
+        return NextResponse.json(
+          {
+            success: true,
+            message: "Position email mapping reactivated successfully",
+            mapping: existingMapping,
+          },
+          { status: 200 }
+        );
+      }
     }
 
     // Create mapping
@@ -184,9 +210,10 @@ export async function PUT(request) {
       );
     }
 
-    // Check if position already exists for another mapping
+    // Check if position + email combination already exists for another mapping
     const existingMapping = await PositionEmailMapping.findOne({
       position: position.trim(),
+      email: email.trim().toLowerCase(),
       isActive: true,
       _id: { $ne: id },
     });
@@ -194,7 +221,7 @@ export async function PUT(request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Position email mapping already exists for this position",
+          error: "An email mapping already exists for this position and email combination",
         },
         { status: 409 }
       );
