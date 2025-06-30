@@ -44,7 +44,7 @@ import {
 } from "@mui/icons-material";
 import CustomSnackbar from "./CustomSnackbar";
 
-const Settings = ({ user, onBack }) => {
+const MailMappings = ({ user, onBack }) => {
   const [mounted, setMounted] = useState(false);
   const [positionMappings, setPositionMappings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -385,7 +385,7 @@ const Settings = ({ user, onBack }) => {
             component="div"
             sx={{ flexGrow: 1, color: "text.primary" }}
           >
-            Settings - Position Email Management
+            Position Email Management
           </Typography>
           <Button
             variant="contained"
@@ -797,4 +797,4 @@ const Settings = ({ user, onBack }) => {
   );
 };
 
-export default Settings;
+export default MailMappings;

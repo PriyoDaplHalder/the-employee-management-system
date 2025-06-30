@@ -206,6 +206,11 @@ const Sidebar = ({
           text: "Inbox",
           view: "inbox",
         },
+        {
+          id: "mailmappings",
+          text: "Mail Mappings",
+          view: "mailmappings",
+        }
       ],
     },
     {

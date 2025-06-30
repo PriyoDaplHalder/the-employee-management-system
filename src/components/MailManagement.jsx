@@ -352,7 +352,7 @@ const MailManagement = ({ user, onBack }) => {
 
               <Grid item xs={12}>
                 <TextField
-                  sx={{ width: "20vw" }}
+                  sx={{ width: "40vw" }}
                   name="subject"
                   label="Subject"
                   value={formData.subject}
@@ -418,6 +418,7 @@ const MailManagement = ({ user, onBack }) => {
 
               <Grid item xs={12}>
                 <TextField
+                  sx={{ minWidth: "66vw" }}
                   fullWidth
                   name="message"
                   label="Message"
@@ -425,14 +426,14 @@ const MailManagement = ({ user, onBack }) => {
                   onChange={handleFormChange}
                   placeholder="Provide detailed information about your request..."
                   multiline
-                  rows={6}
+                  rows={4}
                   required
                 />
               </Grid>
 
               <Grid item xs={12}>
                 <Box
-                  sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
+                  sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }} 
                 >
                   <Button
                     onClick={resetForm}

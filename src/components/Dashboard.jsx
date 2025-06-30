@@ -16,7 +16,7 @@ import AllEmployees from "./AllEmployees";
 import ProjectsManagement from "./ProjectsManagement";
 
 import TaskManagement from "./TaskManagement";
-import Settings from "./Settings";
+import MailMappings from "./MailMappings";
 import MailManagement from "./MailManagement";
 import InboxManagement from "./InboxManagement";
 import { getToken } from "../utils/storage";
@@ -142,6 +142,13 @@ const Dashboard = ({ user, title, onLogout }) => {
             onBack={handleBackToDashboard}
           />
         );
+      case "mailmappings":
+        return (
+          <MailMappings
+            user={user}
+            onBack={handleBackToDashboard}
+          />
+        );
       case "hr":
         return <DepartmentPlaceholder department="Human Resources" />;
       case "it":
@@ -159,7 +166,7 @@ const Dashboard = ({ user, title, onLogout }) => {
       case "notifications":
         return <NotificationsPlaceholder />;
       case "settings":
-        return <Settings user={user} onBack={handleBackToDashboard} />;
+        return <SettingsPlaceholder type="Settings" />;
       default:
         return <DashboardContent user={user} />;
     }

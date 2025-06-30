@@ -154,7 +154,7 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
         console.log("Final userData:", userData);
         onSubmit(data.token, userData, isSignup ? false : formData.rememberMe);
       } else {
-        console.error("Login failed:", data);
+        // console.error("Login failed:", data);
         setSnackbar({
           open: true,
           message: data.error || "Something went wrong",
