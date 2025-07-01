@@ -646,7 +646,16 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
                     {paginatedProjects.map((project) => (
                       <TableRow key={project._id}>
                         <TableCell>{project.name}</TableCell>
-                        <TableCell>{project.details}</TableCell>
+                        <TableCell 
+                          sx={{ 
+                            maxWidth: 200,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          {project.details}
+                        </TableCell>
                         <TableCell>
                           <Chip
                             label={project.isActive === false ? "Inactive" : "Active"}
