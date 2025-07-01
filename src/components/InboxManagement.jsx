@@ -6,8 +6,6 @@ import {
   Box,
   Container,
   Typography,
-  Card,
-  CardContent,
   Paper,
   Alert,
   AppBar,
@@ -18,6 +16,7 @@ import {
   TableBody,
   TableCell,
   TableContainer,
+  TablePagination,
   TableHead,
   TableRow,
   Dialog,
@@ -27,7 +26,6 @@ import {
   Button,
   Chip,
   Grid,
-  Divider,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -43,6 +41,10 @@ const InboxManagement = ({ user, onBack }) => {
   const [error, setError] = useState("");
   const [selectedMail, setSelectedMail] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+
+  // Pagination states
+  const [page, setPage] = useState(0); // Current page
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     setMounted(true);
@@ -88,6 +90,23 @@ const InboxManagement = ({ user, onBack }) => {
   };
 
   const clearError = () => setError("");
+
+  // Handle change of page
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle change of rows per page
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Slice the receivedMails array based on pagination
+  const paginatedMails = receivedMails.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   if (!mounted) {
     return null;
@@ -186,7 +205,7 @@ const InboxManagement = ({ user, onBack }) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {receivedMails.map((mail) => (
+                    {paginatedMails.map((mail) => (
                       <TableRow key={mail._id} hover>
                         <TableCell>
                           <Typography variant="body2">
@@ -238,6 +257,7 @@ const InboxManagement = ({ user, onBack }) => {
                         <TableCell>
                           <Button
                             size="small"
+                            variant="outlined"
                             onClick={() => openMailDetail(mail)}
                           >
                             View Details
@@ -247,8 +267,24 @@ const InboxManagement = ({ user, onBack }) => {
                     ))}
                   </TableBody>
                 </Table>
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  component="div"
+                  count={receivedMails.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  labelRowsPerPage="Mails per page"
+                  labelDisplayedRows={({ from, to, count }) =>
+                    `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
+                  }
+                  sx={{ mt: 2 }}
+                />
               </TableContainer>
             )}
+
+            {/* Pagination Controls */}
           </Box>
         </Paper>
       </Container>
