@@ -361,7 +361,7 @@ const MailMappings = ({ user, onBack }) => {
   }
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "grey.100" }}>
+    <Box sx={{ minHeight: "80vh", bgcolor: "grey.100" }}>
       <AppBar
         position="static"
         elevation={0}

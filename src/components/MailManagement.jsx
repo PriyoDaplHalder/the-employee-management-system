@@ -633,6 +633,8 @@ const MailManagement = ({ user, onBack }) => {
                           <TableCell>
                             <Button
                               size="small"
+                              variant="outlined"
+                              sx={{ fontSize: "0.70rem" }}
                               onClick={() => openMailDetail(mail)}
                             >
                               View Details
