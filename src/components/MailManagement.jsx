@@ -43,6 +43,14 @@ import {
   Mail as MailIcon,
   History as HistoryIcon,
   Info as InfoIcon,
+  Person as PersonIcon,
+  Schedule as ScheduleIcon,
+  Flag as FlagIcon,
+  Subject as SubjectIcon,
+  Message as MessageIcon,
+  Group as GroupIcon,
+  CopyAll as CopyIcon,
+  Event as EventIcon,
 } from "@mui/icons-material";
 import CustomSnackbar from "./CustomSnackbar";
 
@@ -657,142 +665,162 @@ const MailManagement = ({ user, onBack }) => {
         onClose={closeMailDetail}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+          }
+        }}
       >
-        <DialogTitle>Mail Details</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ 
+          borderBottom: '1px solid', 
+          borderColor: 'divider',
+          pb: 2
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <MailIcon color="primary" />
+            <Typography variant="h6" fontWeight={600}>Mail Details</Typography>
+          </Box>
+        </DialogTitle>
+        
+        <DialogContent sx={{ p: 0 }}>
           {selectedMail && (
-            <Box sx={{ pt: 2 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Request Type
-                  </Typography>
-                  <Typography variant="body1">
-                    {selectedMail.requestType}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Priority
-                  </Typography>
-                  <Chip
-                    label={selectedMail.priority}
-                    sx={{ pointerEvents: "none" }}
-                    color={
-                      selectedMail.priority === "High"
-                        ? "error"
-                        : selectedMail.priority === "Medium"
-                        ? "warning"
-                        : "default"
-                    }
-                    size="small"
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Subject
-                  </Typography>
-                  <Typography variant="body1">
-                    {selectedMail.subject}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Message
-                  </Typography>
-                  <Paper
-                    variant="outlined"
-                    sx={{ p: 2, mt: 1, bgcolor: "grey.50" }}
+            <Box>
+              {/* Subject and Message */}
+              <Box sx={{ p: 3 }}>
+                <Typography 
+                  variant="h5" 
+                  sx={{ 
+                    mb: 3, 
+                    fontWeight: 600,
+                    color: 'text.primary',
+                    borderLeft: 3,
+                    borderColor: 'primary.main',
+                    pl: 2
+                  }}
+                >
+                  {selectedMail.subject}
+                </Typography>
+                
+                <Paper
+                  variant="outlined"
+                  sx={{ 
+                    p: 2.5,
+                    bgcolor: 'grey.50',
+                    borderRadius: 1.5
+                  }}
+                >
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      whiteSpace: "pre-wrap",
+                      lineHeight: 1.6,
+                      color: 'text.primary'
+                    }}
                   >
-                    <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                      {selectedMail.message}
+                    {selectedMail.message}
+                  </Typography>
+                </Paper>
+              </Box>
+
+              {/* Mail Info */}
+              <Box sx={{ 
+                px: 3, 
+                pt: 2.5, 
+                bgcolor: 'grey.50',
+                borderTop: '1px solid',
+                borderColor: 'divider'
+              }}>
+                <Grid container spacing={2.5}>
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                      Request Type
                     </Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Recipients (Positions)
-                  </Typography>
-                  <Box
-                    sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1 }}
-                  >
-                    {[
-                      ...new Set(
-                        selectedMail.recipients?.map(
-                          (recipient) => recipient.position
-                        ) || []
-                      ),
-                    ].map((position, index) => (
+                    <Box sx={{ mt: 0.5 }}>
                       <Chip
-                        key={index}
-                        label={position}
+                        label={selectedMail.requestType}
                         size="small"
-                        variant="outlined"
                         color="primary"
+                        variant="outlined"
                         sx={{ pointerEvents: "none" }}
                       />
-                    ))}
-                  </Box>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ mt: 1, display: "block" }}
-                  >
-                    Mail will be delivered to employees holding these positions
-                  </Typography>
-                </Grid>
-                {selectedMail.ccRecipients &&
-                  selectedMail.ccRecipients.length > 0 && (
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        CC Recipients (Positions)
+                    </Box>
+                  </Grid>
+                  
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                      Priority
+                    </Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      <Chip
+                        label={selectedMail.priority}
+                        size="small"
+                        sx={{ pointerEvents: "none" }}
+                        color={
+                          selectedMail.priority === "High"
+                            ? "error"
+                            : selectedMail.priority === "Medium"
+                            ? "warning"
+                            : "default"
+                        }
+                      />
+                    </Box>
+                  </Grid>
+                  
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                      Sent To
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 0.5, fontSize: '0.9rem' }}>
+                      {[
+                        ...new Set(
+                          selectedMail.recipients?.map(
+                            (recipient) => recipient.position
+                          ) || []
+                        ),
+                      ].join(", ")}
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                      Date
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 0.5, fontSize: '0.9rem' }}>
+                      {new Date(selectedMail.createdAt).toLocaleDateString()}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(selectedMail.createdAt).toLocaleTimeString()}
+                    </Typography>
+                  </Grid>
+                  
+                  {selectedMail.ccRecipients && selectedMail.ccRecipients.length > 0 && (
+                    <Grid item xs={12}>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        CC Recipients
                       </Typography>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: 0.5,
-                          mt: 1,
-                        }}
-                      >
+                      <Typography variant="body2" sx={{ mt: 0.5, fontSize: '0.9rem' }}>
                         {[
                           ...new Set(
                             selectedMail.ccRecipients.map((cc) => cc.position)
                           ),
-                        ].map((position, index) => (
-                          <Chip
-                            key={index}
-                            label={position}
-                            size="small"
-                            variant="outlined"
-                            color="secondary"
-                            sx={{ pointerEvents: "none" }}
-                          />
-                        ))}
-                      </Box>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ mt: 1, display: "block" }}
-                      >
-                        These positions will receive a copy
+                        ].join(", ")}
                       </Typography>
                     </Grid>
                   )}
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Sent On
-                  </Typography>
-                  <Typography variant="body2">
-                    {new Date(selectedMail.createdAt).toLocaleString()}
-                  </Typography>
                 </Grid>
-              </Grid>
+              </Box>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeMailDetail}>Close</Button>
+        
+        <DialogActions sx={{ p: 3 }}>
+          <Button 
+            onClick={closeMailDetail} 
+            variant="contained"
+            sx={{ minWidth: 100 }}
+          >
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
