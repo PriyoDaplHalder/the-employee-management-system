@@ -667,13 +667,23 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
                         fullWidth
                         name="phone"
                         label="Phone Number"
+                        type="number"
                         value={formData.phone}
                         onChange={handleChange}
                         variant="outlined"
                         placeholder="e.g., +91 9876543210"
                         sx={{
-                          "& .MuiOutlinedInput-root": {
+                          " & .MuiOutlinedInput-root": {
                             borderRadius: 2,
+                          },
+                          "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button":
+                            {
+                              display: "none",
+                              WebkitAppearance: "none",
+                              margin: 0,
+                            },
+                          "& input[type=number]": {
+                            MozAppearance: "textfield",
                           },
                         }}
                       />
@@ -683,6 +693,7 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
                         fullWidth
                         name="emergencyContact"
                         label="Emergency Contact"
+                        type="number"
                         value={formData.emergencyContact}
                         onChange={handleChange}
                         variant="outlined"
@@ -690,6 +701,15 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             borderRadius: 2,
+                          },
+                          "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button":
+                            {
+                              display: "none",
+                              WebkitAppearance: "none",
+                              margin: 0,
+                            },
+                          "& input[type=number]": {
+                            MozAppearance: "textfield",
                           },
                         }}
                       />

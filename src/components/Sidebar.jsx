@@ -213,12 +213,12 @@ const Sidebar = ({
         }
       ],
     },
-    {
-      id: "settings",
-      text: "Settings",
-      icon: <SettingsIcon />,
-      view: "settings",
-    },
+    // {
+    //   id: "settings",
+    //   text: "Settings",
+    //   icon: <SettingsIcon />,
+    //   view: "settings",
+    // },
   ];
 
   const navigationItems = isEmployee ? employeeNavItems : managementNavItems;

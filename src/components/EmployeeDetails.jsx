@@ -1330,6 +1330,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                         <TextField
                           fullWidth
                           name="phone"
+                          type="number"
                           label="Phone Number"
                           value={formData.phone}
                           onChange={handleChange}
@@ -1348,6 +1349,15 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                                 ? "grey.100"
                                 : "white",
                             },
+                            "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button":
+                              {
+                                display: "none",
+                                WebkitAppearance: "none",
+                                margin: 0,
+                              },
+                            "& input[type=number]": {
+                              MozAppearance: "textfield",
+                            },
                           }}
                         />
                       </Grid>
@@ -1357,6 +1367,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           fullWidth
                           name="emergencyContact"
                           label="Emergency Contact"
+                          type="number"
                           value={formData.emergencyContact}
                           onChange={handleChange}
                           variant="outlined"
@@ -1374,6 +1385,15 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                               bgcolor: !isFieldEditable("emergencyContact")
                                 ? "grey.100"
                                 : "white",
+                            },
+                            "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button":
+                              {
+                                display: "none",
+                                WebkitAppearance: "none",
+                                margin: 0,
+                              },
+                            "& input[type=number]": {
+                              MozAppearance: "textfield",
                             },
                           }}
                         />
