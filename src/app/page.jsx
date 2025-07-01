@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import WelcomeScreen from "../components/WelcomeScreen";
 import LoginForm from "../components/LoginForm";
+import ForgotPasswordForm from "../components/ForgotPasswordForm";
 import EmployeeDashboard from "../components/EmployeeDashboard";
 import LoadingScreen from "../components/LoadingScreen";
 import { useAuthRouting } from "../hooks/useAuthRouting";
@@ -52,6 +53,28 @@ export default function Home() {
     handleAuthSuccess(token, userData, rememberMe);
   };
 
+  const handleForgotPassword = () => {
+    setCurrentView("forgotPassword");
+  };
+
+  const handleForgotPasswordBack = () => {
+    setCurrentView("login");
+  };
+
+  const handleForgotPasswordSuccess = () => {
+    setCurrentView("login");
+    setIsSignup(false);
+  };
+
+  if (currentView === "forgotPassword") {
+    return (
+      <ForgotPasswordForm
+        onBack={handleForgotPasswordBack}
+        onSuccess={handleForgotPasswordSuccess}
+      />
+    );
+  }
+
   if (currentView === "login") {
     return (
       <LoginForm
@@ -60,6 +83,7 @@ export default function Home() {
         onToggleMode={handleToggleMode}
         onBack={handleBack}
         onSubmit={handleSubmit}
+        onForgotPassword={handleForgotPassword}
       />
     );
   }

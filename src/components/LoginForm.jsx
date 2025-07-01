@@ -22,7 +22,7 @@ import {
 } from "@mui/icons-material";
 import CustomSnackbar from "./CustomSnackbar";
 
-const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
+const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit, onForgotPassword }) => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -259,31 +259,53 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit }) => {
                 sx={{ mb: 4 }}
               />
 
-              {/* Remember Me Checkbox */}
+              {/* Remember Me Checkbox and Forgot Password */}
               {!isSignup && (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={formData.rememberMe}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          rememberMe: e.target.checked,
-                        })
+                <Box sx={{ 
+                  mb: 3, 
+                  display: "flex", 
+                  justifyContent: "space-between", 
+                  alignItems: "center" 
+                }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.rememberMe}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            rememberMe: e.target.checked,
+                          })
+                        }
+                        disabled={loading}
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" color="text.secondary">
+                        Remember me
+                      </Typography>
+                    }
+                  />
+                  <Button
+                    variant="text"
+                    size="small"
+                    onClick={onForgotPassword}
+                    disabled={loading}
+                    sx={{ 
+                      textTransform: "none", 
+                      fontSize: "0.875rem",
+                      color: "primary.main",
+                      "&:hover": {
+                        backgroundColor: "transparent",
+                        textDecoration: "underline"
                       }
-                      disabled={loading}
-                      color="primary"
-                    />
-                  }
-                  label={
-                    <Typography variant="body2" color="text.secondary">
-                      Remember me
-                    </Typography>
-                  }
-                  sx={{ mb: 3, display: "flex", justifyContent: "flex-start" }}
-                />
+                    }}
+                  >
+                    Forgot Password?
+                  </Button>
+                </Box>
               )}
-
               <Button
                 type="submit"
                 fullWidth
