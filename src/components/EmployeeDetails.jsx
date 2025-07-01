@@ -540,9 +540,6 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
             sx={{
               p: 2,
               mb: 3,
-              bgcolor: "info.50",
-              border: "1px solid",
-              borderColor: "info.200",
               borderRadius: 2,
             }}
           >
@@ -550,10 +547,9 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
               variant="body2"
               sx={{ color: "info.main", fontWeight: 500 }}
             >
-              ℹ️{" "}
               {profileCompleted
                 ? "Your profile is completed and locked for editing. Contact management for any changes."
-                : "You can only fill empty fields. Once you complete your profile, it will be locked."}
+                : "Fill the empty fields carefully. Once you complete your profile, it will be locked."}
             </Typography>
           </Paper>
         )}

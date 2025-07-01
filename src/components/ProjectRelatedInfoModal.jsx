@@ -354,6 +354,10 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
           severity: "success",
         });
         if (onSuccess) onSuccess();
+        // Close modal after a delay to allow snackbar to be seen
+        setTimeout(() => {
+          handleClose();
+        }, 3500);
       } else {
         const errorData = await response.json();
         console.error("Save error:", errorData);
@@ -372,7 +376,6 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
       });
     } finally {
       setSaveLoading(false);
-      onClose();
     }
   };
 
@@ -385,6 +388,12 @@ const ProjectRelatedInfoModal = ({ project, open, onClose, onSuccess }) => {
     });
     setEditingBoxId(null);
     handleConfirmClose();
+    // Clear snackbar state when closing modal
+    setSnackbar({
+      open: false,
+      message: "",
+      severity: "info",
+    });
     onClose();
   };
 

@@ -5,14 +5,10 @@ import {
   Box,
   Container,
   Typography,
-  Card,
-  CardContent,
   TextField,
   Button,
-  Grid,
   Modal,
   Paper,
-  Alert,
   AppBar,
   Toolbar,
   IconButton,
@@ -27,6 +23,13 @@ import {
   FormControlLabel,
   ToggleButton,
   ToggleButtonGroup,
+  Table,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  TablePagination,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
 import EditIcon from "@mui/icons-material/Edit";
@@ -59,10 +62,20 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
     name: "",
     details: "",
   });
+  // Removed viewMode state - only table view now
+
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     fetchProjects();
   }, [showInactive]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPage(0);
+  }, [viewFilter, assignedFilter]);
 
   const fetchProjects = async () => {
     setLoading(true);
@@ -299,6 +312,18 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
     setShowDetailsModal(false);
   };
 
+  // Removed handleViewModeToggle function - only table view now
+
+  // Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   const getFilteredProjects = () => {
     let filtered = projects;
 
@@ -319,6 +344,12 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
   };
 
   const filteredProjects = getFilteredProjects();
+
+  // Get paginated projects
+  const paginatedProjects = filteredProjects.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "grey.100" }}>
@@ -570,6 +601,7 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
               </ToggleButtonGroup>
             </Box>
           </Box>
+          
 
           {loading && projects.length === 0 ? (
             <Paper sx={{ textAlign: "center", py: 6 }}>
@@ -598,155 +630,95 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
               </Typography>
             </Paper>
           ) : (
-            <Grid container spacing={3}>
-              {filteredProjects.map((project) => (
-                <Grid item xs={12} md={6} lg={4} key={project._id}>
-                  <Card
-                    sx={{
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      borderRadius: 3,
-                      border: "1px solid",
-                      borderColor: "grey.200",
-                      bgcolor: "white",
-                    }}
-                  >
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                          mb: 2,
-                        }}
-                      >
-                        <Typography
-                          variant="h6"
-                          component="h4"
-                          sx={{
-                            fontWeight: "bold",
-                            color:
-                              project.isActive === false
-                                ? "text.secondary"
-                                : "text.primary",
-                            flex: 1,
-                          }}
-                        >
-                          {project.name}
-                        </Typography>
-                        <Box sx={{ display: "flex", gap: 1, ml: 1 }}>
-                          {project.assignmentCount > 0 && (
-                            <Chip
-                              label={`${project.assignmentCount} assigned`}
-                              size="small"
-                              color="info"
-                              variant="outlined"
-                              sx={{ fontWeight: 500, pointerEvents: "none" }}
-                            />
-                          )}
+            <Box>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell><strong>Project Name</strong></TableCell>
+                      <TableCell><strong>Details</strong></TableCell>
+                      <TableCell><strong>Status</strong></TableCell>
+                      <TableCell><strong>Assignments</strong></TableCell>
+                      <TableCell><strong>Actions</strong></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedProjects.map((project) => (
+                      <TableRow key={project._id}>
+                        <TableCell>{project.name}</TableCell>
+                        <TableCell>{project.details}</TableCell>
+                        <TableCell>
                           <Chip
-                            label={
-                              project.isActive === false ? "Inactive" : "Active"
-                            }
-                            color={
-                              project.isActive === false ? "default" : "success"
-                            }
+                            label={project.isActive === false ? "Inactive" : "Active"}
+                            color={project.isActive === false ? "default" : "success"}
                             size="small"
                             sx={{ fontWeight: 500, pointerEvents: "none" }}
                           />
-                        </Box>
-                      </Box>
+                        </TableCell>
+                        <TableCell>
+                          {project.assignmentCount > 0 ? `${project.assignmentCount} assigned` : "None"}
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: "flex", gap: 1 }}>
+                            <Button
+                              variant="outlined"
+                              startIcon={<EditIcon />}
+                              onClick={() => handleEdit(project)}
+                              disabled={loading}
+                              size="small"
+                              sx={{ borderRadius: 2, textTransform: "none", fontWeight: 500 }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              startIcon={<InfoIcon />}
+                              onClick={() => handleViewDetails(project)}
+                              disabled={loading}
+                              size="small"
+                              color="info"
+                              sx={{ borderRadius: 2, textTransform: "none", fontWeight: 500 }}
+                            >
+                              Details
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color={project.isActive === false ? "success" : "warning"}
+                              onClick={() => handleToggleStatus(project)}
+                              disabled={loading}
+                              size="small"
+                              sx={{ borderRadius: 2, textTransform: "none", fontWeight: 500 }}
+                            >
+                              {project.isActive === false ? "Open" : "Close"}
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
 
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 2, whiteSpace: "pre-wrap" }}
-                      >
-                        {project.details}
-                      </Typography>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                        >
-                          Created:{" "}
-                          {new Date(project.createdAt).toLocaleDateString()}
-                        </Typography>
-                        {project.updatedAt !== project.createdAt && (
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            display="block"
-                          >
-                            Updated:{" "}
-                            {new Date(project.updatedAt).toLocaleDateString()}
-                          </Typography>
-                        )}
-                      </Box>
-                    </CardContent>
-
-                    <Divider />
-
-                    <Box sx={{ p: 2, display: "flex", gap: 1 }}>
-                      <Button
-                        flex="1"
-                        variant="outlined"
-                        startIcon={<EditIcon />}
-                        onClick={() => handleEdit(project)}
-                        disabled={loading}
-                        size="small"
-                        sx={{
-                          borderRadius: 2,
-                          textTransform: "none",
-                          fontWeight: 500,
-                          minWidth: 0,
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        flex="1"
-                        variant="outlined"
-                        startIcon={<InfoIcon />}
-                        onClick={() => handleViewDetails(project)}
-                        disabled={loading}
-                        size="small"
-                        color="info"
-                        sx={{
-                          borderRadius: 2,
-                          textTransform: "none",
-                          fontWeight: 500,
-                          minWidth: 0,
-                        }}
-                      >
-                        Details
-                      </Button>
-                      <Button
-                        flex="1"
-                        variant="outlined"
-                        color={
-                          project.isActive === false ? "success" : "warning"
-                        }
-                        onClick={() => handleToggleStatus(project)}
-                        disabled={loading}
-                        size="small"
-                        sx={{
-                          borderRadius: 2,
-                          textTransform: "none",
-                          fontWeight: 500,
-                          minWidth: 0,
-                        }}
-                      >
-                        {project.isActive === false ? "Open" : "Close"}
-                      </Button>
-                    </Box>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+              {/* Pagination */}
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                component="div"
+                count={filteredProjects.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                labelRowsPerPage="Projects per page"
+                labelDisplayedRows={({ from, to, count }) =>
+                  `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
+                }
+                sx={{
+                  borderTop: 1,
+                  borderColor: "divider",
+                  bgcolor: "background.paper",
+                }}
+              />
+            </Box>
           )}
         </Box>
 
