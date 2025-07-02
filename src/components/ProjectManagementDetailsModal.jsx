@@ -42,6 +42,7 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import ConfirmationModal from "./ConfirmationModal";
 import ProjectRelatedInfoModal from "./ProjectRelatedInfoModal";
 import EmployeeAssignmentModal from "./EmployeeAssignmentModal";
+import ProjectMilestoneModal from "./ProjectMilestoneModal";
 
 const ProjectManagementDetailsModal = ({
   project,
@@ -62,6 +63,7 @@ const ProjectManagementDetailsModal = ({
   const [assigningEmployee, setAssigningEmployee] = useState(null);
   const [assignmentToDelete, setAssignmentToDelete] = useState(null);
   const [showRelatedInfoModal, setShowRelatedInfoModal] = useState(false);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [showEmployeeAssignModal, setShowEmployeeAssignModal] = useState(false);
 
   useEffect(() => {
@@ -167,6 +169,10 @@ const ProjectManagementDetailsModal = ({
     setShowRelatedInfoModal(true);
   };
 
+  const handleMilestoneClick = () => {
+    setShowMilestoneModal(true);
+  };
+
   const handleAssignEmployee = () => {
     setShowEmployeeAssignModal(true);
   };
@@ -190,6 +196,16 @@ const ProjectManagementDetailsModal = ({
   const handleRelatedInfoSuccess = () => {
     setSuccess("Related information updated successfully!");
     setTimeout(() => setSuccess(""), 3000);
+  };
+
+  const handleCloseMilestone = () => {
+    setShowMilestoneModal(false);
+  };
+
+  const handleMilestoneSuccess = () => {
+    setSuccess("Milestones updated successfully!");
+    setTimeout(() => setSuccess(""), 3000);
+    setShowMilestoneModal(false);
   };
 
   if (!project) return null;
@@ -274,14 +290,15 @@ const ProjectManagementDetailsModal = ({
                       label={project.isActive === false ? "Inactive" : "Active"}
                       color={project.isActive === false ? "default" : "success"}
                       size="small"
-                      sx={{ fontWeight: 500, pointerEvents: "none" }}
+                      sx={{ fontWeight: 500 }}
+                      clickable={false}
                     />
                     <Chip
                       label={`${assignments.length} Assigned`}
                       variant="outlined"
                       size="small"
                       color="primary"
-                      sx={{ pointerEvents: "none" }}
+                      clickable={false}
                     />
                   </Box>
                 </CardContent>
@@ -532,7 +549,7 @@ const ProjectManagementDetailsModal = ({
             Related Info
           </Button>
           <Button
-            onClick={handleRelatedInfoClick}
+            onClick={handleMilestoneClick}
             variant="contained"
             startIcon={<TimelineIcon />}
             sx={{
@@ -578,6 +595,14 @@ const ProjectManagementDetailsModal = ({
         open={showEmployeeAssignModal}
         onClose={handleCloseEmployeeAssignModal}
         onSuccess={handleEmployeeAssignmentSuccess}
+      />
+
+      {/* Project Milestone Modal */}
+      <ProjectMilestoneModal
+        project={project}
+        open={showMilestoneModal}
+        onClose={handleCloseMilestone}
+        onSuccess={handleMilestoneSuccess}
       />
 
       <CustomSnackbar

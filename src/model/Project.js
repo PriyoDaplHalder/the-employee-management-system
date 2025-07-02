@@ -49,6 +49,25 @@ const projectSchema = new mongoose.Schema({
       }]
     }],
   },
+  milestones: [{
+    id: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+    title: { type: String, required: true, trim: true },
+    description: { type: String, trim: true },
+    startDate: { type: Date },
+    endDate: { type: Date },
+    features: [{
+      id: { type: String, required: true },
+      topic: { type: String, required: true, trim: true },
+      items: [{
+        id: { type: String, required: true },
+        text: { type: String, required: true, trim: true },
+        completed: { type: Boolean, default: false }
+      }]
+    }],
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+  }],
 }, {
   timestamps: true,
 });
