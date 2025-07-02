@@ -403,11 +403,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                 display: "flex", 
                 justifyContent: "space-between", 
                 alignItems: "center", 
-                my: 2,
                 p: 3,
-                bgcolor: "white",
-                borderRadius: 3,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
               }}>
                 <Typography variant="h6" sx={{ 
                   color: "primary.main", 
