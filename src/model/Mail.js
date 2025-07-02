@@ -69,6 +69,10 @@ const mailSchema = new mongoose.Schema({
     enum: ['Low', 'Medium', 'High'],
     default: 'Medium',
   },
+  selectedDepartment: {
+    type: String,
+    trim: true,
+  },
   emailStatus: {
     type: String,
     enum: ['Not Sent', 'Sent', 'Partially Sent', 'Failed'],

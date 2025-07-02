@@ -240,30 +240,105 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { requestType, subject, message, selectedPositions, ccPositions, priority } = body;
+    const { requestType, subject, message, selectedPositions, ccPositions, priority, selectedDepartment } = body;
 
     // Validate required fields
-    if (!requestType || !subject || !message || !selectedPositions || selectedPositions.length === 0) {
+    if (!requestType || !subject || !message || !selectedPositions || selectedPositions.length === 0 || !selectedDepartment) {
       return NextResponse.json(
         {
           success: false,
-          error: "Request type, subject, message, and at least one recipient are required",
+          error: "Request type, subject, message, department, and at least one recipient are required",
         },
         { status: 400 }
       );
     }
 
     // Helper function to get employees for a position and extract their details
-    const getEmployeeDetailsForPosition = async (positionTitle) => {
-      const employees = await Employee.find({ 
+    const getEmployeeDetailsForPosition = async (positionTitle, departmentFilter = null) => {
+      const query = { 
         position: positionTitle, 
         isActive: true 
-      }).populate('user', 'email firstName lastName');
+      };
+      
+      // Add department filter if provided
+      if (departmentFilter) {
+        query.department = departmentFilter;
+      }
+      
+      const employees = await Employee.find(query).populate('user', 'email firstName lastName');
 
       return employees.map(emp => ({
         email: emp.user?.email || 'no-email@company.com',
-        employeeName: `${emp.user?.firstName || ''} ${emp.user?.lastName || ''}`.trim() || emp.name || 'Unknown Employee'
+        employeeName: `${emp.user?.firstName || ''} ${emp.user?.lastName || ''}`.trim() || emp.name || 'Unknown Employee',
+        department: emp.department
       }));
+    };
+
+    // Helper function to get emails for a position with department filtering
+    const getEmailsForPositionWithDepartment = async (positionTitle, departmentFilter = null) => {
+      // First check if there are mapped emails for this position
+      const positionMappings = await PositionEmailMapping.find({
+        position: positionTitle,
+        isActive: true
+      });
+
+      const query = { 
+        position: positionTitle, 
+        isActive: true 
+      };
+      
+      // Add department filter if provided
+      if (departmentFilter) {
+        query.department = departmentFilter;
+      }
+
+      const employees = await Employee.find(query).populate('user', 'email firstName lastName');
+
+      // Filter employees to only include those with valid email addresses
+      const employeesWithValidEmails = employees.filter(emp => 
+        emp.user?.email && 
+        emp.user.email !== 'no-email@company.com' && 
+        emp.user.email.includes('@') && 
+        emp.user.email.trim() !== ''
+      );
+
+      if (positionMappings && positionMappings.length > 0) {
+        // Create a set of mapped employee names for quick lookup
+        const mappedEmployeeNames = new Set(positionMappings.map(mapping => mapping.employeeName.toLowerCase().trim()));
+        
+        // Filter personal emails to only include employees who DON'T have mapped emails
+        // An employee should be excluded if their name matches any mapped employee name for this position
+        const employeesWithoutMappedEmails = employeesWithValidEmails.filter(emp => {
+          const empName = `${emp.user?.firstName || ''} ${emp.user?.lastName || ''}`.trim() || emp.name || 'Unknown Employee';
+          const empNameLower = empName.toLowerCase().trim();
+          return !mappedEmployeeNames.has(empNameLower);
+        });
+
+        return {
+          mappedEmails: positionMappings.map(mapping => ({
+            email: mapping.email,
+            employeeName: mapping.employeeName,
+            isMapped: true
+          })),
+          personalEmails: employeesWithoutMappedEmails.map(emp => ({
+            email: emp.user.email,
+            employeeName: `${emp.user?.firstName || ''} ${emp.user?.lastName || ''}`.trim() || emp.name || 'Unknown Employee',
+            isMapped: false,
+            department: emp.department
+          }))
+        };
+      }
+
+      // No mapped emails, use personal emails only (but only valid ones)
+      return {
+        mappedEmails: [],
+        personalEmails: employeesWithValidEmails.map(emp => ({
+          email: emp.user.email,
+          employeeName: `${emp.user?.firstName || ''} ${emp.user?.lastName || ''}`.trim() || emp.name || 'Unknown Employee',
+          isMapped: false,
+          department: emp.department
+        }))
+      };
     };
 
     // Extract position titles from selected position IDs
@@ -273,10 +348,11 @@ export async function POST(request) {
     const recipients = [];
     const emailRecipients = []; // For actual email sending
     for (const positionTitle of selectedPositionTitles) {
-      const employeeDetails = await getEmployeeDetailsForPosition(positionTitle);
-      const emailData = await getEmailsForPosition(positionTitle);
+      // Always use department filtering since department is now required
+      const employeeDetails = await getEmployeeDetailsForPosition(positionTitle, selectedDepartment);
+      const emailData = await getEmailsForPositionWithDepartment(positionTitle, selectedDepartment);
       
-      console.log(`=== PROCESSING POSITION: ${positionTitle} ===`);
+      console.log(`=== PROCESSING POSITION: ${positionTitle} (Department: ${selectedDepartment}) ===`);
       console.log('Employee details:', employeeDetails);
       console.log('Email data - mapped emails:', emailData.mappedEmails);
       console.log('Email data - personal emails:', emailData.personalEmails);
@@ -337,10 +413,11 @@ export async function POST(request) {
       const ccPositionTitles = ccPositions;
       
       for (const positionTitle of ccPositionTitles) {
-        const employeeDetails = await getEmployeeDetailsForPosition(positionTitle);
-        const emailData = await getEmailsForPosition(positionTitle);
+        // Always use department filtering since department is now required
+        const employeeDetails = await getEmployeeDetailsForPosition(positionTitle, selectedDepartment);
+        const emailData = await getEmailsForPositionWithDepartment(positionTitle, selectedDepartment);
         
-        console.log(`=== PROCESSING CC POSITION: ${positionTitle} ===`);
+        console.log(`=== PROCESSING CC POSITION: ${positionTitle} (Department: ${selectedDepartment}) ===`);
         console.log('CC Employee details:', employeeDetails);
         console.log('CC Email data - mapped emails:', emailData.mappedEmails);
         console.log('CC Email data - personal emails:', emailData.personalEmails);
@@ -406,6 +483,7 @@ export async function POST(request) {
       recipients,
       ccRecipients,
       priority: priority || "Medium",
+      selectedDepartment: selectedDepartment || null,
       emailStatus: 'Not Sent',
       emailResults: {
         sent: [],

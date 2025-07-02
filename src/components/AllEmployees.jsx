@@ -73,7 +73,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   const [positionFilter, setPositionFilter] = useState("all");
   const [salaryRangeFilter, setSalaryRangeFilter] = useState("all");
   const [sortConfig, setSortConfig] = useState({
-    key: "name",
+    key: null,
     direction: "asc",
   });
   const [viewMenuAnchor, setViewMenuAnchor] = useState(null);
