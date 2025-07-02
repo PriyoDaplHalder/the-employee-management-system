@@ -439,7 +439,7 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
             <Box
               component="form"
               onSubmit={handleSubmit}
-              sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+              sx={{ display: "flex", flexDirection: "column", gap: 3}}
             >
               <TextField
                 fullWidth
@@ -633,13 +633,13 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
             <Box>
               <TableContainer component={Paper}>
                 <Table>
-                  <TableHead>
+                  <TableHead sx={{ bgcolor: "primary.main" }}>
                     <TableRow>
-                      <TableCell><strong>Project Name</strong></TableCell>
-                      <TableCell><strong>Details</strong></TableCell>
-                      <TableCell><strong>Status</strong></TableCell>
-                      <TableCell><strong>Assignments</strong></TableCell>
-                      <TableCell><strong>Actions</strong></TableCell>
+                      <TableCell sx={{ color: "white" }}><strong>Project Name</strong></TableCell>
+                      <TableCell sx={{ color: "white" }}><strong>Details</strong></TableCell>
+                      <TableCell sx={{ color: "white" }}><strong>Status</strong></TableCell>
+                      <TableCell sx={{ color: "white" }}><strong>Assignments</strong></TableCell>
+                      <TableCell sx={{ color: "white" }}><strong>Actions</strong></TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>

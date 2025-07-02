@@ -390,6 +390,14 @@ const InboxManagement = ({ user, onBack }) => {
                       />
                     </Box>
                   </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                      Sent From
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 0.5, fontSize: '0.9rem' }}>
+                      {selectedMail.senderName}
+                    </Typography>
+                  </Grid>
                   
                   <Grid item xs={6} sm={3}>
                     <Typography variant="caption" color="text.secondary" fontWeight={600}>

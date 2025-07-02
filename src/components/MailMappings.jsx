@@ -407,12 +407,8 @@ const MailMappings = ({ user, onBack }) => {
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
         {/* Position Mappings Table */}
-        <Paper elevation={2} sx={{ borderRadius: 3 }}>
-          <Box sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Current Position Email Mappings
-            </Typography>
-
+        <Paper elevation={2} sx={{ borderRadius: 3, overflow: "hidden" }}>
+          <Box sx={{ p: 0 }}>
             {loading ? (
               <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
                 <CircularProgress />
@@ -445,14 +441,14 @@ const MailMappings = ({ user, onBack }) => {
               <TableContainer>
                 <Table>
                   <TableHead>
-                    <TableRow>
-                      <TableCell>Position</TableCell>
-                      <TableCell>Employee Name</TableCell>
-                      <TableCell>Email Address</TableCell>
-                      <TableCell>Description</TableCell>
-                      <TableCell>Created By</TableCell>
-                      <TableCell>Created Date</TableCell>
-                      <TableCell align="center">Actions</TableCell>
+                    <TableRow sx={{ bgcolor: "primary.main" }}>
+                      <TableCell sx={{ color: "white", fontWeight: "Bold" }}>Position</TableCell>
+                      <TableCell sx={{ color: "white", fontWeight: "Bold" }}>Employee Name</TableCell>
+                      <TableCell sx={{ color: "white", fontWeight: "Bold" }}>Email Address</TableCell>
+                      <TableCell sx={{ color: "white", fontWeight: "Bold" }}>Description</TableCell>
+                      <TableCell sx={{ color: "white", fontWeight: "Bold" }}>Created By</TableCell>
+                      <TableCell sx={{ color: "white", fontWeight: "Bold" }}>Created Date</TableCell>
+                      <TableCell sx={{ color: "white", fontWeight: "Bold" }} align="center">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -477,8 +473,22 @@ const MailMappings = ({ user, onBack }) => {
                             {mapping.email}
                           </Typography>
                         </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
+                        <TableCell
+                          sx={{
+                            maxWidth: 200,
+                          }}
+                        >
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary"
+                            sx={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              maxWidth: "100%",
+                              display: "block",
+                            }}
+                          >
                             {mapping.description || "No description"}
                           </Typography>
                         </TableCell>
@@ -621,7 +631,6 @@ const MailMappings = ({ user, onBack }) => {
                   value={formData.description}
                   onChange={handleFormChange}
                   placeholder="Brief description of this position email mapping"
-                  multiline
                   rows={2}
                 />
               </Grid>
@@ -727,7 +736,7 @@ const MailMappings = ({ user, onBack }) => {
               </Grid>
               <Grid item xs={12}>
                 <TextField
-                  fullWidth
+                sx={{ width: "35vw" }}
                   name="description"
                   label="Description"
                   value={formData.description}

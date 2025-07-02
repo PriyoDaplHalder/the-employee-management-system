@@ -38,6 +38,7 @@ import {
   Notes as NotesIcon,
   Info as InfoIcon,
 } from "@mui/icons-material";
+import TimelineIcon from '@mui/icons-material/Timeline';
 import ConfirmationModal from "./ConfirmationModal";
 import ProjectRelatedInfoModal from "./ProjectRelatedInfoModal";
 import EmployeeAssignmentModal from "./EmployeeAssignmentModal";
@@ -234,11 +235,15 @@ const ProjectManagementDetailsModal = ({
 
       <DialogContent sx={{ p: 0 }}>
         {success && (
-          <Alert severity="success" sx={{ m: 3, mb: 0 }} onClose={() => setSuccess("")}>
+          <Alert
+            severity="success"
+            sx={{ m: 3, mb: 0 }}
+            onClose={() => setSuccess("")}
+          >
             {success}
           </Alert>
         )}
-        
+
         {/* Project Information Section */}
         <Box sx={{ p: 3, bgcolor: "grey.50" }}>
           <Typography
@@ -513,18 +518,32 @@ const ProjectManagementDetailsModal = ({
           alignItems: "center",
         }}
       >
-        <Button
-          onClick={handleRelatedInfoClick}
-          variant="contained"
-          startIcon={<InfoIcon />}
-          sx={{
-            borderRadius: 2,
-            textTransform: "none",
-            fontWeight: 500,
-          }}
-        >
-          Related Info
-        </Button>
+        <Box gap={1} display="flex" alignItems="center">
+          <Button
+            onClick={handleRelatedInfoClick}
+            variant="contained"
+            startIcon={<InfoIcon />}
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 500,
+            }}
+          >
+            Related Info
+          </Button>
+          <Button
+            onClick={handleRelatedInfoClick}
+            variant="contained"
+            startIcon={<TimelineIcon />}
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 500,
+            }}
+          >
+            Project Milestone
+          </Button>
+        </Box>
         <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2 }}>
           Close
         </Button>

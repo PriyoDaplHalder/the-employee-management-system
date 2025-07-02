@@ -139,12 +139,12 @@ const MailManagement = ({ user, onBack }) => {
       if (response.ok) {
         const employeeData = await response.json();
         setUserDepartment(employeeData.department);
-        
+
         // Auto-select user's department if they are an employee
         if (user?.role === "employee" && employeeData.department) {
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
-            selectedDepartment: employeeData.department
+            selectedDepartment: employeeData.department,
           }));
         }
       }
@@ -213,13 +213,13 @@ const MailManagement = ({ user, onBack }) => {
         ...prev,
         [name]: value,
       };
-      
+
       // If department changes, clear position selections
       if (name === "selectedDepartment") {
         newFormData.selectedPosition = null;
         newFormData.ccPositions = [];
       }
-      
+
       return newFormData;
     });
   };
@@ -253,7 +253,8 @@ const MailManagement = ({ user, onBack }) => {
     ) {
       setSnackbar({
         open: true,
-        message: "Please fill in all required fields including department and recipient position",
+        message:
+          "Please fill in all required fields including department and recipient position",
         severity: "error",
       });
       return;
@@ -331,17 +332,17 @@ const MailManagement = ({ user, onBack }) => {
   const closeMailDetail = () => {
     setSelectedMail(null);
     setShowDetailModal(false);
-  };  // Helper function to get filtered positions based on selected department
+  }; // Helper function to get filtered positions based on selected department
   const getFilteredPositions = () => {
     if (!formData.selectedDepartment) {
       return [];
     }
-    
+
     // Find the selected department and return its positions
     const selectedDept = availableDepartments.find(
       (dept) => dept.department === formData.selectedDepartment
     );
-    
+
     return selectedDept ? selectedDept.positions : [];
   };
 
@@ -408,9 +409,12 @@ const MailManagement = ({ user, onBack }) => {
 
             <Alert severity="info" sx={{ mb: 3 }}>
               <Typography variant="body2">
-                <strong>Department-Based Mailing:</strong> First select a department to unlock position selection. 
-                Once a department is chosen, you can select the specific position within that department and optionally add CC positions. 
-                This ensures your mail reaches only the intended recipients in the right department.
+                <strong>Department-Based Mailing:</strong> First select a
+                department to unlock position selection. Once a department is
+                chosen, you can select the specific position within that
+                department and optionally add CC positions. This ensures your
+                mail reaches only the intended recipients in the right
+                department.
               </Typography>
             </Alert>
 
@@ -465,7 +469,7 @@ const MailManagement = ({ user, onBack }) => {
 
               {/* Department Selection - Required First */}
               <Grid item xs={12}>
-                <FormControl sx={{minWidth:"20vw"}} required>
+                <FormControl sx={{ minWidth: "20vw" }} required>
                   <InputLabel>Department *</InputLabel>
                   <Select
                     name="selectedDepartment"
@@ -487,7 +491,8 @@ const MailManagement = ({ user, onBack }) => {
                 <Grid item xs={12}>
                   <Alert severity="warning" sx={{ mt: 1 }}>
                     <Typography variant="body2">
-                      Please select a department above to see available positions for that department.
+                      Please select a department above to see available
+                      positions for that department.
                     </Typography>
                   </Alert>
                 </Grid>
@@ -605,9 +610,13 @@ const MailManagement = ({ user, onBack }) => {
 
               <Alert severity="info" sx={{ mb: 3 }}>
                 <Typography variant="body2">
-                  <strong>About Department-Based Mailing:</strong> All mails are sent to specific positions within selected departments. 
-                  When you send a mail to "HR Manager" in the "Development" department, it goes only to HR Managers in that specific department. 
-                  This allows precise targeting while maintaining the flexibility of position-based mailing when employees change roles within departments.
+                  <strong>About Department-Based Mailing:</strong> All mails are
+                  sent to specific positions within selected departments. When
+                  you send a mail to "HR Manager" in the "Development"
+                  department, it goes only to HR Managers in that specific
+                  department. This allows precise targeting while maintaining
+                  the flexibility of position-based mailing when employees
+                  change roles within departments.
                 </Typography>
               </Alert>
 
@@ -630,7 +639,8 @@ const MailManagement = ({ user, onBack }) => {
               ) : (
                 <TableContainer>
                   <Table>
-                    <TableHead>                        <TableRow>
+                    <TableHead>
+                      <TableRow>
                         <TableCell>Date</TableCell>
                         <TableCell>Request Type</TableCell>
                         <TableCell>Subject</TableCell>
@@ -679,7 +689,10 @@ const MailManagement = ({ user, onBack }) => {
                                 sx={{ pointerEvents: "none" }}
                               />
                             ) : (
-                              <Typography variant="body2" color="text.secondary">
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
                                 Not specified
                               </Typography>
                             )}
@@ -939,7 +952,11 @@ const MailManagement = ({ user, onBack }) => {
                           sx={{ pointerEvents: "none" }}
                         />
                       ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.9rem" }}>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ fontSize: "0.9rem" }}
+                        >
                           Not specified
                         </Typography>
                       )}
