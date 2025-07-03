@@ -22,7 +22,9 @@ import {
   Tooltip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
+import TimelineIcon from "@mui/icons-material/Timeline";
 import ProjectDetailsModal from "./ProjectDetailsModal";
+import EmployeeMilestoneModal from "./EmployeeMilestoneModal";
 import { getToken } from "../utils/storage";
 
 const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
@@ -30,6 +32,7 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedMilestoneProject, setSelectedMilestoneProject] = useState(null);
 
   useEffect(() => {
     fetchMyProjects();
@@ -77,6 +80,14 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
 
   const handleCloseModal = () => {
     setSelectedProject(null);
+  };
+
+  const handleViewMilestones = (assignment) => {
+    setSelectedMilestoneProject(assignment);
+  };
+
+  const handleCloseMilestoneModal = () => {
+    setSelectedMilestoneProject(null);
   };
 
   if (loading) {
@@ -264,22 +275,24 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
-                      <Tooltip title="View Project Details">
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewDetails(assignment);
-                          }}
-                          sx={{
-                            textTransform: "none",
-                            fontWeight: 500,
-                          }}
-                        >
-                          View Details
-                        </Button>
-                      </Tooltip>
+                      <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                        <Tooltip title="View Project Details">
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewDetails(assignment);
+                            }}
+                            sx={{
+                              textTransform: "none",
+                              fontWeight: 500,
+                            }}
+                          >
+                            Details
+                          </Button>
+                        </Tooltip>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -293,6 +306,14 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
             assignment={selectedProject}
             open={!!selectedProject}
             onClose={handleCloseModal}
+          />
+        )}
+
+        {selectedMilestoneProject && (
+          <EmployeeMilestoneModal
+            assignment={selectedMilestoneProject}
+            open={!!selectedMilestoneProject}
+            onClose={handleCloseMilestoneModal}
           />
         )}
       </Container>

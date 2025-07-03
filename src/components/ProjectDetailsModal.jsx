@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -11,11 +12,23 @@ import {
   Divider,
   Chip,
 } from "@mui/material";
+import { Timeline as TimelineIcon } from "@mui/icons-material";
+import EmployeeMilestoneModal from "./EmployeeMilestoneModal";
 
 const ProjectDetailsModal = ({ assignment, open, onClose }) => {
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+
   if (!assignment) return null;
 
   const { projectId: project, assignedBy, assignedDate, notes } = assignment;
+
+  const handleViewMilestones = () => {
+    setShowMilestoneModal(true);
+  };
+
+  const handleCloseMilestoneModal = () => {
+    setShowMilestoneModal(false);
+  };
 
   return (
     <Dialog 
@@ -212,20 +225,45 @@ const ProjectDetailsModal = ({ assignment, open, onClose }) => {
       </DialogContent>
 
       <DialogActions sx={{ p: 3, pt: 2 }}>
-        <Button 
-          onClick={onClose} 
-          variant="contained" 
-          fullWidth
-          sx={{
-            textTransform: "none",
-            fontWeight: 500,
-            borderRadius: 1.5,
-            py: 1.2
-          }}
-        >
-          Close
-        </Button>
+        <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
+          <Button 
+            onClick={handleViewMilestones}
+            variant="outlined"
+            startIcon={<TimelineIcon />}
+            sx={{
+              textTransform: "none",
+              fontWeight: 500,
+              borderRadius: 1.5,
+              py: 1.2,
+              flex: 1,
+            }}
+          >
+            View Milestones
+          </Button>
+          <Button 
+            onClick={onClose} 
+            variant="contained" 
+            sx={{
+              textTransform: "none",
+              fontWeight: 500,
+              borderRadius: 1.5,
+              py: 1.2,
+              flex: 1,
+            }}
+          >
+            Close
+          </Button>
+        </Box>
       </DialogActions>
+
+      {/* Milestone Modal */}
+      {showMilestoneModal && (
+        <EmployeeMilestoneModal
+          assignment={assignment}
+          open={showMilestoneModal}
+          onClose={handleCloseMilestoneModal}
+        />
+      )}
     </Dialog>
   );
 };

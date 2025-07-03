@@ -37,6 +37,7 @@ import {
   CalendarToday as CalendarIcon,
   Notes as NotesIcon,
   Info as InfoIcon,
+  DocumentScanner as DocumentScannerIcon,
 } from "@mui/icons-material";
 import TimelineIcon from '@mui/icons-material/Timeline';
 import ConfirmationModal from "./ConfirmationModal";
@@ -527,7 +528,7 @@ const ProjectManagementDetailsModal = ({
 
       <DialogActions
         sx={{
-          p: 3,
+          p: 2,
           borderTop: "1px solid",
           borderColor: "divider",
           display: "flex",
@@ -559,6 +560,18 @@ const ProjectManagementDetailsModal = ({
             }}
           >
             Project Milestone
+          </Button>
+          <Button
+            onClick={handleMilestoneClick}
+            variant="contained"
+            startIcon={<DocumentScannerIcon />}
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 500,
+            }}
+          >
+            SRS Document
           </Button>
         </Box>
         <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2 }}>
