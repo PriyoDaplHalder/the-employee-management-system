@@ -665,14 +665,13 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
             Close
           </Button>
         </DialogActions>
-      </Dialog>
-
-      <CustomSnackbar
+        <CustomSnackbar
         open={snackbar.open}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         message={snackbar.message}
         severity={snackbar.severity}
       />
+      </Dialog>
     </>
   );
 };

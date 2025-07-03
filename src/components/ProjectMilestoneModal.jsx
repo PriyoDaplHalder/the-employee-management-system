@@ -366,7 +366,6 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
 
   const handleDeleteConfirm = () => {
     const { type, target } = deleteConfirmation;
-
     switch (type) {
       case "milestone":
         confirmDeleteMilestone(target.milestoneId);
@@ -375,11 +374,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
         confirmDeleteFeature(target.milestoneId, target.featureId);
         break;
       case "item":
-        confirmDeleteFeatureItem(
-          target.milestoneId,
-          target.featureId,
-          target.itemId
-        );
+        confirmDeleteFeatureItem(target.milestoneId, target.featureId, target.itemId);
         break;
       default:
         setDeleteConfirmation({
@@ -409,14 +404,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
   const handleDeleteMilestone = (milestone) => {
     setDeleteConfirmation({
       open: true,
+      type: "milestone",
+      target: { milestoneId: milestone.id },
       title: "Delete Milestone",
       message: `Are you sure you want to delete "${
         milestone.title || "this milestone"
       }"? This action cannot be undone once save changes is clicked.`,
-      onConfirm: () => {
-        deleteMilestone(milestone.id);
-        setDeleteConfirmation({ open: false });
-      },
     });
   };
 
@@ -647,7 +640,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                             )}
                           </Box>
                         </AccordionSummary>
-                        <AccordionDetails sx={{ p: 4, bgcolor: "grey.50" }}>
+                        <AccordionDetails sx={{ p: 2, bgcolor: "grey.50" }}>
                           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mb: 1 }}>
                             <Tooltip title="Edit milestone">
                               <IconButton
@@ -656,8 +649,9 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                   handleEditMilestone(milestone.id);
                                 }}
                                 sx={{
-                                  color: "info.main",
-                                  "&:hover": { color: "info.dark" },
+                                  backgroundColor: "info.light",
+                                  color: "white",
+                                  "&:hover": { color: "white", backgroundColor: "info.main"},
                                 }}
                               >
                                 <EditIcon fontSize="small" />
@@ -670,8 +664,9 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                   handleDeleteMilestone(milestone);
                                 }}
                                 sx={{
-                                  color: "error.main",
-                                  "&:hover": { color: "error.dark" },
+                                  backgroundColor: "error.light",
+                                  color: "white",
+                                  "&:hover": { color: "white", backgroundColor: "error.main" },
                                 }}
                               >
                                 <DeleteIcon fontSize="small" />

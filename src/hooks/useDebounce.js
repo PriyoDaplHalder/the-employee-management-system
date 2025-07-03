@@ -43,3 +43,6 @@ export const useDebouncedCallback = (callback, delay) => {
 
   return debouncedCallback;
 };
+
+// Debounce is used for delaying the execution of a function until after a specified delay has passed since the last time it was invoked.
+// This is useful for performance optimization, especially in scenarios like search input where you want to avoid making API calls or heavy computations on every keystroke.
