@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Container,
@@ -394,8 +394,20 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
     setPage(0);
   };
 
-  // Get paginated employees
-  const paginatedEmployees = filteredEmployees.slice(
+  // Memoize sorted employees to prevent unnecessary recalculations
+  const sortedEmployees = useMemo(() => {
+    if (!sortConfig.key) return filteredEmployees;
+    return [...filteredEmployees].sort((a, b) => {
+      const aValue = getSortValue(a, sortConfig.key);
+      const bValue = getSortValue(b, sortConfig.key);
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredEmployees, sortConfig]);
+
+  // Use the memoized sorted employees for pagination
+  const paginatedEmployees = sortedEmployees.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );

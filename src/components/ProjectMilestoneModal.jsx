@@ -492,72 +492,36 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                         >
                           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
                             <FlagIcon sx={{ color: "primary.main", fontSize: 24 }} />
-                            <Box sx={{ flex: 1 }}>
-                              <Typography variant="h6" sx={{ fontWeight: 700, color: "primary.dark" }}>
-                                {milestone.name}
+                            <Typography variant="h6" sx={{ fontWeight: 700, color: "primary.dark" }}>
+                              {milestone.name}
+                            </Typography>
+                            {milestone.title && (
+                              <Typography variant="body2" sx={{ color: "text.secondary", fontStyle: "italic" }}>
+                                {milestone.title}
                               </Typography>
-                              {milestone.title && (
-                                <Typography variant="body2" sx={{ color: "text.secondary", fontStyle: "italic" }}>
-                                  {milestone.title}
-                                </Typography>
-                              )}
-                            </Box>
-                            
-                            <Box sx={{ display: "flex", gap: 1, mr: 2 }}>
-                              {milestone.features.length > 0 && (
-                                <Chip
-                                  label={`${milestone.features.length} Features`}
-                                  size="small"
-                                  color="primary"
-                                  variant="outlined"
-                                  clickable={false}
-                                />
-                              )}
-                              
-                              {milestone.startDate && milestone.endDate && (
-                                <Chip
-                                  label={`${new Date(milestone.startDate).toLocaleDateString()} - ${new Date(milestone.endDate).toLocaleDateString()}`}
-                                  size="small"
-                                  icon={<CalendarIcon />}
-                                  variant="outlined"
-                                  clickable={false}
-                                />
-                              )}
-                            </Box>
-
-                            <Box sx={{ display: "flex", gap: 1 }}>
-                              <Tooltip title="Edit milestone">
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingMilestone(milestone.id);
-                                  }}
-                                  sx={{
-                                    color: "warning.main",
-                                    "&:hover": { color: "warning.dark" }
-                                  }}
-                                >
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              
-                              <Tooltip title="Delete milestone">
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteMilestone(milestone.id);
-                                  }}
-                                  sx={{
-                                    color: "error.main",
-                                    "&:hover": { color: "error.dark" }
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
+                            )}
+                          </Box>
+                          <Box sx={{ display: "flex", gap: 1, mr: 2 }}>
+                            {milestone.features.length > 0 && (
+                              <Chip
+                                label={`${milestone.features.length} Features`}
+                                size="small"
+                                sx={{pointerEvents: "none"}}
+                                color="primary"
+                                variant="outlined"
+                                clickable={false}
+                              />
+                            )}
+                            {milestone.startDate && milestone.endDate && (
+                              <Chip
+                                label={`${new Date(milestone.startDate).toLocaleDateString()} - ${new Date(milestone.endDate).toLocaleDateString()}`}
+                                size="small"
+                                sx={{pointerEvents: "none"}}
+                                icon={<CalendarIcon />}
+                                variant="outlined"
+                                clickable={false}
+                              />
+                            )}
                           </Box>
                         </AccordionSummary>
 
