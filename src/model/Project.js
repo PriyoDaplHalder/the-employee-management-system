@@ -68,6 +68,14 @@ const projectSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
   }],
+  notes: [{
+    id: { type: String, required: true },
+    title: { type: String, trim: true },
+    description: { type: String, trim: true },
+    order: { type: Number, default: 0 },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+  }],
 }, {
   timestamps: true,
 });

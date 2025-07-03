@@ -41,7 +41,8 @@ export async function GET(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      milestones: project.milestones || []
+      milestones: project.milestones || [],
+      notes: project.notes || []
     });
 
   } catch (error) {
@@ -66,7 +67,7 @@ export async function PUT(request, { params }) {
 
     const { id } = params;
     const body = await request.json();
-    const { milestones } = body;
+    const { milestones, notes } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -100,12 +101,23 @@ export async function PUT(request, { params }) {
       createdAt: milestone.createdAt || new Date()
     }));
 
+    // Update notes if provided
+    if (notes && Array.isArray(notes)) {
+      project.notes = notes.map(note => ({
+        ...note,
+        updatedAt: new Date(),
+        // Ensure createdAt exists for new notes
+        createdAt: note.createdAt || new Date()
+      }));
+    }
+
     await project.save();
 
     return NextResponse.json({
       success: true,
-      message: 'Milestones updated successfully',
-      milestones: project.milestones
+      message: 'Milestones and notes updated successfully',
+      milestones: project.milestones,
+      notes: project.notes || []
     });
 
   } catch (error) {

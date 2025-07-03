@@ -49,7 +49,7 @@ export async function GET(request) {
     const requestType = searchParams.get("requestType");
     const page = parseInt(searchParams.get("page")) || 1;
     const limit = parseInt(searchParams.get("limit")) || 50;
-    const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit; // Calculate the number of documents to skip based on page and limit
 
     // Build query based on filters
     let query = { isActive: { $ne: false } };

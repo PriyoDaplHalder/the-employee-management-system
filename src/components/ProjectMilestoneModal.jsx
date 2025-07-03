@@ -49,22 +49,26 @@ import {
   Flag as FlagIcon,
   CalendarToday as CalendarIcon,
   Assignment as AssignmentIcon,
+  Notes as NotesIcon,
 } from "@mui/icons-material";
 import CustomSnackbar from "./CustomSnackbar";
 import ConfirmationModal from "./ConfirmationModal";
 
 const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
   const [milestones, setMilestones] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState(null);
   const [editingFeature, setEditingFeature] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const [editingNote, setEditingNote] = useState(null);
   const [expandedMilestone, setExpandedMilestone] = useState(null);
   const [expandedFeature, setExpandedFeature] = useState({});
+  const [expandedNote, setExpandedNote] = useState({});
   const [deleteConfirmation, setDeleteConfirmation] = useState({
     open: false,
-    type: "", // 'milestone', 'feature', 'item'
+    type: "", // 'milestone', 'feature', 'item', 'note'
     target: null, // object with relevant IDs and data
     title: "",
     message: "",
@@ -98,6 +102,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
 
       const data = await response.json();
       setMilestones(data.milestones || []);
+      setNotes(data.notes || []);
     } catch (err) {
       console.error("Error fetching milestones:", err);
       setSnackbar({
@@ -120,7 +125,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ milestones }),
+        body: JSON.stringify({ milestones, notes }),
       });
 
       if (!response.ok) {
@@ -129,7 +134,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
 
       setSnackbar({
         open: true,
-        message: "Milestones saved successfully!",
+        message: "Milestones and notes saved successfully!",
         severity: "success",
       });
 
@@ -175,7 +180,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
     setMilestones([...milestones, newMilestone]);
     setEditingMilestone(newMilestone.id);
     setExpandedMilestone(newMilestone.id);
-  };
+  }; 
 
   const deleteMilestone = (milestoneId) => {
     const milestone = milestones.find((m) => m.id === milestoneId);
@@ -210,6 +215,64 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
         m.id === milestoneId ? { ...m, ...updates, updatedAt: new Date() } : m
       )
     );
+  };
+
+  const addNotes = () => {
+    const newNote = {
+      id: `note_${Date.now()}`,
+      title: "",
+      description: "",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      order: notes.length, // Add order for positioning
+    };
+
+    setNotes([...notes, newNote]);
+    setEditingNote(newNote.id);
+    setExpandedNote({ ...expandedNote, [newNote.id]: true });
+  };
+
+  const updateNote = (noteId, updates) => {
+    setNotes(
+      notes.map((note) =>
+        note.id === noteId 
+          ? { ...note, ...updates, updatedAt: new Date() } 
+          : note
+      )
+    );
+  };
+
+  const deleteNote = (noteId) => {
+    const note = notes.find((n) => n.id === noteId);
+    setDeleteConfirmation({
+      open: true,
+      type: "note",
+      target: { noteId },
+      title: "Delete Note",
+      message: `Are you sure you want to delete the note "${
+        note?.title || "this note"
+      }"? This action cannot be undone.`,
+    });
+  };
+
+  const confirmDeleteNote = (noteId) => {
+    setNotes(notes.filter((n) => n.id !== noteId));
+    delete expandedNote[noteId];
+    setExpandedNote({ ...expandedNote });
+    setDeleteConfirmation({
+      open: false,
+      type: "",
+      target: null,
+      title: "",
+      message: "",
+    });
+  };
+
+  const toggleNoteExpansion = (noteId) => {
+    setExpandedNote({
+      ...expandedNote,
+      [noteId]: !expandedNote[noteId],
+    });
   };
 
   const addFeature = (milestoneId) => {
@@ -374,7 +437,14 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
         confirmDeleteFeature(target.milestoneId, target.featureId);
         break;
       case "item":
-        confirmDeleteFeatureItem(target.milestoneId, target.featureId, target.itemId);
+        confirmDeleteFeatureItem(
+          target.milestoneId,
+          target.featureId,
+          target.itemId
+        );
+        break;
+      case "note":
+        confirmDeleteNote(target.noteId);
         break;
       default:
         setDeleteConfirmation({
@@ -484,24 +554,41 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                   <TimelineIcon />
                   Milestones ({milestones.length})
                 </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={addMilestone}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: "none",
-                    fontWeight: 600,
-                    px: 3,
-                    py: 1,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                  }}
-                >
-                  Add Milestone
-                </Button>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={addMilestone}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: 600,
+                      px: 3,
+                      py: 1,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    Add Milestone
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={addNotes}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: 600,
+                      px: 3,
+                      py: 1,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    Add notes
+                  </Button>
+                </Box>
               </Box>
 
-              {milestones.length === 0 ? (
+              {milestones.length === 0 && notes.length === 0 ? (
                 <Paper
                   sx={{
                     p: 6,
@@ -523,23 +610,23 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                     gutterBottom
                     sx={{ fontWeight: 600 }}
                   >
-                    No milestones yet
+                    No milestones or notes yet
                   </Typography>
                   <Typography
                     variant="body1"
                     color="text.secondary"
                     sx={{ mb: 2 }}
                   >
-                    Create your first milestone to start tracking project
-                    progress.
+                    Create your first milestone or add notes to start organizing your project.
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Milestones help you organize features and track development
-                    progress effectively.
+                    progress effectively. Notes provide additional context and documentation.
                   </Typography>
                 </Paper>
               ) : (
                 <Box sx={{ spacing: 3 }}>
+                  {/* Render all milestones */}
                   {milestones.map((milestone, index) => (
                     <Card
                       key={milestone.id}
@@ -641,7 +728,14 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                           </Box>
                         </AccordionSummary>
                         <AccordionDetails sx={{ p: 2, bgcolor: "grey.50" }}>
-                          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mb: 1 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "flex-end",
+                              gap: 1,
+                              mb: 1,
+                            }}
+                          >
                             <Tooltip title="Edit milestone">
                               <IconButton
                                 size="small"
@@ -651,7 +745,10 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                 sx={{
                                   backgroundColor: "info.light",
                                   color: "white",
-                                  "&:hover": { color: "white", backgroundColor: "info.main"},
+                                  "&:hover": {
+                                    color: "white",
+                                    backgroundColor: "info.main",
+                                  },
                                 }}
                               >
                                 <EditIcon fontSize="small" />
@@ -666,7 +763,10 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                 sx={{
                                   backgroundColor: "error.light",
                                   color: "white",
-                                  "&:hover": { color: "white", backgroundColor: "error.main" },
+                                  "&:hover": {
+                                    color: "white",
+                                    backgroundColor: "error.main",
+                                  },
                                 }}
                               >
                                 <DeleteIcon fontSize="small" />
@@ -1380,6 +1480,182 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                       </Accordion>
                     </Card>
                   ))}
+                  
+                  {/* Render all notes */}
+                  {notes.map((note) => (
+                    <Card
+                      key={note.id}
+                      sx={{
+                        borderRadius: 3,
+                        boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
+                        borderColor: "warning.200",
+                        overflow: "hidden",
+                        mb: 1,
+                        bgcolor: "linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)",
+                        "&:hover": {
+                          boxShadow: "0 8px 28px rgba(0,0,0,0.15)",
+                          transform: "translateY(-1px)",
+                          transition: "all 0.3s ease",
+                        },
+                      }}
+                    >
+                      <Accordion
+                        expanded={expandedNote[note.id]}
+                        onChange={() => toggleNoteExpansion(note.id)}
+                      >
+                        <AccordionSummary
+                          expandIcon={<ExpandMoreIcon />}
+                          sx={{
+                            bgcolor: "linear-gradient(135deg, #fff3c4 0%, #ffcc02 100%)",
+                            borderRadius: "12px 12px 0 0",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                            "& .MuiAccordionSummary-content": {
+                              alignItems: "center",
+                              py: 1,
+                            },
+                            "&:hover": {
+                              bgcolor: "linear-gradient(135deg, #fff176 0%, #ffa000 100%)",
+                            },
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                              flex: 1,
+                            }}
+                          >
+                            <NotesIcon
+                              sx={{ color: "warning.dark", fontSize: 24 }}
+                            />
+                            {editingNote === note.id ? (
+                              <TextField
+                                fullWidth
+                                size="small"
+                                value={note.title}
+                                onChange={(e) =>
+                                  updateNote(note.id, { title: e.target.value })
+                                }
+                                onBlur={() => setEditingNote(null)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    setEditingNote(null);
+                                  }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                autoFocus
+                                placeholder="Enter note title..."
+                                variant="outlined"
+                                sx={{
+                                  "& .MuiOutlinedInput-root": {
+                                    borderRadius: 2,
+                                    bgcolor: "white",
+                                  },
+                                }}
+                              />
+                            ) : (
+                              <Typography
+                                variant="h6"
+                                sx={{ 
+                                  fontWeight: 700, 
+                                  color: "warning.dark",
+                                  cursor: "pointer",
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingNote(note.id);
+                                }}
+                              >
+                                {note.title || "Untitled Note"}
+                              </Typography>
+                            )}
+                          </Box>
+                          <Box sx={{ display: "flex", gap: 1, mr: 2 }}>
+                            <Chip
+                              label={new Date(note.createdAt).toLocaleDateString()}
+                              size="small"
+                              sx={{ pointerEvents: "none" }}
+                              icon={<CalendarIcon />}
+                              variant="outlined"
+                              clickable={false}
+                            />
+                          </Box>
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ p: 2, bgcolor: "white" }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "flex-end",
+                              gap: 1,
+                              mb: 1,
+                            }}
+                          >
+                            <Tooltip title="Edit note title">
+                              <IconButton
+                                size="small"
+                                onClick={() => setEditingNote(note.id)}
+                                sx={{
+                                  backgroundColor: "info.light",
+                                  color: "white",
+                                  "&:hover": {
+                                    color: "white",
+                                    backgroundColor: "info.main",
+                                  },
+                                }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete note">
+                              <IconButton
+                                size="small"
+                                onClick={() => deleteNote(note.id)}
+                                sx={{
+                                  backgroundColor: "error.light",
+                                  color: "white",
+                                  "&:hover": {
+                                    color: "white",
+                                    backgroundColor: "error.main",
+                                  },
+                                }}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                          
+                          <Box
+                            sx={{
+                              bgcolor: "grey.50",
+                              p: 3,
+                              borderRadius: 3,
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                            }}
+                          >
+                            <TextField
+                              fullWidth
+                              multiline
+                              rows={4}
+                              label="Note Description"
+                              value={note.description}
+                              onChange={(e) =>
+                                updateNote(note.id, { description: e.target.value })
+                              }
+                              placeholder="Add your note content here..."
+                              variant="outlined"
+                              sx={{
+                                "& .MuiOutlinedInput-root": {
+                                  borderRadius: 2,
+                                  bgcolor: "white",
+                                },
+                              }}
+                            />
+                          </Box>
+                        </AccordionDetails>
+                      </Accordion>
+                    </Card>
+                  ))}
                 </Box>
               )}
             </>
@@ -1407,11 +1683,17 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
               gap: 1,
             }}
           >
-            {milestones.length > 0 && (
+            {(milestones.length > 0 || notes.length > 0) && (
               <>
                 <TimelineIcon fontSize="small" />
-                Total: {milestones.length} milestone
-                {milestones.length !== 1 ? "s" : ""}
+                Total: {milestones.length} milestone{milestones.length !== 1 ? "s" : ""}
+                {notes.length > 0 && (
+                  <>
+                    {milestones.length > 0 && ", "}
+                    <NotesIcon fontSize="small" />
+                    {notes.length} note{notes.length !== 1 ? "s" : ""}
+                  </>
+                )}
               </>
             )}
           </Typography>
