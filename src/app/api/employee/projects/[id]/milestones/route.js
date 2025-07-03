@@ -72,6 +72,7 @@ export async function GET(request, { params }) {
     return NextResponse.json({
       success: true,
       milestones: project.milestones || [],
+      notes: project.notes || [],
       project: {
         id: project._id,
         name: project.name,

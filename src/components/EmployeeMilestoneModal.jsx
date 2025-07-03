@@ -37,14 +37,17 @@ import {
   CalendarToday as CalendarIcon,
   Assignment as AssignmentIcon,
   Visibility as VisibilityIcon,
+  Notes as NotesIcon,
 } from "@mui/icons-material";
 import CustomSnackbar from "./CustomSnackbar";
 
 const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
   const [milestones, setMilestones] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedMilestone, setExpandedMilestone] = useState(null);
   const [expandedFeature, setExpandedFeature] = useState({});
+  const [expandedNote, setExpandedNote] = useState({});
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -76,6 +79,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
 
       const data = await response.json();
       setMilestones(data.milestones || []);
+      setNotes(data.notes || []);
     } catch (err) {
       console.error("Error fetching milestones:", err);
       setSnackbar({
@@ -135,9 +139,17 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
     });
   };
 
+  const toggleNoteExpansion = (noteId) => {
+    setExpandedNote({
+      ...expandedNote,
+      [noteId]: !expandedNote[noteId],
+    });
+  };
+
   const handleClose = () => {
     setExpandedMilestone(null);
     setExpandedFeature({});
+    setExpandedNote({});
     onClose();
   };
 
@@ -617,6 +629,157 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
                   ))}
                 </Box>
               )}
+
+              {/* Notes Section */}
+              <Box sx={{ mt: 4 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "primary.main",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    mb: 2,
+                  }}
+                >
+                  <NotesIcon />
+                  Notes ({notes.length})
+                </Typography>
+
+                {notes.length === 0 ? (
+                  <Paper
+                    sx={{
+                      p: 6,
+                      textAlign: "center",
+                      bgcolor: "white",
+                      borderRadius: 4,
+                      border: "2px dashed",
+                      borderColor: "grey.300",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    }}
+                  >
+                    <NotesIcon
+                      sx={{ fontSize: 64, color: "grey.400", mb: 3 }}
+                    />
+                    <Typography
+                      variant="h5"
+                      color="text.secondary"
+                      gutterBottom
+                      sx={{ fontWeight: 600 }}
+                    >
+                      No Notes Available
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary">
+                      This project doesn't have any notes yet.
+                    </Typography>
+                  </Paper>
+                ) : (
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {notes.map((note) => (
+                      <Card
+                        key={note.id}
+                        sx={{
+                          borderRadius: 3,
+                          overflow: "hidden",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                          transition: "all 0.3s ease",
+                          "&:hover": {
+                            transform: "translateY(-1px)",
+                            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                          },
+                        }}
+                      >
+                        <Accordion
+                          expanded={expandedNote[note.id]}
+                          onChange={() => toggleNoteExpansion(note.id)}
+                        >
+                          <AccordionSummary
+                            expandIcon={<ExpandMoreIcon />}
+                            sx={{
+                              bgcolor: "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)",
+                              borderRadius: "12px 12px 0 0",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                              "& .MuiAccordionSummary-content": {
+                                alignItems: "center",
+                                py: 1,
+                              },
+                              "&:hover": {
+                                bgcolor: "linear-gradient(135deg, #ffecb3 0%, #ffd54f 100%)",
+                              },
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                                flex: 1,
+                              }}
+                            >
+                              <NotesIcon
+                                sx={{ color: "warning.dark", fontSize: 24 }}
+                              />
+                              <Typography
+                                variant="h6"
+                                sx={{ 
+                                  fontWeight: 700, 
+                                  color: "warning.dark",
+                                }}
+                              >
+                                {note.title || "Untitled Note"}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", gap: 1, mr: 2 }}>
+                              <Chip
+                                label={new Date(note.createdAt).toLocaleDateString()}
+                                size="small"
+                                sx={{ pointerEvents: "none" }}
+                                icon={<CalendarIcon />}
+                                variant="outlined"
+                                clickable={false}
+                              />
+                              <Chip
+                                label="Read Only"
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                                sx={{ pointerEvents: "none" }}
+                              />
+                            </Box>
+                          </AccordionSummary>
+                          <AccordionDetails sx={{ p: 3, bgcolor: "grey.50" }}>
+                            {note.description ? (
+                              <Typography
+                                variant="body1"
+                                sx={{
+                                  lineHeight: 1.7,
+                                  color: "text.primary",
+                                  whiteSpace: "pre-wrap",
+                                }}
+                              >
+                                {note.description}
+                              </Typography>
+                            ) : (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                  textAlign: "center",
+                                  py: 2,
+                                  fontStyle: "italic",
+                                }}
+                              >
+                                No description available for this note.
+                              </Typography>
+                            )}
+                          </AccordionDetails>
+                        </Accordion>
+                      </Card>
+                    ))}
+                  </Box>
+                )}
+              </Box>
             </>
           )}
         </DialogContent>
@@ -642,10 +805,20 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
               gap: 1,
             }}
           >
-            {milestones.length > 0 && (
+            {(milestones.length > 0 || notes.length > 0) && (
               <>
                 <TimelineIcon fontSize="small" />
-                Total: {milestones.length} milestone{milestones.length !== 1 ? "s" : ""}
+                {milestones.length > 0 && (
+                  <>
+                    {milestones.length} milestone{milestones.length !== 1 ? "s" : ""}
+                    {notes.length > 0 && " • "}
+                  </>
+                )}
+                {notes.length > 0 && (
+                  <>
+                    {notes.length} note{notes.length !== 1 ? "s" : ""}
+                  </>
+                )}
               </>
             )}
           </Typography>

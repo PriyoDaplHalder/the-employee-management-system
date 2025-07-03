@@ -1482,6 +1482,51 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                   ))}
                   
                   {/* Render all notes */}
+                  <Box sx={{ mt: 4 }}>
+                                  <Typography
+                                    variant="h6"
+                                    sx={{
+                                      color: "primary.main",
+                                      fontWeight: 700,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 1,
+                                      mb: 2,
+                                    }}
+                                  >
+                                    <NotesIcon />
+                                    Notes ({notes.length})
+                                  </Typography>
+                  
+                                  {notes.length === 0 ? (
+                                    <Paper
+                                      sx={{
+                                        p: 6,
+                                        textAlign: "center",
+                                        bgcolor: "white",
+                                        borderRadius: 4,
+                                        border: "2px dashed",
+                                        borderColor: "grey.300",
+                                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                      }}
+                                    >
+                                      <NotesIcon
+                                        sx={{ fontSize: 64, color: "grey.400", mb: 3 }}
+                                      />
+                                      <Typography
+                                        variant="h5"
+                                        color="text.secondary"
+                                        gutterBottom
+                                        sx={{ fontWeight: 600 }}
+                                      >
+                                        No Notes Available
+                                      </Typography>
+                                      <Typography variant="body1" color="text.secondary">
+                                        This project doesn't have any notes yet.
+                                      </Typography>
+                                    </Paper>
+                                  ) : (
+                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {notes.map((note) => (
                     <Card
                       key={note.id}
@@ -1656,6 +1701,9 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                       </Accordion>
                     </Card>
                   ))}
+                </Box>
+              )}
+            </Box>
                 </Box>
               )}
             </>
