@@ -271,9 +271,26 @@ export async function GET(request) {
     const tasks = await tasksQuery.skip(skip).limit(limit);
     const totalTasks = await Task.countDocuments(query);
 
+    // Fetch all active tasks
+    const allTasks = await Task.find({ isActive: true });
+    // Overdue: dueDate < today and not completed
+    const now = new Date();
+    const tasksOverdue = allTasks.filter(t => t.dueDate && t.dueDate < now && t.status !== "Completed");
+    // Due today: dueDate is today and not completed
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    const tasksDueToday = allTasks.filter(t => t.dueDate && t.dueDate >= todayStart && t.dueDate <= todayEnd && t.status !== "Completed");
+    // Completed
+    const tasksCompleted = allTasks.filter(t => t.status === "Completed");
+
     return NextResponse.json({
       success: true,
       tasks,
+      tasksOverdue,
+      tasksDueToday,
+      tasksCompleted,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(totalTasks / limit),

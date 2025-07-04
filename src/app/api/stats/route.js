@@ -26,56 +26,69 @@ export async function GET(request) {
 
     if (decoded.role === "management") {
       // Management can see all stats
-      const [activeEmployeeCount, activeProjectCount, totalMessages, todayMessages] = await Promise.all([
+      const [
+        activeEmployeeCount,
+        inactiveEmployeeCount,
+        totalEmployeeCount,
+        activeProjectCount,
+        inactiveProjectCount,
+
+      ] = await Promise.all([
         User.countDocuments({ role: "employee", isActive: { $ne: false } }),
+        User.countDocuments({ role: "employee", isActive: false }),
+        User.countDocuments({ role: "employee" }),
         Project.countDocuments({ isActive: { $ne: false } }),
+        Project.countDocuments({ isActive: false }),
+        Project.countDocuments({}),
         Mail.countDocuments({ isActive: { $ne: false } }),
-        Mail.countDocuments({ 
+        Mail.countDocuments({
           isActive: { $ne: false },
-          createdAt: { 
+          createdAt: {
             $gte: new Date(new Date().setHours(0, 0, 0, 0)),
-            $lt: new Date(new Date().setHours(23, 59, 59, 999))
-          }
-        })
+            $lt: new Date(new Date().setHours(23, 59, 59, 999)),
+          },
+        }),
       ]);
 
       // Get message statistics by request type
       const messagesByType = await Mail.aggregate([
         { $match: { isActive: { $ne: false } } },
         { $group: { _id: "$requestType", count: { $sum: 1 } } },
-        { $sort: { count: -1 } }
+        { $sort: { count: -1 } },
       ]);
 
       // Get recent messaging activity (last 7 days)
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
+
       const recentMessages = await Mail.aggregate([
-        { 
-          $match: { 
+        {
+          $match: {
             isActive: { $ne: false },
-            createdAt: { $gte: sevenDaysAgo }
-          } 
+            createdAt: { $gte: sevenDaysAgo },
+          },
         },
         {
           $group: {
             _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-            count: { $sum: 1 }
-          }
+            count: { $sum: 1 },
+          },
         },
-        { $sort: { _id: 1 } }
+        { $sort: { _id: 1 } },
       ]);
 
-      stats.employeeCount = activeEmployeeCount;
+      stats.employeeCount = totalEmployeeCount;
+      stats.activeEmployeeCount = activeEmployeeCount;
+      stats.inactiveEmployeeCount = inactiveEmployeeCount;
       stats.projectCount = activeProjectCount;
-      stats.totalMessages = totalMessages;
-      stats.todayMessages = todayMessages;
-      stats.messagesByType = messagesByType;
-      stats.recentMessagingActivity = recentMessages;
+      stats.activeProjectCount = activeProjectCount;
+      stats.inactiveProjectCount = inactiveProjectCount;
+      stats.totalProjectCount = activeProjectCount + inactiveProjectCount;
+      
     } else {
       // Employees can see limited stats - only count active projects
       const [activeProjectCount] = await Promise.all([
-        Project.countDocuments({ isActive: { $ne: false } })
+        Project.countDocuments({ isActive: { $ne: false } }),
       ]);
 
       stats.projectCount = activeProjectCount; // Only count active projects

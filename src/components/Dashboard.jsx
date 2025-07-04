@@ -11,7 +11,7 @@ import {
   Paper,
 } from "@mui/material";
 import Layout from "./Layout";
-import ManagementDetails from "./ManagementDetails";
+import DashboardContent from "./DashboardContent";
 import AllEmployees from "./AllEmployees";
 import ProjectsManagement from "./ProjectsManagement";
 
@@ -91,7 +91,6 @@ const Dashboard = ({ user, title, onLogout }) => {
   };
   const handleBackToDashboard = () => {
     setCurrentView("dashboard");
-    // Refresh stats when returning to dashboard to ensure data is up-to-date
     fetchStats();
     fetchTaskCount();
   };
@@ -149,24 +148,6 @@ const Dashboard = ({ user, title, onLogout }) => {
             onBack={handleBackToDashboard}
           />
         );
-      case "hr":
-        return <DepartmentPlaceholder department="Human Resources" />;
-      case "it":
-        return <DepartmentPlaceholder department="IT Department" />;
-      case "finance":
-        return <DepartmentPlaceholder department="Finance" />;
-      case "marketing":
-        return <DepartmentPlaceholder department="Marketing" />;
-      case "performance":
-        return <AnalyticsPlaceholder type="Performance" />;
-      case "productivity":
-        return <AnalyticsPlaceholder type="Productivity" />;
-      case "attendance":
-        return <AnalyticsPlaceholder type="Attendance" />;
-      case "notifications":
-        return <NotificationsPlaceholder />;
-      case "settings":
-        return <SettingsPlaceholder type="Settings" />;
       default:
         return <DashboardContent user={user} />;
     }
@@ -207,93 +188,5 @@ const Dashboard = ({ user, title, onLogout }) => {
     </Layout>
   );
 };
-
-// Management Dashboard main content
-const DashboardContent = ({ user }) => {
-  return (
-    <Container maxWidth="lg">
-      <Box sx={{ textAlign: "center", mt: 8, mb: 4 }}>
-        <Typography
-          variant="h4"
-          component="h1"
-          gutterBottom
-          sx={{ fontWeight: 600, color: "primary.main", mb: 2 }}
-        >
-          Hi {user?.name || user?.email}, welcome to your{" "}
-          {user?.role || "management"} dashboard
-        </Typography>
-      </Box>
-    </Container>
-  );
-};
-
-// Placeholder components for navigation items
-const DepartmentPlaceholder = ({ department }) => (
-  <Container maxWidth="lg">
-    <Typography
-      variant="h4"
-      gutterBottom
-      sx={{ fontWeight: 600, color: "primary.main" }}
-    >
-      {department}
-    </Typography>
-    <Paper sx={{ p: 4, textAlign: "center" }}>
-      <Typography variant="h6" color="text.secondary">
-        {department} management coming soon
-      </Typography>
-    </Paper>
-  </Container>
-);
-
-const AnalyticsPlaceholder = ({ type }) => (
-  <Container maxWidth="lg">
-    <Typography
-      variant="h4"
-      gutterBottom
-      sx={{ fontWeight: 600, color: "primary.main" }}
-    >
-      {type} Analytics
-    </Typography>
-    <Paper sx={{ p: 4, textAlign: "center" }}>
-      <Typography variant="h6" color="text.secondary">
-        {type} analytics dashboard coming soon
-      </Typography>
-    </Paper>
-  </Container>
-);
-
-const NotificationsPlaceholder = () => (
-  <Container maxWidth="lg">
-    <Typography
-      variant="h4"
-      gutterBottom
-      sx={{ fontWeight: 600, color: "primary.main" }}
-    >
-      Notifications
-    </Typography>
-    <Paper sx={{ p: 4, textAlign: "center" }}>
-      <Typography variant="h6" color="text.secondary">
-        Notification center coming soon
-      </Typography>
-    </Paper>
-  </Container>
-);
-
-const SettingsPlaceholder = () => (
-  <Container maxWidth="lg">
-    <Typography
-      variant="h4"
-      gutterBottom
-      sx={{ fontWeight: 600, color: "primary.main" }}
-    >
-      Settings
-    </Typography>
-    <Paper sx={{ p: 4, textAlign: "center" }}>
-      <Typography variant="h6" color="text.secondary">
-        System settings coming soon
-      </Typography>
-    </Paper>
-  </Container>
-);
 
 export default Dashboard;
