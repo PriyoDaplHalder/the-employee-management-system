@@ -284,9 +284,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
                         expanded={expandedMilestone === milestone.id}
                         onChange={() =>
                           setExpandedMilestone(
-                            expandedMilestone === milestone.id
-                              ? null
-                              : milestone.id
+                            expandedMilestone === milestone.id ? null : milestone.id
                           )
                         }
                       >
@@ -691,7 +689,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
                         }}
                       >
                         <Accordion
-                          expanded={expandedNote[note.id]}
+                          expanded={!!expandedNote[note.id]}
                           onChange={() => toggleNoteExpansion(note.id)}
                         >
                           <AccordionSummary

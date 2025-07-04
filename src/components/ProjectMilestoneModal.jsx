@@ -180,7 +180,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
     setMilestones([...milestones, newMilestone]);
     setEditingMilestone(newMilestone.id);
     setExpandedMilestone(newMilestone.id);
-  }; 
+  };
 
   const deleteMilestone = (milestoneId) => {
     const milestone = milestones.find((m) => m.id === milestoneId);
@@ -235,8 +235,8 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
   const updateNote = (noteId, updates) => {
     setNotes(
       notes.map((note) =>
-        note.id === noteId 
-          ? { ...note, ...updates, updatedAt: new Date() } 
+        note.id === noteId
+          ? { ...note, ...updates, updatedAt: new Date() }
           : note
       )
     );
@@ -617,11 +617,13 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                     color="text.secondary"
                     sx={{ mb: 2 }}
                   >
-                    Create your first milestone or add notes to start organizing your project.
+                    Create your first milestone or add notes to start organizing
+                    your project.
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Milestones help you organize features and track development
-                    progress effectively. Notes provide additional context and documentation.
+                    progress effectively. Notes provide additional context and
+                    documentation.
                   </Typography>
                 </Paper>
               ) : (
@@ -1480,230 +1482,245 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                       </Accordion>
                     </Card>
                   ))}
-                  
+
                   {/* Render all notes */}
                   <Box sx={{ mt: 4 }}>
-                                  <Typography
-                                    variant="h6"
-                                    sx={{
-                                      color: "primary.main",
-                                      fontWeight: 700,
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 1,
-                                      mb: 2,
-                                    }}
-                                  >
-                                    <NotesIcon />
-                                    Notes ({notes.length})
-                                  </Typography>
-                  
-                                  {notes.length === 0 ? (
-                                    <Paper
-                                      sx={{
-                                        p: 6,
-                                        textAlign: "center",
-                                        bgcolor: "white",
-                                        borderRadius: 4,
-                                        border: "2px dashed",
-                                        borderColor: "grey.300",
-                                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                                      }}
-                                    >
-                                      <NotesIcon
-                                        sx={{ fontSize: 64, color: "grey.400", mb: 3 }}
-                                      />
-                                      <Typography
-                                        variant="h5"
-                                        color="text.secondary"
-                                        gutterBottom
-                                        sx={{ fontWeight: 600 }}
-                                      >
-                                        No Notes Available
-                                      </Typography>
-                                      <Typography variant="body1" color="text.secondary">
-                                        This project doesn't have any notes yet.
-                                      </Typography>
-                                    </Paper>
-                                  ) : (
-                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {notes.map((note) => (
-                    <Card
-                      key={note.id}
+                    <Typography
+                      variant="h6"
                       sx={{
-                        borderRadius: 3,
-                        boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
-                        borderColor: "warning.200",
-                        overflow: "hidden",
-                        mb: 1,
-                        bgcolor: "linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)",
-                        "&:hover": {
-                          boxShadow: "0 8px 28px rgba(0,0,0,0.15)",
-                          transform: "translateY(-1px)",
-                          transition: "all 0.3s ease",
-                        },
+                        color: "primary.main",
+                        fontWeight: 700,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 2,
                       }}
                     >
-                      <Accordion
-                        expanded={expandedNote[note.id]}
-                        onChange={() => toggleNoteExpansion(note.id)}
+                      <NotesIcon />
+                      Notes ({notes.length})
+                    </Typography>
+
+                    {notes.length === 0 ? (
+                      <Paper
+                        sx={{
+                          p: 6,
+                          textAlign: "center",
+                          bgcolor: "white",
+                          borderRadius: 4,
+                          border: "2px dashed",
+                          borderColor: "grey.300",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        }}
                       >
-                        <AccordionSummary
-                          expandIcon={<ExpandMoreIcon />}
-                          sx={{
-                            bgcolor: "linear-gradient(135deg, #fff3c4 0%, #ffcc02 100%)",
-                            borderRadius: "12px 12px 0 0",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                            "& .MuiAccordionSummary-content": {
-                              alignItems: "center",
-                              py: 1,
-                            },
-                            "&:hover": {
-                              bgcolor: "linear-gradient(135deg, #fff176 0%, #ffa000 100%)",
-                            },
-                          }}
+                        <NotesIcon
+                          sx={{ fontSize: 64, color: "grey.400", mb: 3 }}
+                        />
+                        <Typography
+                          variant="h5"
+                          color="text.secondary"
+                          gutterBottom
+                          sx={{ fontWeight: 600 }}
                         >
-                          <Box
+                          No Notes Available
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary">
+                          This project doesn't have any notes yet.
+                        </Typography>
+                      </Paper>
+                    ) : (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 2,
+                        }}
+                      >
+                        {notes.map((note) => (
+                          <Card
+                            key={note.id}
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 2,
-                              flex: 1,
-                            }}
-                          >
-                            <NotesIcon
-                              sx={{ color: "warning.dark", fontSize: 24 }}
-                            />
-                            {editingNote === note.id ? (
-                              <TextField
-                                fullWidth
-                                size="small"
-                                value={note.title}
-                                onChange={(e) =>
-                                  updateNote(note.id, { title: e.target.value })
-                                }
-                                onBlur={() => setEditingNote(null)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    setEditingNote(null);
-                                  }
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                autoFocus
-                                placeholder="Enter note title..."
-                                variant="outlined"
-                                sx={{
-                                  "& .MuiOutlinedInput-root": {
-                                    borderRadius: 2,
-                                    bgcolor: "white",
-                                  },
-                                }}
-                              />
-                            ) : (
-                              <Typography
-                                variant="h6"
-                                sx={{ 
-                                  fontWeight: 700, 
-                                  color: "warning.dark",
-                                  cursor: "pointer",
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingNote(note.id);
-                                }}
-                              >
-                                {note.title || "Untitled Note"}
-                              </Typography>
-                            )}
-                          </Box>
-                          <Box sx={{ display: "flex", gap: 1, mr: 2 }}>
-                            <Chip
-                              label={new Date(note.createdAt).toLocaleDateString()}
-                              size="small"
-                              sx={{ pointerEvents: "none" }}
-                              icon={<CalendarIcon />}
-                              variant="outlined"
-                              clickable={false}
-                            />
-                          </Box>
-                        </AccordionSummary>
-                        <AccordionDetails sx={{ p: 2, bgcolor: "white" }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              gap: 1,
-                              mb: 1,
-                            }}
-                          >
-                            <Tooltip title="Edit note title">
-                              <IconButton
-                                size="small"
-                                onClick={() => setEditingNote(note.id)}
-                                sx={{
-                                  backgroundColor: "info.light",
-                                  color: "white",
-                                  "&:hover": {
-                                    color: "white",
-                                    backgroundColor: "info.main",
-                                  },
-                                }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete note">
-                              <IconButton
-                                size="small"
-                                onClick={() => deleteNote(note.id)}
-                                sx={{
-                                  backgroundColor: "error.light",
-                                  color: "white",
-                                  "&:hover": {
-                                    color: "white",
-                                    backgroundColor: "error.main",
-                                  },
-                                }}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                          
-                          <Box
-                            sx={{
-                              bgcolor: "grey.50",
-                              p: 3,
                               borderRadius: 3,
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                              boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
+                              borderColor: "warning.200",
+                              overflow: "hidden",
+                              mb: 1,
+                              bgcolor:
+                                "linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)",
+                              "&:hover": {
+                                boxShadow: "0 8px 28px rgba(0,0,0,0.15)",
+                                transform: "translateY(-1px)",
+                                transition: "all 0.3s ease",
+                              },
                             }}
                           >
-                            <TextField
-                              fullWidth
-                              multiline
-                              rows={4}
-                              label="Note Description"
-                              value={note.description}
-                              onChange={(e) =>
-                                updateNote(note.id, { description: e.target.value })
-                              }
-                              placeholder="Add your note content here..."
-                              variant="outlined"
-                              sx={{
-                                "& .MuiOutlinedInput-root": {
-                                  borderRadius: 2,
-                                  bgcolor: "white",
-                                },
-                              }}
-                            />
-                          </Box>
-                        </AccordionDetails>
-                      </Accordion>
-                    </Card>
-                  ))}
-                </Box>
-              )}
-            </Box>
+                            <Accordion
+                              expanded={!!expandedNote[note.id]}
+                              onChange={() => toggleNoteExpansion(note.id)}
+                            >
+                              <AccordionSummary
+                                expandIcon={<ExpandMoreIcon />}
+                                sx={{
+                                  bgcolor:
+                                    "linear-gradient(135deg, #fff3c4 0%, #ffcc02 100%)",
+                                  borderRadius: "12px 12px 0 0",
+                                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                                  "& .MuiAccordionSummary-content": {
+                                    alignItems: "center",
+                                    py: 1,
+                                  },
+                                  "&:hover": {
+                                    bgcolor:
+                                      "linear-gradient(135deg, #fff176 0%, #ffa000 100%)",
+                                  },
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 2,
+                                    flex: 1,
+                                  }}
+                                >
+                                  <NotesIcon
+                                    sx={{ color: "warning.dark", fontSize: 24 }}
+                                  />
+                                  {editingNote === note.id ? (
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      value={note.title}
+                                      onChange={(e) =>
+                                        updateNote(note.id, {
+                                          title: e.target.value,
+                                        })
+                                      }
+                                      onBlur={() => setEditingNote(null)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                          setEditingNote(null);
+                                        }
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      autoFocus
+                                      placeholder="Enter note title..."
+                                      variant="outlined"
+                                      sx={{
+                                        "& .MuiOutlinedInput-root": {
+                                          borderRadius: 2,
+                                          bgcolor: "white",
+                                        },
+                                      }}
+                                    />
+                                  ) : (
+                                    <Typography
+                                      variant="h6"
+                                      sx={{
+                                        fontWeight: 700,
+                                        color: "warning.dark",
+                                        cursor: "pointer",
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingNote(note.id);
+                                      }}
+                                    >
+                                      {note.title || "Untitled Note"}
+                                    </Typography>
+                                  )}
+                                </Box>
+                                <Box sx={{ display: "flex", gap: 1, mr: 2 }}>
+                                  <Chip
+                                    label={new Date(
+                                      note.createdAt
+                                    ).toLocaleDateString()}
+                                    size="small"
+                                    sx={{ pointerEvents: "none" }}
+                                    icon={<CalendarIcon />}
+                                    variant="outlined"
+                                    clickable={false}
+                                  />
+                                </Box>
+                              </AccordionSummary>
+                              <AccordionDetails sx={{ p: 2, bgcolor: "white" }}>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                    gap: 1,
+                                    mb: 1,
+                                  }}
+                                >
+                                  <Tooltip title="Edit note title">
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => setEditingNote(note.id)}
+                                      sx={{
+                                        backgroundColor: "info.light",
+                                        color: "white",
+                                        "&:hover": {
+                                          color: "white",
+                                          backgroundColor: "info.main",
+                                        },
+                                      }}
+                                    >
+                                      <EditIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Delete note">
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => deleteNote(note.id)}
+                                      sx={{
+                                        backgroundColor: "error.light",
+                                        color: "white",
+                                        "&:hover": {
+                                          color: "white",
+                                          backgroundColor: "error.main",
+                                        },
+                                      }}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Box>
+
+                                <Box
+                                  sx={{
+                                    bgcolor: "grey.50",
+                                    p: 0,
+                                    borderRadius: 3,
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                                  }}
+                                >
+                                  <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={4}
+                                    label="Note Description"
+                                    value={note.description}
+                                    onChange={(e) =>
+                                      updateNote(note.id, {
+                                        description: e.target.value,
+                                      })
+                                    }
+                                    placeholder="Add your note content here..."
+                                    variant="outlined"
+                                    sx={{
+                                      "& .MuiOutlinedInput-root": {
+                                        borderRadius: 2,
+                                        bgcolor: "white",
+                                      },
+                                    }}
+                                  />
+                                </Box>
+                              </AccordionDetails>
+                            </Accordion>
+                          </Card>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
                 </Box>
               )}
             </>
@@ -1734,7 +1751,8 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
             {(milestones.length > 0 || notes.length > 0) && (
               <>
                 <TimelineIcon fontSize="small" />
-                Total: {milestones.length} milestone{milestones.length !== 1 ? "s" : ""}
+                Total: {milestones.length} milestone
+                {milestones.length !== 1 ? "s" : ""}
                 {notes.length > 0 && (
                   <>
                     {milestones.length > 0 && ", "}
