@@ -44,6 +44,7 @@ import ConfirmationModal from "./ConfirmationModal";
 import ProjectRelatedInfoModal from "./ProjectRelatedInfoModal";
 import EmployeeAssignmentModal from "./EmployeeAssignmentModal";
 import ProjectMilestoneModal from "./ProjectMilestoneModal";
+import ProjectSRSDocumentModal from "./ProjectSRSDocumentModal";
 
 const ProjectManagementDetailsModal = ({
   project,
@@ -66,6 +67,7 @@ const ProjectManagementDetailsModal = ({
   const [showRelatedInfoModal, setShowRelatedInfoModal] = useState(false);
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [showEmployeeAssignModal, setShowEmployeeAssignModal] = useState(false);
+  const [showSRSDocumentModal, setShowSRSDocumentModal] = useState(false);
 
   useEffect(() => {
     if (open && project) {
@@ -207,6 +209,20 @@ const ProjectManagementDetailsModal = ({
     setSuccess("Milestones updated successfully!");
     setTimeout(() => setSuccess(""), 3000);
     setShowMilestoneModal(false);
+  };
+
+  const handleSRSDocumentClick = () => {
+    setShowSRSDocumentModal(true);
+  };
+
+  const handleCloseSRSDocument = () => {
+    setShowSRSDocumentModal(false);
+  };
+
+  const handleSRSDocumentSuccess = () => {
+    setSuccess("SRS document updated successfully!");
+    setTimeout(() => setSuccess(""), 3000);
+    setShowSRSDocumentModal(false);
   };
 
   if (!project) return null;
@@ -562,7 +578,7 @@ const ProjectManagementDetailsModal = ({
             Project Milestone
           </Button>
           <Button
-            onClick={handleMilestoneClick}
+            onClick={handleSRSDocumentClick}
             variant="contained"
             startIcon={<DocumentScannerIcon />}
             sx={{
@@ -616,6 +632,15 @@ const ProjectManagementDetailsModal = ({
         open={showMilestoneModal}
         onClose={handleCloseMilestone}
         onSuccess={handleMilestoneSuccess}
+      />
+
+      {/* SRS Document Modal */}
+      <ProjectSRSDocumentModal
+        project={project}
+        open={showSRSDocumentModal}
+        onClose={handleCloseSRSDocument}
+        onSuccess={handleSRSDocumentSuccess}
+        user={{ role: "management" }}
       />
 
       <CustomSnackbar

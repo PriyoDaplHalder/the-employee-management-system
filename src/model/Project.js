@@ -68,6 +68,14 @@ const projectSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
   }],
+  srsDocument: {
+    websiteLink: { type: String, trim: true },
+    fileName: { type: String, trim: true },
+    filePath: { type: String, trim: true },
+    uploadedAt: { type: Date },
+    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    updatedAt: { type: Date, default: Date.now }
+  },
   notes: [{
     id: { type: String, required: true },
     title: { type: String, trim: true },

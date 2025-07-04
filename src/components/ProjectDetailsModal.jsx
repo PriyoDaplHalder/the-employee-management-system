@@ -12,11 +12,13 @@ import {
   Divider,
   Chip,
 } from "@mui/material";
-import { Timeline as TimelineIcon } from "@mui/icons-material";
+import { Timeline as TimelineIcon, Description as DescriptionIcon } from "@mui/icons-material";
 import EmployeeMilestoneModal from "./EmployeeMilestoneModal";
+import ProjectSRSDocumentModal from "./ProjectSRSDocumentModal";
 
 const ProjectDetailsModal = ({ assignment, open, onClose }) => {
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [showSRSModal, setShowSRSModal] = useState(false);
 
   if (!assignment) return null;
 
@@ -28,6 +30,14 @@ const ProjectDetailsModal = ({ assignment, open, onClose }) => {
 
   const handleCloseMilestoneModal = () => {
     setShowMilestoneModal(false);
+  };
+
+  const handleViewSRSDocument = () => {
+    setShowSRSModal(true);
+  };
+
+  const handleCloseSRSModal = () => {
+    setShowSRSModal(false);
   };
 
   return (
@@ -241,6 +251,20 @@ const ProjectDetailsModal = ({ assignment, open, onClose }) => {
             View Milestones
           </Button>
           <Button 
+            onClick={handleViewSRSDocument}
+            variant="outlined"
+            startIcon={<DescriptionIcon />}
+            sx={{
+              textTransform: "none",
+              fontWeight: 500,
+              borderRadius: 1.5,
+              py: 1.2,
+              flex: 1,
+            }}
+          >
+            SRS Document
+          </Button>
+          <Button 
             onClick={onClose} 
             variant="contained" 
             sx={{
@@ -262,6 +286,16 @@ const ProjectDetailsModal = ({ assignment, open, onClose }) => {
           assignment={assignment}
           open={showMilestoneModal}
           onClose={handleCloseMilestoneModal}
+        />
+      )}
+
+      {/* SRS Document Modal */}
+      {showSRSModal && (
+        <ProjectSRSDocumentModal
+          project={project}
+          open={showSRSModal}
+          onClose={handleCloseSRSModal}
+          isManagementView={false}
         />
       )}
     </Dialog>
