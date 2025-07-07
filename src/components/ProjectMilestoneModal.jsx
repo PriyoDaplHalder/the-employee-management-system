@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getToken } from "../utils/storage";
 import {
   Dialog,
@@ -53,6 +53,7 @@ import {
 } from "@mui/icons-material";
 import CustomSnackbar from "./CustomSnackbar";
 import ConfirmationModal from "./ConfirmationModal";
+import DebouncedTextField from "./DebouncedTextField";
 
 const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
   const [milestones, setMilestones] = useState([]);
@@ -78,6 +79,31 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
     message: "",
     severity: "info",
   });
+
+  // useRef for performance optimization
+  const milestoneTitleRefs = useRef({});
+  const milestoneNameRefs = useRef({});
+  const milestoneDescriptionRefs = useRef({});
+  const featureTopicRefs = useRef({});
+  const featureItemRefs = useRef({});
+  const noteRefs = useRef({});
+
+  // Optimized update functions using refs
+  const handleMilestoneUpdate = (milestoneId, field, value) => {
+    updateMilestone(milestoneId, { [field]: value });
+  };
+
+  const handleFeatureUpdate = (milestoneId, featureId, field, value) => {
+    updateFeature(milestoneId, featureId, { [field]: value });
+  };
+
+  const handleFeatureItemUpdate = (milestoneId, featureId, itemId, field, value) => {
+    updateFeatureItem(milestoneId, featureId, itemId, { [field]: value });
+  };
+
+  const handleNoteUpdate = (noteId, field, value) => {
+    updateNote(noteId, { [field]: value });
+  };
 
   useEffect(() => {
     if (open && project) {
@@ -787,42 +813,36 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                             >
                               <Grid container spacing={3}>
                                 <Grid item xs={12} md={6}>
-                                  <TextField
+                                  <DebouncedTextField
                                     fullWidth
                                     label="Milestone Title"
                                     value={milestone.title}
-                                    onChange={(e) =>
-                                      updateMilestone(milestone.id, {
-                                        title: e.target.value,
-                                      })
+                                    onChange={(value) =>
+                                      handleMilestoneUpdate(milestone.id, "title", value)
                                     }
                                     variant="outlined"
                                   />
                                 </Grid>
                                 <Grid item xs={12} md={6}>
-                                  <TextField
+                                  <DebouncedTextField
                                     fullWidth
                                     label="Milestone Name"
                                     value={milestone.name}
-                                    onChange={(e) =>
-                                      updateMilestone(milestone.id, {
-                                        name: e.target.value,
-                                      })
+                                    onChange={(value) =>
+                                      handleMilestoneUpdate(milestone.id, "name", value)
                                     }
                                     variant="outlined"
                                   />
                                 </Grid>
                                 <Grid item xs={12}>
-                                  <TextField
+                                  <DebouncedTextField
                                     fullWidth
                                     multiline
                                     rows={3}
                                     label="Description"
                                     value={milestone.description}
-                                    onChange={(e) =>
-                                      updateMilestone(milestone.id, {
-                                        description: e.target.value,
-                                      })
+                                    onChange={(value) =>
+                                      handleMilestoneUpdate(milestone.id, "description", value)
                                     }
                                     variant="outlined"
                                   />
@@ -1053,15 +1073,16 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                 milestone.id &&
                                               editingFeature?.featureId ===
                                                 feature.id ? (
-                                                <TextField
+                                                <DebouncedTextField
                                                   fullWidth
                                                   size="small"
                                                   value={feature.topic}
-                                                  onChange={(e) =>
-                                                    updateFeature(
+                                                  onChange={(value) =>
+                                                    handleFeatureUpdate(
                                                       milestone.id,
                                                       feature.id,
-                                                      { topic: e.target.value }
+                                                      "topic",
+                                                      value
                                                     )
                                                   }
                                                   onBlur={() =>
@@ -1358,15 +1379,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                                   item.text
                                                                 }
                                                                 onChange={(e) =>
-                                                                  updateFeatureItem(
+                                                                  handleFeatureItemUpdate(
                                                                     milestone.id,
                                                                     feature.id,
                                                                     item.id,
-                                                                    {
-                                                                      text: e
-                                                                        .target
-                                                                        .value,
-                                                                    }
+                                                                    "text",
+                                                                    e.target.value
                                                                   )
                                                                 }
                                                                 onBlur={() =>
@@ -1408,28 +1426,14 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                                     item.completed
                                                                       ? "text.secondary"
                                                                       : "text.primary",
-                                                                  cursor:
-                                                                    "pointer",
                                                                   fontWeight:
                                                                     item.completed
                                                                       ? 400
                                                                       : 500,
                                                                 }}
-                                                                onClick={() =>
-                                                                  setEditingItem(
-                                                                    {
-                                                                      milestoneId:
-                                                                        milestone.id,
-                                                                      featureId:
-                                                                        feature.id,
-                                                                      itemId:
-                                                                        item.id,
-                                                                    }
-                                                                  )
-                                                                }
                                                               >
                                                                 {item.text ||
-                                                                  "Click to add text"}
+                                                                  "No text provided"}
                                                               </Typography>
                                                             )
                                                           }
@@ -1440,28 +1444,50 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                         />
 
                                                         <ListItemSecondaryAction>
-                                                          <Tooltip title="Delete item">
-                                                            <IconButton
-                                                              size="small"
-                                                              onClick={() =>
-                                                                deleteFeatureItem(
-                                                                  milestone.id,
-                                                                  feature.id,
-                                                                  item.id
-                                                                )
-                                                              }
-                                                              sx={{
-                                                                color:
-                                                                  "error.main",
-                                                                "&:hover": {
+                                                          <Box sx={{ display: "flex", gap: 0.5 }}>
+                                                            <Tooltip title="Edit item">
+                                                              <IconButton
+                                                                size="small"
+                                                                onClick={() =>
+                                                                  setEditingItem({
+                                                                    milestoneId: milestone.id,
+                                                                    featureId: feature.id,
+                                                                    itemId: item.id,
+                                                                  })
+                                                                }
+                                                                sx={{
+                                                                  color: "info.main",
+                                                                  "&:hover": {
+                                                                    color: "info.dark",
+                                                                  },
+                                                                }}
+                                                              >
+                                                                <EditIcon fontSize="small" />
+                                                              </IconButton>
+                                                            </Tooltip>
+                                                            <Tooltip title="Delete item">
+                                                              <IconButton
+                                                                size="small"
+                                                                onClick={() =>
+                                                                  deleteFeatureItem(
+                                                                    milestone.id,
+                                                                    feature.id,
+                                                                    item.id
+                                                                  )
+                                                                }
+                                                                sx={{
                                                                   color:
-                                                                    "error.dark",
-                                                                },
-                                                              }}
-                                                            >
-                                                              <DeleteIcon fontSize="small" />
-                                                            </IconButton>
-                                                          </Tooltip>
+                                                                    "error.main",
+                                                                  "&:hover": {
+                                                                    color:
+                                                                      "error.dark",
+                                                                  },
+                                                                }}
+                                                              >
+                                                                <DeleteIcon fontSize="small" />
+                                                              </IconButton>
+                                                            </Tooltip>
+                                                          </Box>
                                                         </ListItemSecondaryAction>
                                                       </ListItem>
                                                     )
@@ -1586,14 +1612,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                     sx={{ color: "warning.dark", fontSize: 24 }}
                                   />
                                   {editingNote === note.id ? (
-                                    <TextField
+                                    <DebouncedTextField
                                       fullWidth
                                       size="small"
                                       value={note.title}
-                                      onChange={(e) =>
-                                        updateNote(note.id, {
-                                          title: e.target.value,
-                                        })
+                                      onChange={(value) =>
+                                        handleNoteUpdate(note.id, "title", value)
                                       }
                                       onBlur={() => setEditingNote(null)}
                                       onKeyDown={(e) => {
@@ -1693,16 +1717,14 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                     boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                                   }}
                                 >
-                                  <TextField
+                                  <DebouncedTextField
                                     fullWidth
                                     multiline
                                     rows={4}
                                     label="Note Description"
                                     value={note.description}
-                                    onChange={(e) =>
-                                      updateNote(note.id, {
-                                        description: e.target.value,
-                                      })
+                                    onChange={(value) =>
+                                      handleNoteUpdate(note.id, "description", value)
                                     }
                                     placeholder="Add your note content here..."
                                     variant="outlined"
