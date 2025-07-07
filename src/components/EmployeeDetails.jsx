@@ -55,6 +55,8 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
   const [existingSkills, setExistingSkills] = useState([]);
   const [showCustomPosition, setShowCustomPosition] = useState(false);
   const [originalData, setOriginalData] = useState({});
+  const [permissions, setPermissions] = useState(null);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
 
   const predefinedPositions = [
     "Human Resource",
@@ -82,8 +84,23 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
   const isManagement = user?.role === "management";
 
   useEffect(() => {
-    fetchEmployeeDetails();
+    const initializeComponent = async () => {
+      await fetchEmployeeDetails();
+      if (!isManagement) {
+        await fetchPermissions();
+      }
+    };
+    
+    initializeComponent();
   }, []);
+
+  // Update view mode when profile completion status and permissions are both loaded
+  useEffect(() => {
+    if (!isManagement && profileCompleted !== null && permissions !== null) {
+      // For employees with completed profiles, set view mode based on permissions
+      setIsViewMode(!permissions);
+    }
+  }, [profileCompleted, permissions, isManagement]);
 
   const fetchEmployeeDetails = async () => {
     setFetchLoading(true);
@@ -111,15 +128,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
           (employee.salary === 0 || !employee.salary) &&
           !employee.hireDate;
 
-        console.log("Employee profile debug:", {
-          department: employee.department,
-          position: employee.position,
-          salary: employee.salary,
-          hireDate: employee.hireDate,
-          profileCompleted: employee.profileCompleted,
-          isDefaultProfile,
-          isManagement,
-        });
+
 
         if (isDefaultProfile) {
           // Treat as first-time creation
@@ -133,7 +142,8 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
           // Set view mode based on completion status and user role
           // For employees: show edit mode if profile is not completed
           // For management: always start in view mode
-          setIsViewMode(employee.profileCompleted || isManagement);
+          // Note: View mode for employees with completed profiles will be adjusted after permissions are fetched
+          setIsViewMode(isManagement);
         }
 
         // Pre-fill form with existing data
@@ -199,16 +209,79 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
     }
   };
 
+  const fetchPermissions = async () => {
+    setPermissionsLoading(true);
+    try {
+      if (typeof window === "undefined") return;
+
+      const token = getToken();
+      if (!token) {
+        setPermissions(false); // Explicitly set to false when no token
+        return;
+      }
+
+      const response = await fetch("/api/employee/permissions", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPermissions(data.permission || false);
+      } else {
+        setPermissions(false);
+      }
+    } catch (error) {
+      console.error("Error fetching permissions:", error);
+      setPermissions(false); // Set to false on error
+    } finally {
+      setPermissionsLoading(false);
+    }
+  };
+
   // Helper function to check if a field is editable
   const isFieldEditable = (fieldName) => {
-    // If profile is completed, no field is editable for employees
-    if (profileCompleted && !isManagement) {
-      return false;
-    }
-
     // Management can always edit
     if (isManagement) {
       return true;
+    }
+
+    // If profile is completed, check permissions for employees
+    if (profileCompleted && !isManagement) {
+      // If permissions are still loading, default to not editable
+      if (permissionsLoading || permissions === null) {
+        return false;
+      }
+      
+      // If no permissions granted, not editable
+      if (!permissions) {
+        return false;
+      }
+
+      // Check specific field permissions
+      // Basic info permissions
+      if (fieldName === "firstName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.firstName) {
+        return true;
+      }
+      if (fieldName === "lastName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.lastName) {
+        return true;
+      }
+      
+      // Personal info permissions
+      if (fieldName === "phone" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.phone) {
+        return true;
+      }
+      if (fieldName === "address" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.address) {
+        return true;
+      }
+      if (fieldName === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) {
+        return true;
+      }
+      
+      // If profile is completed but no specific permission for this field, not editable
+      return false;
     }
 
     // Department and salary are not editable by employees
@@ -233,20 +306,120 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
     return isEmptyField || isDefaultValue;
   };
 
+  // Helper function to get permission-aware helper text
+  const getFieldHelperText = (fieldName) => {
+    if (!isFieldEditable(fieldName)) {
+      if (profileCompleted && !isManagement && permissions) {
+        // Check if this field has permission but is currently disabled for other reasons
+        let hasPermission = false;
+        if (fieldName === "firstName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.firstName) hasPermission = true;
+        if (fieldName === "lastName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.lastName) hasPermission = true;
+        if (fieldName === "phone" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.phone) hasPermission = true;
+        if (fieldName === "address" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.address) hasPermission = true;
+        if (fieldName === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) hasPermission = true;
+        
+        if (!hasPermission) {
+          return "No permission to edit this field. Contact management for access.";
+        }
+      }
+      
+      if (formData[fieldName]) {
+        return "Field already filled and cannot be changed";
+      }
+      
+      if ((fieldName === "department" || fieldName === "salary") && !isManagement) {
+        return `${fieldName === "department" ? "Department" : "Salary"} is assigned by management`;
+      }
+    }
+    
+    // Field is editable, check if it's due to permissions
+    if (profileCompleted && !isManagement && permissions) {
+      let hasPermission = false;
+      if (fieldName === "firstName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.firstName) hasPermission = true;
+      if (fieldName === "lastName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.lastName) hasPermission = true;
+      if (fieldName === "phone" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.phone) hasPermission = true;
+      if (fieldName === "address" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.address) hasPermission = true;
+      if (fieldName === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) hasPermission = true;
+      
+      if (hasPermission) {
+        return "Edit permission granted by management";
+      }
+    }
+    
+    return "";
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // If profile is completed, prevent any changes
-    if (profileCompleted) {
+    // Management can always edit
+    if (isManagement) {
+      if (name === "position") {
+        setShowCustomPosition(value === "Others");
+        if (value !== "Others") {
+          setFormData({
+            ...formData,
+            [name]: value,
+            customPosition: "", // Clear custom position when predefined is selected
+          });
+        } else {
+          setFormData({
+            ...formData,
+            [name]: value,
+          });
+        }
+      } else {
+        setFormData({
+          ...formData,
+          [name]: value,
+        });
+      }
       return;
     }
 
-    // If profile exists but not completed, only allow editing empty fields
-    if (profileExists && !isFirstTimeCreation) {
-      const originalValue = originalData[name];
-      if (originalValue && originalValue.trim() !== "") {
-        // Field already has data, don't allow changes
+    // For employees: if profile is completed, check permissions
+    if (profileCompleted && !isManagement) {
+      if (!permissions) {
+        // No permissions at all
         return;
+      }
+
+      // Check if the field has specific permission
+      let hasPermission = false;
+      
+      // Check basic info permissions
+      if (name === "firstName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.firstName) {
+        hasPermission = true;
+      }
+      if (name === "lastName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.lastName) {
+        hasPermission = true;
+      }
+      
+      // Check personal info permissions
+      if (name === "phone" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.phone) {
+        hasPermission = true;
+      }
+      if (name === "address" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.address) {
+        hasPermission = true;
+      }
+      if (name === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) {
+        hasPermission = true;
+      }
+      
+      if (!hasPermission) {
+        return;
+      }
+      
+      // If we reach here, the user has permission to edit this field
+      // Skip the empty field check and proceed to update
+    } else {
+      // For incomplete profiles: only allow editing empty fields
+      if (profileExists && !isFirstTimeCreation && !profileCompleted) {
+        const originalValue = originalData[name];
+        if (originalValue && originalValue.trim() !== "") {
+          // Field already has data, don't allow changes
+          return;
+        }
       }
     }
 
@@ -349,8 +522,17 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
         completeProfile,
       };
 
-      const method = isFirstTimeCreation || !profileExists ? "POST" : "PATCH";
-      const response = await fetch("/api/employee/profile", {
+      // Determine which endpoint to use based on profile completion status and permissions
+      let apiEndpoint = "/api/employee/profile";
+      let method = isFirstTimeCreation || !profileExists ? "POST" : "PATCH";
+
+      // If profile is completed and employee has permissions, use the specialized endpoint
+      if (profileCompleted && permissions && !isManagement) {
+        apiEndpoint = "/api/employee/profile/permitted-update";
+        method = "PATCH";
+      }
+
+      const response = await fetch(apiEndpoint, {
         method,
         headers: {
           "Content-Type": "application/json",
@@ -370,9 +552,25 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
           });
           setProfileCompleted(true);
         } else {
+          // Contextual success message based on whether permissions were used
+          const isPermissionUpdate = profileCompleted && permissions && !isManagement;
+          let successMessage = "Employee details saved successfully!";
+          
+          if (isPermissionUpdate) {
+            // Check if permissions were revoked
+            if (data.permissionsRevoked) {
+              successMessage = "Profile updated successfully using granted permissions! Permissions have been automatically revoked for security.";
+              // Clear permissions state since they were revoked
+              setPermissions(false);
+              setIsViewMode(true); // Switch back to view mode since no more permissions
+            } else {
+              successMessage = "Profile updated successfully using granted permissions!";
+            }
+          }
+          
           setSnackbar({
             open: true,
-            message: "Employee details saved successfully!",
+            message: successMessage,
             severity: "success",
           });
         }
@@ -380,9 +578,12 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
         setIsViewMode(true);
         setExistingSkills(skillsArray);
 
-        // Refresh the data
+        // Refresh the data and permissions
         setTimeout(() => {
           fetchEmployeeDetails();
+          if (!isManagement) {
+            fetchPermissions(); // Refresh permissions to reflect any changes
+          }
         }, 1000);
       } else {
         const data = await response.json();
@@ -445,7 +646,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
     );
   };
 
-  if (fetchLoading) {
+  if (fetchLoading || (!isManagement && permissionsLoading)) {
     return (
       <Box sx={{ flexGrow: 1, bgcolor: "grey.50", minHeight: "100vh" }}>
         <AppBar
@@ -548,7 +749,9 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
               sx={{ color: "info.main", fontWeight: 500 }}
             >
               {profileCompleted
-                ? "Your profile is completed and locked for editing. Contact management for any changes."
+                ? permissions 
+                  ? "Your profile is completed and locked. You have been granted temporary edit permissions for specific fields. These permissions will be automatically revoked after you save your changes."
+                  : "Your profile is completed and locked for editing. Contact management for any changes."
                 : "Fill the empty fields carefully. Once you complete your profile, it will be locked."}
             </Typography>
           </Paper>
@@ -589,6 +792,54 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                 <Typography variant="body2" color="text.secondary">
                   Profile locked for editing. Contact management for changes.
                 </Typography>
+              )}
+            </Box>
+          )}
+
+          {/* Permissions Status Indicator for Employees */}
+          {profileExists && !isManagement && profileCompleted && (
+            <Box sx={{ mb: 3 }}>
+              {permissions ? (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                  <Chip
+                    label="Edit Permissions Granted"
+                    color="success"
+                    variant="outlined"
+                    size="small"
+                    sx={{ fontWeight: 500 }}
+                  />
+                  {permissions.canEditBasicInfo && (
+                    <Box sx={{ display: "flex", gap: 0.5 }}>
+                      {permissions.basicInfoFields?.firstName && (
+                        <Chip label="First Name" size="small" color="primary" />
+                      )}
+                      {permissions.basicInfoFields?.lastName && (
+                        <Chip label="Last Name" size="small" color="primary" />
+                      )}
+                    </Box>
+                  )}
+                  {permissions.canEditPersonalInfo && (
+                    <Box sx={{ display: "flex", gap: 0.5 }}>
+                      {permissions.personalInfoFields?.phone && (
+                        <Chip label="Phone" size="small" color="secondary" />
+                      )}
+                      {permissions.personalInfoFields?.address && (
+                        <Chip label="Address" size="small" color="secondary" />
+                      )}
+                      {permissions.personalInfoFields?.emergencyContact && (
+                        <Chip label="Emergency Contact" size="small" color="secondary" />
+                      )}
+                    </Box>
+                  )}
+                </Box>
+              ) : (
+                <Chip
+                  label="No Edit Permissions"
+                  color="default"
+                  variant="outlined"
+                  size="small"
+                  sx={{ fontWeight: 500 }}
+                />
               )}
             </Box>
           )}
@@ -1034,11 +1285,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           variant="outlined"
                           required
                           disabled={!isFieldEditable("firstName")}
-                          helperText={
-                            !isFieldEditable("firstName") && formData.firstName
-                              ? "Field already filled and cannot be changed"
-                              : ""
-                          }
+                          helperText={getFieldHelperText("firstName")}
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
@@ -1060,11 +1307,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           variant="outlined"
                           required
                           disabled={!isFieldEditable("lastName")}
-                          helperText={
-                            !isFieldEditable("lastName") && formData.lastName
-                              ? "Field already filled and cannot be changed"
-                              : ""
-                          }
+                          helperText={getFieldHelperText("lastName")}
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               borderRadius: 2,
@@ -1336,11 +1579,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           onChange={handleChange}
                           variant="outlined"
                           disabled={!isFieldEditable("phone")}
-                          helperText={
-                            !isFieldEditable("phone") && formData.phone
-                              ? "Field already filled and cannot be changed"
-                              : ""
-                          }
+                          helperText={getFieldHelperText("phone")}
                           placeholder="e.g., +91 9876543210"
                           sx={{
                             "& .MuiOutlinedInput-root": {
@@ -1372,12 +1611,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           onChange={handleChange}
                           variant="outlined"
                           disabled={!isFieldEditable("emergencyContact")}
-                          helperText={
-                            !isFieldEditable("emergencyContact") &&
-                            formData.emergencyContact
-                              ? "Field already filled and cannot be changed"
-                              : ""
-                          }
+                          helperText={getFieldHelperText("emergencyContact")}
                           placeholder="e.g., +91 9876543210"
                           sx={{
                             "& .MuiOutlinedInput-root": {
@@ -1410,11 +1644,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           multiline
                           rows={2}
                           disabled={!isFieldEditable("address")}
-                          helperText={
-                            !isFieldEditable("address") && formData.address
-                              ? "Field already filled and cannot be changed"
-                              : ""
-                          }
+                          helperText={getFieldHelperText("address")}
                           placeholder="Street address"
                           sx={{
                             "& .MuiOutlinedInput-root": {
@@ -1565,6 +1795,32 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           </Button>
                         </>
                       )
+                    ) : profileCompleted && !isManagement && permissions ? (
+                      // For employees with completed profiles who have permissions
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={loading}
+                        onClick={(e) => handleSubmit(e, false)}
+                        sx={{
+                          minWidth: 120,
+                          borderRadius: 2,
+                          fontWeight: 600,
+                          textTransform: "none",
+                          bgcolor: "warning.main",
+                          "&:hover": {
+                            bgcolor: "warning.dark",
+                            transform: "translateY(-1px)",
+                          },
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        {loading ? (
+                          <CircularProgress size={24} color="inherit" />
+                        ) : (
+                          "Save Changes (Will Revoke Permissions)"
+                        )}
+                      </Button>
                     ) : null}
 
                     <Button

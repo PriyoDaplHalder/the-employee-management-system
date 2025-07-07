@@ -350,15 +350,85 @@ export async function PATCH(request) {
       );
     }
 
-    // If profile is already completed, prevent any changes
+    // If profile is already completed, check for permissions
     if (existingEmployee.profileCompleted) {
-      return NextResponse.json(
-        {
-          error:
-            "Profile already completed. You cannot make changes once your profile is completed. Contact management for any updates.",
-        },
-        { status: 400 }
-      );
+      // Import Permission model to check permissions
+      const { Permission } = require("@/model/Permission");
+      
+      // Get employee's active permissions
+      const permission = await Permission.findOne({
+        employee: decoded.userId,
+        isActive: true,
+      });
+
+      if (!permission) {
+        return NextResponse.json(
+          {
+            error:
+              "Profile already completed. You cannot make changes once your profile is completed. Contact management for any updates.",
+          },
+          { status: 400 }
+        );
+      }
+
+      // If permissions exist, validate that only permitted fields are being updated
+      const permittedUpdates = {};
+      const permittedUserUpdates = {};
+
+      // Check basic info permissions
+      if (permission.canEditBasicInfo) {
+        if (permission.basicInfoFields?.firstName && firstName?.trim()) {
+          permittedUserUpdates.firstName = firstName.trim();
+        }
+        if (permission.basicInfoFields?.lastName && lastName?.trim()) {
+          permittedUserUpdates.lastName = lastName.trim();
+        }
+      }
+
+      // Check personal info permissions
+      const personalInfoUpdate = {};
+      if (permission.canEditPersonalInfo) {
+        if (permission.personalInfoFields?.phone && phone?.trim()) {
+          personalInfoUpdate.phone = phone.trim();
+        }
+        if (permission.personalInfoFields?.address && address?.trim()) {
+          personalInfoUpdate.address = { street: address.trim() };
+        }
+        if (permission.personalInfoFields?.emergencyContact && emergencyContact?.trim()) {
+          personalInfoUpdate.emergencyContact = { phone: emergencyContact.trim() };
+        }
+      }
+
+      if (Object.keys(personalInfoUpdate).length > 0) {
+        permittedUpdates.personalInfo = {
+          ...existingEmployee.personalInfo,
+          ...personalInfoUpdate,
+        };
+      }
+
+      // Update user information if there are permitted changes
+      if (Object.keys(permittedUserUpdates).length > 0) {
+        await User.findByIdAndUpdate(existingEmployee.user._id, permittedUserUpdates);
+      }
+
+      // Update employee information if there are permitted changes
+      if (Object.keys(permittedUpdates).length > 0) {
+        const updatedEmployee = await Employee.findByIdAndUpdate(
+          existingEmployee._id,
+          permittedUpdates,
+          { new: true }
+        ).populate("user", "email firstName lastName");
+
+        return NextResponse.json({
+          message: "Profile updated successfully using granted permissions!",
+          employee: updatedEmployee,
+        });
+      } else {
+        return NextResponse.json({
+          message: "No permitted changes were made. Check your permissions with management.",
+          employee: existingEmployee,
+        });
+      }
     }
 
     // Prepare update data - only update empty/null fields
