@@ -35,8 +35,8 @@ import {
   Task as TaskIcon,
   Mail as MailIcon,
   AlternateEmail as MailAltIcon,
-  Send,
 } from "@mui/icons-material";
+import LockPersonOutlinedIcon from '@mui/icons-material/LockPersonOutlined';
 
 const Sidebar = ({
   user,
@@ -213,12 +213,12 @@ const Sidebar = ({
         }
       ],
     },
-    // {
-    //   id: "settings",
-    //   text: "Settings",
-    //   icon: <SettingsIcon />,
-    //   view: "settings",
-    // },
+    {
+      id: "permissions",
+      text: "Permissions",
+      icon: <LockPersonOutlinedIcon />,
+      view: "permissions",
+    },
   ];
 
   const navigationItems = isEmployee ? employeeNavItems : managementNavItems;

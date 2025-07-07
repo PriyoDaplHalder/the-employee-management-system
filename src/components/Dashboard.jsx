@@ -19,6 +19,7 @@ import TaskManagement from "./TaskManagement";
 import MailMappings from "./MailMappings";
 import MailManagement from "./MailManagement";
 import InboxManagement from "./InboxManagement";
+import Permission from "./Permission";
 import { getToken } from "../utils/storage";
 
 const Dashboard = ({ user, title, onLogout }) => {
@@ -110,7 +111,13 @@ const Dashboard = ({ user, title, onLogout }) => {
   const renderCurrentView = () => {
     switch (currentView) {
       case "employees":
-        return <AllEmployees user={user} onBack={handleBackToDashboard} onEmployeeCountChange={handleEmployeeCountChange} />;
+        return (
+          <AllEmployees
+            user={user}
+            onBack={handleBackToDashboard}
+            onEmployeeCountChange={handleEmployeeCountChange}
+          />
+        );
       case "projects":
         return (
           <ProjectsManagement
@@ -121,33 +128,20 @@ const Dashboard = ({ user, title, onLogout }) => {
         );
       case "tasks":
         return (
-          <TaskManagement 
-            user={user} 
+          <TaskManagement
+            user={user}
             onBack={handleBackToDashboard}
             onTaskCountChange={handleTaskCountChange}
           />
         );
       case "mailmanagement":
-        return (
-          <MailManagement
-            user={user}
-            onBack={handleBackToDashboard}
-          />
-        );
+        return <MailManagement user={user} onBack={handleBackToDashboard} />;
       case "inbox":
-        return (
-          <InboxManagement
-            user={user}
-            onBack={handleBackToDashboard}
-          />
-        );
+        return <InboxManagement user={user} onBack={handleBackToDashboard} />;
       case "mailmappings":
-        return (
-          <MailMappings
-            user={user}
-            onBack={handleBackToDashboard}
-          />
-        );
+        return <MailMappings user={user} onBack={handleBackToDashboard} />;
+      case "permissions":
+        return <Permission user={user} onBack={handleBackToDashboard} />;
       default:
         return <DashboardContent user={user} />;
     }
