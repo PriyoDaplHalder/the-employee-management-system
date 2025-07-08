@@ -29,6 +29,7 @@ export async function PATCH(request) {
       phone,
       address,
       emergencyContact,
+      skills,
     } = await request.json();
 
     // Find existing employee profile
@@ -89,6 +90,11 @@ export async function PATCH(request) {
       }
       if (permission.personalInfoFields?.emergencyContact && emergencyContact?.trim()) {
         personalInfoUpdate.emergencyContact = { phone: emergencyContact.trim() };
+      }
+      if (permission.personalInfoFields?.skills && skills) {
+        permittedUpdates.skills = Array.isArray(skills)
+          ? skills.filter((skill) => skill.trim())
+          : [];
       }
     }
 

@@ -63,6 +63,7 @@ const Permission = ({ user }) => {
       phone: false,
       address: false,
       emergencyContact: false,
+      skills: false,
     },
     reason: "",
   });
@@ -124,6 +125,7 @@ const Permission = ({ user }) => {
           phone: employee.permission?.personalInfoFields?.phone || false,
           address: employee.permission?.personalInfoFields?.address || false,
           emergencyContact: employee.permission?.personalInfoFields?.emergencyContact || false,
+          skills: employee.permission?.personalInfoFields?.skills || false,
         },
         reason: employee.permission?.reason || "",
       });
@@ -137,12 +139,13 @@ const Permission = ({ user }) => {
           firstName: false,
           lastName: false,
         },
-        canEditPersonalInfo: false,
-        personalInfoFields: {
-          phone: false,
-          address: false,
-          emergencyContact: false,
-        },
+    canEditPersonalInfo: false,
+    personalInfoFields: {
+      phone: false,
+      address: false,
+      emergencyContact: false,
+      skills: false,
+    },
         reason: "",
       });
     }
@@ -164,6 +167,7 @@ const Permission = ({ user }) => {
         phone: false,
         address: false,
         emergencyContact: false,
+        skills: false,
       },
       reason: "",
     });
@@ -178,6 +182,30 @@ const Permission = ({ user }) => {
       });
       return;
     }
+
+    // Validate that at least one permission is granted
+    const hasBasicPermissions = permissionData.canEditBasicInfo && 
+      (permissionData.basicInfoFields.firstName || permissionData.basicInfoFields.lastName);
+    const hasPersonalPermissions = permissionData.canEditPersonalInfo && 
+      (permissionData.personalInfoFields.phone || permissionData.personalInfoFields.address || 
+       permissionData.personalInfoFields.emergencyContact || permissionData.personalInfoFields.skills);
+
+    if (!hasBasicPermissions && !hasPersonalPermissions) {
+      setSnackbar({
+        open: true,
+        message: "Please grant at least one field permission",
+        severity: "error",
+      });
+      return;
+    }
+
+    // Debug: Log the permission data being sent
+    console.log("=== PERMISSION SAVE DEBUG - FRONTEND ===");
+    console.log("Full permissionData:", JSON.stringify(permissionData, null, 2));
+    console.log("Skills permission specifically:", permissionData.personalInfoFields.skills);
+    console.log("canEditPersonalInfo:", permissionData.canEditPersonalInfo);
+    console.log("personalInfoFields object:", permissionData.personalInfoFields);
+    console.log("========================================");
 
     setActionLoading(true);
     try {
@@ -197,6 +225,12 @@ const Permission = ({ user }) => {
             employeeId: selectedEmployee,
             ...permissionData,
           };
+
+      // Debug: Log the exact body being sent in the request
+      console.log("=== BODY BEING SENT TO API ===");
+      console.log("Body object:", JSON.stringify(body, null, 2));
+      console.log("Body.personalInfoFields.skills:", body.personalInfoFields?.skills);
+      console.log("===============================");
 
       const response = await fetch(url, {
         method,
@@ -299,6 +333,9 @@ const Permission = ({ user }) => {
       }
       if (permission.personalInfoFields?.emergencyContact) {
         chips.push(<Chip key="emergency" label="Emergency Contact" size="small" color="secondary" />);
+      }
+      if (permission.personalInfoFields?.skills) {
+        chips.push(<Chip key="skills" label="Skills" size="small" color="secondary" />);
       }
     }
 
@@ -425,70 +462,6 @@ const Permission = ({ user }) => {
             )}
           </Paper>
         </Grid>
-
-        {/* Summary */}
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, borderRadius: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              Summary
-            </Typography>
-            
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Card variant="outlined" sx={{ borderRadius: 2 }}>
-                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                  <Typography variant="h4" color="primary" sx={{ fontWeight: 600 }}>
-                    {employees.length}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Employees
-                  </Typography>
-                </CardContent>
-              </Card>
-
-              <Card variant="outlined" sx={{ borderRadius: 2 }}>
-                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                  <Typography variant="h4" color="success.main" sx={{ fontWeight: 600 }}>
-                    {getEmployeesWithPermissions().length}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    With Permissions
-                  </Typography>
-                </CardContent>
-              </Card>
-
-              <Card variant="outlined" sx={{ borderRadius: 2 }}>
-                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                  <Typography variant="h4" color="warning.main" sx={{ fontWeight: 600 }}>
-                    {getEmployeesWithoutPermissions().length}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Without Permissions
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Box>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-              Permission Types
-            </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Chip label="Basic Info" size="small" color="primary" />
-                <Typography variant="caption" color="text.secondary">
-                  Name fields
-                </Typography>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Chip label="Personal Info" size="small" color="secondary" />
-                <Typography variant="caption" color="text.secondary">
-                  Contact & address
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
       </Grid>
 
       {/* Permission Dialog */}
@@ -541,6 +514,10 @@ const Permission = ({ user }) => {
                     setPermissionData({
                       ...permissionData,
                       canEditBasicInfo: e.target.checked,
+                      basicInfoFields: e.target.checked ? permissionData.basicInfoFields : {
+                        firstName: false,
+                        lastName: false,
+                      },
                     })
                   }
                 />
@@ -562,15 +539,19 @@ const Permission = ({ user }) => {
                     control={
                       <Checkbox
                         checked={permissionData.basicInfoFields.firstName}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const newFirstNameValue = e.target.checked;
+                          const lastNameEnabled = permissionData.basicInfoFields.lastName;
+                          
                           setPermissionData({
                             ...permissionData,
+                            canEditBasicInfo: newFirstNameValue || lastNameEnabled,
                             basicInfoFields: {
                               ...permissionData.basicInfoFields,
-                              firstName: e.target.checked,
+                              firstName: newFirstNameValue,
                             },
-                          })
-                        }
+                          });
+                        }}
                       />
                     }
                     label="First Name"
@@ -579,15 +560,19 @@ const Permission = ({ user }) => {
                     control={
                       <Checkbox
                         checked={permissionData.basicInfoFields.lastName}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const newLastNameValue = e.target.checked;
+                          const firstNameEnabled = permissionData.basicInfoFields.firstName;
+                          
                           setPermissionData({
                             ...permissionData,
+                            canEditBasicInfo: newLastNameValue || firstNameEnabled,
                             basicInfoFields: {
                               ...permissionData.basicInfoFields,
-                              lastName: e.target.checked,
+                              lastName: newLastNameValue,
                             },
-                          })
-                        }
+                          });
+                        }}
                       />
                     }
                     label="Last Name"
@@ -606,6 +591,12 @@ const Permission = ({ user }) => {
                     setPermissionData({
                       ...permissionData,
                       canEditPersonalInfo: e.target.checked,
+                      personalInfoFields: e.target.checked ? permissionData.personalInfoFields : {
+                        phone: false,
+                        address: false,
+                        emergencyContact: false,
+                        skills: false,
+                      },
                     })
                   }
                 />
@@ -614,7 +605,7 @@ const Permission = ({ user }) => {
                 <Box>
                   <Typography variant="subtitle2">Personal Information</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Allow editing of contact and address fields
+                    Allow editing of contact, address, and skills fields
                   </Typography>
                 </Box>
               }
@@ -627,15 +618,22 @@ const Permission = ({ user }) => {
                     control={
                       <Checkbox
                         checked={permissionData.personalInfoFields.phone}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const newPhoneValue = e.target.checked;
+                          const otherFieldsEnabled = 
+                            permissionData.personalInfoFields.address || 
+                            permissionData.personalInfoFields.emergencyContact || 
+                            permissionData.personalInfoFields.skills;
+                          
                           setPermissionData({
                             ...permissionData,
+                            canEditPersonalInfo: newPhoneValue || otherFieldsEnabled,
                             personalInfoFields: {
                               ...permissionData.personalInfoFields,
-                              phone: e.target.checked,
+                              phone: newPhoneValue,
                             },
-                          })
-                        }
+                          });
+                        }}
                       />
                     }
                     label="Phone Number"
@@ -644,15 +642,22 @@ const Permission = ({ user }) => {
                     control={
                       <Checkbox
                         checked={permissionData.personalInfoFields.address}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const newAddressValue = e.target.checked;
+                          const otherFieldsEnabled = 
+                            permissionData.personalInfoFields.phone || 
+                            permissionData.personalInfoFields.emergencyContact || 
+                            permissionData.personalInfoFields.skills;
+                          
                           setPermissionData({
                             ...permissionData,
+                            canEditPersonalInfo: newAddressValue || otherFieldsEnabled,
                             personalInfoFields: {
                               ...permissionData.personalInfoFields,
-                              address: e.target.checked,
+                              address: newAddressValue,
                             },
-                          })
-                        }
+                          });
+                        }}
                       />
                     }
                     label="Address"
@@ -661,18 +666,49 @@ const Permission = ({ user }) => {
                     control={
                       <Checkbox
                         checked={permissionData.personalInfoFields.emergencyContact}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const newEmergencyValue = e.target.checked;
+                          const otherFieldsEnabled = 
+                            permissionData.personalInfoFields.phone || 
+                            permissionData.personalInfoFields.address || 
+                            permissionData.personalInfoFields.skills;
+                          
                           setPermissionData({
                             ...permissionData,
+                            canEditPersonalInfo: newEmergencyValue || otherFieldsEnabled,
                             personalInfoFields: {
                               ...permissionData.personalInfoFields,
-                              emergencyContact: e.target.checked,
+                              emergencyContact: newEmergencyValue,
                             },
-                          })
-                        }
+                          });
+                        }}
                       />
                     }
                     label="Emergency Contact"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={permissionData.personalInfoFields.skills}
+                        onChange={(e) => {
+                          const newSkillsValue = e.target.checked;
+                          const otherFieldsEnabled = 
+                            permissionData.personalInfoFields.phone || 
+                            permissionData.personalInfoFields.address || 
+                            permissionData.personalInfoFields.emergencyContact;
+                          
+                          setPermissionData({
+                            ...permissionData,
+                            canEditPersonalInfo: newSkillsValue || otherFieldsEnabled,
+                            personalInfoFields: {
+                              ...permissionData.personalInfoFields,
+                              skills: newSkillsValue,
+                            },
+                          });
+                        }}
+                      />
+                    }
+                    label="Skills"
                   />
                 </FormGroup>
               </Box>

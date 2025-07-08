@@ -24,6 +24,7 @@ const permissionSchema = new mongoose.Schema({
     phone: { type: Boolean, default: false },
     address: { type: Boolean, default: false },
     emergencyContact: { type: Boolean, default: false },
+    skills: { type: Boolean, default: false },
   },
   // Permission metadata
   grantedBy: {

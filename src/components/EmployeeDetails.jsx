@@ -279,6 +279,9 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
       if (fieldName === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) {
         return true;
       }
+      if (fieldName === "skills" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.skills) {
+        return true;
+      }
       
       // If profile is completed but no specific permission for this field, not editable
       return false;
@@ -317,6 +320,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
         if (fieldName === "phone" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.phone) hasPermission = true;
         if (fieldName === "address" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.address) hasPermission = true;
         if (fieldName === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) hasPermission = true;
+        if (fieldName === "skills" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.skills) hasPermission = true;
         
         if (!hasPermission) {
           return "No permission to edit this field. Contact management for access.";
@@ -340,6 +344,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
       if (fieldName === "phone" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.phone) hasPermission = true;
       if (fieldName === "address" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.address) hasPermission = true;
       if (fieldName === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) hasPermission = true;
+      if (fieldName === "skills" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.skills) hasPermission = true;
       
       if (hasPermission) {
         return "Edit permission granted by management";
@@ -403,6 +408,9 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
         hasPermission = true;
       }
       if (name === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) {
+        hasPermission = true;
+      }
+      if (name === "skills" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.skills) {
         hasPermission = true;
       }
       
@@ -828,6 +836,9 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                       )}
                       {permissions.personalInfoFields?.emergencyContact && (
                         <Chip label="Emergency Contact" size="small" color="secondary" />
+                      )}
+                      {permissions.personalInfoFields?.skills && (
+                        <Chip label="Skills" size="small" color="secondary" />
                       )}
                     </Box>
                   )}
@@ -1666,11 +1677,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           onChange={handleChange}
                           variant="outlined"
                           disabled={!isFieldEditable("skills")}
-                          helperText={
-                            !isFieldEditable("skills") && formData.skills
-                              ? "Field already filled and cannot be changed"
-                              : "Enter skills separated by commas"
-                          }
+                          helperText={getFieldHelperText("skills") || "Enter skills separated by commas"}
                           placeholder="e.g., JavaScript, React, Node.js, Python"
                           multiline
                           rows={2}

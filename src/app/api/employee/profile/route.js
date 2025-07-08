@@ -397,6 +397,11 @@ export async function PATCH(request) {
         if (permission.personalInfoFields?.emergencyContact && emergencyContact?.trim()) {
           personalInfoUpdate.emergencyContact = { phone: emergencyContact.trim() };
         }
+        if (permission.personalInfoFields?.skills && skills) {
+          permittedUpdates.skills = Array.isArray(skills)
+            ? skills.filter((skill) => skill.trim())
+            : [];
+        }
       }
 
       if (Object.keys(personalInfoUpdate).length > 0) {
@@ -419,14 +424,19 @@ export async function PATCH(request) {
           { new: true }
         ).populate("user", "email firstName lastName");
 
+        // Revoke the permission after successful update
+        await Permission.findByIdAndDelete(permission._id);
+
         return NextResponse.json({
-          message: "Profile updated successfully using granted permissions!",
+          message: "Profile updated successfully using granted permissions! Permissions have been revoked for security.",
           employee: updatedEmployee,
+          permissionsRevoked: true,
         });
       } else {
         return NextResponse.json({
           message: "No permitted changes were made. Check your permissions with management.",
           employee: existingEmployee,
+          permissionsRevoked: false,
         });
       }
     }
