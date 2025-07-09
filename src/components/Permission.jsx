@@ -350,10 +350,10 @@ const Permission = ({ user }) => {
     }
 
     if (permission.canEditProjectMilestone) {
-      chips.push(<Chip key="milestone" label="Project Milestone" sx={{pointerEvents:"none"}} size="small" color="secondary" />);
+      chips.push(<Chip key="milestone" label="Project Milestone" sx={{pointerEvents:"none"}} size="small" color="primary" />);
     }
     if (permission.canEditProjectSRS) {
-      chips.push(<Chip key="srs" label="SRS Document" sx={{pointerEvents:"none"}} size="small" color="secondary" />);
+      chips.push(<Chip key="srs" label="SRS Document" sx={{pointerEvents:"none"}} size="small" color="primary" />);
     }
 
     return chips.length > 0 ? chips : [<Chip key="none" sx={{pointerEvents:"none"}} label="No permissions" size="small" />];

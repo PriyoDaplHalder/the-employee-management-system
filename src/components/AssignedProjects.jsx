@@ -177,7 +177,7 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
                   <TableCell>Status</TableCell>
                   <TableCell>Description</TableCell>
                   <TableCell>Assigned Date</TableCell>
-                  <TableCell>Assigned By</TableCell>
+                  {/* <TableCell>Assigned By</TableCell> */}
                   <TableCell>Notes</TableCell>
                   <TableCell align="center">Actions</TableCell>
                 </TableRow>
@@ -198,6 +198,7 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
                         variant="subtitle2" 
                         sx={{ 
                           fontWeight: 600,
+                          width: "10vw",
                           color: assignment.projectId?.isActive === false ? "text.secondary" : "text.primary"
                         }}
                       >
@@ -228,7 +229,7 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
                         variant="body2"
                         color="text.secondary"
                         sx={{
-                          maxWidth: 250,
+                          maxWidth: 200,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
@@ -246,7 +247,7 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
                         })}
                       </Typography>
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       <Typography
                         variant="body2"
                         color="text.secondary"
@@ -259,7 +260,7 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
                       >
                         {assignment.assignedBy?.email || "N/A"}
                       </Typography>
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
                       <Typography
                         variant="body2"
