@@ -30,6 +30,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  Alert,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -55,11 +56,13 @@ import CustomSnackbar from "./CustomSnackbar";
 import ConfirmationModal from "./ConfirmationModal";
 import DebouncedTextField from "./DebouncedTextField";
 
-const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
+const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
   const [milestones, setMilestones] = useState([]);
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [permissions, setPermissions] = useState(null);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState(null);
   const [editingFeature, setEditingFeature] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
@@ -90,19 +93,64 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
 
   // Optimized update functions using refs
   const handleMilestoneUpdate = (milestoneId, field, value) => {
-    updateMilestone(milestoneId, { [field]: value });
+    if (canEdit) {
+      updateMilestone(milestoneId, { [field]: value });
+    }
   };
 
   const handleFeatureUpdate = (milestoneId, featureId, field, value) => {
-    updateFeature(milestoneId, featureId, { [field]: value });
+    if (canEdit) {
+      updateFeature(milestoneId, featureId, { [field]: value });
+    }
   };
 
   const handleFeatureItemUpdate = (milestoneId, featureId, itemId, field, value) => {
-    updateFeatureItem(milestoneId, featureId, itemId, { [field]: value });
+    if (canEdit) {
+      updateFeatureItem(milestoneId, featureId, itemId, { [field]: value });
+    }
   };
 
   const handleNoteUpdate = (noteId, field, value) => {
-    updateNote(noteId, { [field]: value });
+    if (canEdit) {
+      updateNote(noteId, { [field]: value });
+    }
+  };
+
+  // Check if user is management or employee with editing permissions
+  const isManagement = user?.role === "management";
+  const isEmployee = user?.role === "employee";
+  const canEdit = isManagement || (isEmployee && permissions?.canEditProjectMilestone);
+
+  // Fetch user permissions if employee
+  useEffect(() => {
+    if (isEmployee && open) {
+      fetchPermissions();
+    }
+  }, [isEmployee, open]);
+
+  const fetchPermissions = async () => {
+    setPermissionsLoading(true);
+    try {
+      const token = getToken();
+      const response = await fetch("/api/employee/permissions", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPermissions(data.permission || null);
+      } else {
+        setPermissions(null);
+      }
+    } catch (error) {
+      console.error("Error fetching permissions:", error);
+      setPermissions(null);
+    } finally {
+      setPermissionsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -115,7 +163,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
     setLoading(true);
     try {
       const token = getToken();
-      const response = await fetch(`/api/projects/${project._id}/milestones`, {
+      // Use appropriate API endpoint based on user role and permissions
+      const endpoint = isManagement 
+        ? `/api/projects/${project._id}/milestones`
+        : `/api/employee/projects/${project._id}/milestones`;
+        
+      const response = await fetch(endpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -145,7 +198,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
     setSaveLoading(true);
     try {
       const token = getToken();
-      const response = await fetch(`/api/projects/${project._id}/milestones`, {
+      // Use appropriate API endpoint based on user role and permissions
+      const endpoint = isManagement 
+        ? `/api/projects/${project._id}/milestones`
+        : `/api/employee/projects/${project._id}/milestones/edit`;
+        
+      const response = await fetch(endpoint, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -155,16 +213,31 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save milestones");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save milestones");
       }
 
+      const data = await response.json();
+      
+      const successMessage = isManagement 
+        ? "Milestones and notes saved successfully!"
+        : "Milestones and notes updated successfully using your editing permissions!";
+        
       setSnackbar({
         open: true,
-        message: "Milestones and notes saved successfully!",
+        message: successMessage,
         severity: "success",
       });
 
+      // Refetch the data to ensure we have the latest version
+      await fetchMilestones();
+
       if (onSuccess) onSuccess();
+      
+      // Close the modal after a short delay to allow user to see the success message
+      setTimeout(() => {
+        handleClose();
+      }, 1000);
     } catch (err) {
       console.error("Error saving milestones:", err);
       setSnackbar({
@@ -542,7 +615,23 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                 Project Milestones
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {project.name} - Manage project milestones and features
+                {project.name} - {canEdit ? 'Edit Mode' : 'View Mode'}
+                {isEmployee && !canEdit && (
+                  <Chip 
+                    label="No Edit Permission" 
+                    size="small" 
+                    color="warning" 
+                    sx={{ ml: 1 }}
+                  />
+                )}
+                {isEmployee && canEdit && (
+                  <Chip 
+                    label="Edit Permission Granted" 
+                    size="small" 
+                    color="success" 
+                    sx={{ ml: 1 }}
+                  />
+                )}
               </Typography>
             </Box>
           </Box>
@@ -552,12 +641,30 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
         </DialogTitle>
 
         <DialogContent sx={{ p: 4, bgcolor: "grey.50" }}>
-          {loading ? (
+          {loading || (isEmployee && permissionsLoading) ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
               <CircularProgress size={48} />
+              <Typography variant="body2" sx={{ ml: 2 }}>
+                {permissionsLoading ? "Loading permissions..." : "Loading milestones..."}
+              </Typography>
             </Box>
           ) : (
             <>
+              {/* Permission Alert for Employees */}
+              {isEmployee && (
+                <Box sx={{ mb: 3 }}>
+                  <Alert 
+                    severity={canEdit ? "success" : "info"}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    {canEdit 
+                      ? "You have been granted permission to edit project milestones. You can add, modify, and delete milestones and notes."
+                      : "You can view project milestones but cannot edit them. Contact management if you need editing permissions."
+                    }
+                  </Alert>
+                </Box>
+              )}
+
               {/* Add Milestone Button */}
               <Box
                 sx={{
@@ -580,38 +687,40 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                   <TimelineIcon />
                   Milestones ({milestones.length})
                 </Typography>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={addMilestone}
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: "none",
-                      fontWeight: 600,
-                      px: 3,
-                      py: 1,
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                    }}
-                  >
-                    Add Milestone
-                  </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={addNotes}
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: "none",
-                      fontWeight: 600,
-                      px: 3,
-                      py: 1,
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                    }}
-                  >
-                    Add notes
-                  </Button>
-                </Box>
+                {canEdit && (
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      onClick={addMilestone}
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: "none",
+                        fontWeight: 600,
+                        px: 3,
+                        py: 1,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                      }}
+                    >
+                      Add Milestone
+                    </Button>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      onClick={addNotes}
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: "none",
+                        fontWeight: 600,
+                        px: 3,
+                        py: 1,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                      }}
+                    >
+                      Add notes
+                    </Button>
+                  </Box>
+                )}
               </Box>
 
               {milestones.length === 0 && notes.length === 0 ? (
@@ -764,42 +873,46 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                               mb: 1,
                             }}
                           >
-                            <Tooltip title="Edit milestone">
-                              <IconButton
-                                size="small"
-                                onClick={() => {
-                                  handleEditMilestone(milestone.id);
-                                }}
-                                sx={{
-                                  backgroundColor: "info.light",
-                                  color: "white",
-                                  "&:hover": {
-                                    color: "white",
-                                    backgroundColor: "info.main",
-                                  },
-                                }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete milestone">
-                              <IconButton
-                                size="small"
-                                onClick={() => {
-                                  handleDeleteMilestone(milestone);
-                                }}
-                                sx={{
-                                  backgroundColor: "error.light",
-                                  color: "white",
-                                  "&:hover": {
-                                    color: "white",
-                                    backgroundColor: "error.main",
-                                  },
-                                }}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
+                            {canEdit && (
+                              <>
+                                <Tooltip title="Edit milestone">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                      handleEditMilestone(milestone.id);
+                                    }}
+                                    sx={{
+                                      backgroundColor: "info.light",
+                                      color: "white",
+                                      "&:hover": {
+                                        color: "white",
+                                        backgroundColor: "info.main",
+                                      },
+                                    }}
+                                  >
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Delete milestone">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                      handleDeleteMilestone(milestone);
+                                    }}
+                                    sx={{
+                                      backgroundColor: "error.light",
+                                      color: "white",
+                                      "&:hover": {
+                                        color: "white",
+                                        backgroundColor: "error.main",
+                                      },
+                                    }}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </>
+                            )}
                           </Box>
                           {editingMilestone === milestone.id ? (
                             // Edit Milestone Form
@@ -821,6 +934,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                       handleMilestoneUpdate(milestone.id, "title", value)
                                     }
                                     variant="outlined"
+                                    disabled={!canEdit}
                                   />
                                 </Grid>
                                 <Grid item xs={12} md={6}>
@@ -832,6 +946,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                       handleMilestoneUpdate(milestone.id, "name", value)
                                     }
                                     variant="outlined"
+                                    disabled={!canEdit}
                                   />
                                 </Grid>
                                 <Grid item xs={12}>
@@ -845,6 +960,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                       handleMilestoneUpdate(milestone.id, "description", value)
                                     }
                                     variant="outlined"
+                                    disabled={!canEdit}
                                   />
                                 </Grid>
                                 <Grid item xs={12} md={6}>
@@ -856,10 +972,11 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                         : null
                                     }
                                     onChange={(date) =>
-                                      updateMilestone(milestone.id, {
+                                      canEdit && updateMilestone(milestone.id, {
                                         startDate: date,
                                       })
                                     }
+                                    disabled={!canEdit}
                                     slotProps={{
                                       textField: {
                                         fullWidth: true,
@@ -877,10 +994,11 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                         : null
                                     }
                                     onChange={(date) =>
-                                      updateMilestone(milestone.id, {
+                                      canEdit && updateMilestone(milestone.id, {
                                         endDate: date,
                                       })
                                     }
+                                    disabled={!canEdit}
                                     slotProps={{
                                       textField: {
                                         fullWidth: true,
@@ -951,19 +1069,21 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                     Features to Implement (
                                     {milestone.features.length})
                                   </Typography>
-                                  <Button
-                                    variant="contained"
-                                    size="small"
-                                    startIcon={<AddIcon />}
-                                    onClick={() => addFeature(milestone.id)}
-                                    sx={{
-                                      borderRadius: 2,
-                                      px: 2,
-                                      boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                                    }}
-                                  >
-                                    Add Feature
-                                  </Button>
+                                  {canEdit && (
+                                    <Button
+                                      variant="contained"
+                                      size="small"
+                                      startIcon={<AddIcon />}
+                                      onClick={() => addFeature(milestone.id)}
+                                      sx={{
+                                        borderRadius: 2,
+                                        px: 2,
+                                        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                                      }}
+                                    >
+                                      Add Feature
+                                    </Button>
+                                  )}
                                 </Box>
 
                                 {milestone.features.length === 0 ? (
@@ -1098,6 +1218,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                   }
                                                   autoFocus
                                                   variant="outlined"
+                                                  disabled={!canEdit}
                                                   sx={{
                                                     "& .MuiOutlinedInput-root":
                                                       {
@@ -1120,51 +1241,53 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                               )}
                                             </Box>
 
-                                            <Box
-                                              sx={{ display: "flex", gap: 1 }}
-                                            >
-                                              <Tooltip title="Edit feature name">
-                                                <IconButton
-                                                  size="small"
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setEditingFeature({
-                                                      milestoneId: milestone.id,
-                                                      featureId: feature.id,
-                                                    });
-                                                  }}
-                                                  sx={{
-                                                    color: "info.main",
-                                                    "&:hover": {
-                                                      color: "info.dark",
-                                                    },
-                                                  }}
-                                                >
-                                                  <EditIcon fontSize="small" />
-                                                </IconButton>
-                                              </Tooltip>
+                                            {canEdit && (
+                                              <Box
+                                                sx={{ display: "flex", gap: 1 }}
+                                              >
+                                                <Tooltip title="Edit feature name">
+                                                  <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      setEditingFeature({
+                                                        milestoneId: milestone.id,
+                                                        featureId: feature.id,
+                                                      });
+                                                    }}
+                                                    sx={{
+                                                      color: "info.main",
+                                                      "&:hover": {
+                                                        color: "info.dark",
+                                                      },
+                                                    }}
+                                                  >
+                                                    <EditIcon fontSize="small" />
+                                                  </IconButton>
+                                                </Tooltip>
 
-                                              <Tooltip title="Delete feature">
-                                                <IconButton
-                                                  size="small"
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    deleteFeature(
-                                                      milestone.id,
-                                                      feature.id
-                                                    );
-                                                  }}
-                                                  sx={{
-                                                    color: "error.main",
-                                                    "&:hover": {
-                                                      color: "error.dark",
-                                                    },
-                                                  }}
-                                                >
-                                                  <DeleteIcon fontSize="small" />
-                                                </IconButton>
-                                              </Tooltip>
-                                            </Box>
+                                                <Tooltip title="Delete feature">
+                                                  <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      deleteFeature(
+                                                        milestone.id,
+                                                        feature.id
+                                                      );
+                                                    }}
+                                                    sx={{
+                                                      color: "error.main",
+                                                      "&:hover": {
+                                                        color: "error.dark",
+                                                      },
+                                                    }}
+                                                  >
+                                                    <DeleteIcon fontSize="small" />
+                                                  </IconButton>
+                                                </Tooltip>
+                                              </Box>
+                                            )}
                                           </Box>
 
                                           {expandedFeature[
@@ -1228,33 +1351,35 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                   Task Items (
                                                   {feature.items.length})
                                                 </Typography>
-                                                <Button
-                                                  size="small"
-                                                  variant="contained"
-                                                  startIcon={<AddIcon />}
-                                                  onClick={() =>
-                                                    addFeatureItem(
-                                                      milestone.id,
-                                                      feature.id
-                                                    )
-                                                  }
-                                                  sx={{
-                                                    fontSize: "0.75rem",
-                                                    py: 0.5,
-                                                    px: 1.5,
-                                                    borderRadius: 2,
-                                                    transition:
-                                                      "all 0.2s ease-in-out",
-                                                    "&:hover": {
-                                                      transform:
-                                                        "translateY(-1px)",
-                                                      boxShadow:
-                                                        "0 4px 8px rgba(0,0,0,0.2)",
-                                                    },
-                                                  }}
-                                                >
-                                                  Add Item
-                                                </Button>
+                                                {canEdit && (
+                                                  <Button
+                                                    size="small"
+                                                    variant="contained"
+                                                    startIcon={<AddIcon />}
+                                                    onClick={() =>
+                                                      addFeatureItem(
+                                                        milestone.id,
+                                                        feature.id
+                                                      )
+                                                    }
+                                                    sx={{
+                                                      fontSize: "0.75rem",
+                                                      py: 0.5,
+                                                      px: 1.5,
+                                                      borderRadius: 2,
+                                                      transition:
+                                                        "all 0.2s ease-in-out",
+                                                      "&:hover": {
+                                                        transform:
+                                                          "translateY(-1px)",
+                                                        boxShadow:
+                                                          "0 4px 8px rgba(0,0,0,0.2)",
+                                                      },
+                                                    }}
+                                                  >
+                                                    Add Item
+                                                  </Button>
+                                                )}
                                               </Box>
 
                                               {feature.items.length === 0 ? (
@@ -1338,7 +1463,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                                 item.completed
                                                               }
                                                               onChange={(e) =>
-                                                                updateFeatureItem(
+                                                                canEdit && updateFeatureItem(
                                                                   milestone.id,
                                                                   feature.id,
                                                                   item.id,
@@ -1349,6 +1474,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                                   }
                                                                 )
                                                               }
+                                                              disabled={!canEdit}
                                                               icon={
                                                                 <RadioButtonUncheckedIcon />
                                                               }
@@ -1363,6 +1489,9 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                                     color:
                                                                       "success.main",
                                                                   },
+                                                                "&.Mui-disabled": {
+                                                                  color: "grey.400",
+                                                                },
                                                               }}
                                                             />
                                                           }
@@ -1372,7 +1501,8 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                             editingItem?.featureId ===
                                                               feature.id &&
                                                             editingItem?.itemId ===
-                                                              item.id ? (
+                                                              item.id &&
+                                                            canEdit ? (
                                                               <TextField
                                                                 size="small"
                                                                 value={
@@ -1406,6 +1536,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                                 }}
                                                                 autoFocus
                                                                 variant="standard"
+                                                                disabled={!canEdit}
                                                                 sx={{
                                                                   "& .MuiInput-underline:before":
                                                                     {
@@ -1444,50 +1575,52 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                                         />
 
                                                         <ListItemSecondaryAction>
-                                                          <Box sx={{ display: "flex", gap: 0.5 }}>
-                                                            <Tooltip title="Edit item">
-                                                              <IconButton
-                                                                size="small"
-                                                                onClick={() =>
-                                                                  setEditingItem({
-                                                                    milestoneId: milestone.id,
-                                                                    featureId: feature.id,
-                                                                    itemId: item.id,
-                                                                  })
-                                                                }
-                                                                sx={{
-                                                                  color: "info.main",
-                                                                  "&:hover": {
-                                                                    color: "info.dark",
-                                                                  },
-                                                                }}
-                                                              >
-                                                                <EditIcon fontSize="small" />
-                                                              </IconButton>
-                                                            </Tooltip>
-                                                            <Tooltip title="Delete item">
-                                                              <IconButton
-                                                                size="small"
-                                                                onClick={() =>
-                                                                  deleteFeatureItem(
-                                                                    milestone.id,
-                                                                    feature.id,
-                                                                    item.id
-                                                                  )
-                                                                }
-                                                                sx={{
-                                                                  color:
-                                                                    "error.main",
-                                                                  "&:hover": {
+                                                          {canEdit && (
+                                                            <Box sx={{ display: "flex", gap: 0.5 }}>
+                                                              <Tooltip title="Edit item">
+                                                                <IconButton
+                                                                  size="small"
+                                                                  onClick={() =>
+                                                                    setEditingItem({
+                                                                      milestoneId: milestone.id,
+                                                                      featureId: feature.id,
+                                                                      itemId: item.id,
+                                                                    })
+                                                                  }
+                                                                  sx={{
+                                                                    color: "info.main",
+                                                                    "&:hover": {
+                                                                      color: "info.dark",
+                                                                    },
+                                                                  }}
+                                                                >
+                                                                  <EditIcon fontSize="small" />
+                                                                </IconButton>
+                                                              </Tooltip>
+                                                              <Tooltip title="Delete item">
+                                                                <IconButton
+                                                                  size="small"
+                                                                  onClick={() =>
+                                                                    deleteFeatureItem(
+                                                                      milestone.id,
+                                                                      feature.id,
+                                                                      item.id
+                                                                    )
+                                                                  }
+                                                                  sx={{
                                                                     color:
-                                                                      "error.dark",
-                                                                  },
-                                                                }}
-                                                              >
-                                                                <DeleteIcon fontSize="small" />
-                                                              </IconButton>
-                                                            </Tooltip>
-                                                          </Box>
+                                                                      "error.main",
+                                                                    "&:hover": {
+                                                                      color:
+                                                                        "error.dark",
+                                                                    },
+                                                                  }}
+                                                                >
+                                                                  <DeleteIcon fontSize="small" />
+                                                                </IconButton>
+                                                              </Tooltip>
+                                                            </Box>
+                                                          )}
                                                         </ListItemSecondaryAction>
                                                       </ListItem>
                                                     )
@@ -1629,6 +1762,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                       autoFocus
                                       placeholder="Enter note title..."
                                       variant="outlined"
+                                      disabled={!canEdit}
                                       sx={{
                                         "& .MuiOutlinedInput-root": {
                                           borderRadius: 2,
@@ -1642,11 +1776,13 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                       sx={{
                                         fontWeight: 700,
                                         color: "warning.dark",
-                                        cursor: "pointer",
+                                        cursor: canEdit ? "pointer" : "default",
                                       }}
                                       onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEditingNote(note.id);
+                                        if (canEdit) {
+                                          e.stopPropagation();
+                                          setEditingNote(note.id);
+                                        }
                                       }}
                                     >
                                       {note.title || "Untitled Note"}
@@ -1667,47 +1803,49 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                 </Box>
                               </AccordionSummary>
                               <AccordionDetails sx={{ p: 2, bgcolor: "white" }}>
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                    gap: 1,
-                                    mb: 1,
-                                  }}
-                                >
-                                  <Tooltip title="Edit note title">
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => setEditingNote(note.id)}
-                                      sx={{
-                                        backgroundColor: "info.light",
-                                        color: "white",
-                                        "&:hover": {
+                                {canEdit && (
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      justifyContent: "flex-end",
+                                      gap: 1,
+                                      mb: 1,
+                                    }}
+                                  >
+                                    <Tooltip title="Edit note title">
+                                      <IconButton
+                                        size="small"
+                                        onClick={() => setEditingNote(note.id)}
+                                        sx={{
+                                          backgroundColor: "info.light",
                                           color: "white",
-                                          backgroundColor: "info.main",
-                                        },
-                                      }}
-                                    >
-                                      <EditIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Delete note">
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => deleteNote(note.id)}
-                                      sx={{
-                                        backgroundColor: "error.light",
-                                        color: "white",
-                                        "&:hover": {
+                                          "&:hover": {
+                                            color: "white",
+                                            backgroundColor: "info.main",
+                                          },
+                                        }}
+                                      >
+                                        <EditIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Delete note">
+                                      <IconButton
+                                        size="small"
+                                        onClick={() => deleteNote(note.id)}
+                                        sx={{
+                                          backgroundColor: "error.light",
                                           color: "white",
-                                          backgroundColor: "error.main",
-                                        },
-                                      }}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Box>
+                                          "&:hover": {
+                                            color: "white",
+                                            backgroundColor: "error.main",
+                                          },
+                                        }}
+                                      >
+                                        <DeleteIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Box>
+                                )}
 
                                 <Box
                                   sx={{
@@ -1728,10 +1866,11 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
                                     }
                                     placeholder="Add your note content here..."
                                     variant="outlined"
+                                    disabled={!canEdit}
                                     sx={{
                                       "& .MuiOutlinedInput-root": {
                                         borderRadius: 2,
-                                        bgcolor: "white",
+                                        bgcolor: canEdit ? "white" : "grey.100",
                                       },
                                     }}
                                   />
@@ -1787,27 +1926,29 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess }) => {
           </Typography>
 
           <Box sx={{ display: "flex", gap: 2 }}>
-            <Button
-              variant="contained"
-              onClick={saveMilestones}
-              disabled={saveLoading}
-              startIcon={
-                saveLoading ? <CircularProgress size={16} /> : <SaveIcon />
-              }
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1,
-                fontWeight: 600,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                "&:hover": {
-                  transform: "translateY(-1px)",
-                  boxShadow: "0 6px 16px rgba(0,0,0,0.3)",
-                },
-              }}
-            >
-              Save Changes
-            </Button>
+            {canEdit && (
+              <Button
+                variant="contained"
+                onClick={saveMilestones}
+                disabled={saveLoading}
+                startIcon={
+                  saveLoading ? <CircularProgress size={16} /> : <SaveIcon />
+                }
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 600,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                  "&:hover": {
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 6px 16px rgba(0,0,0,0.3)",
+                  },
+                }}
+              >
+                Save Changes
+              </Button>
+            )}
             <Button
               onClick={handleClose}
               variant="outlined"

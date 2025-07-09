@@ -108,6 +108,8 @@ export async function POST(request) {
       basicInfoFields,
       canEditPersonalInfo,
       personalInfoFields,
+      canEditProjectMilestone,
+      canEditProjectSRS,
       reason,
     } = await request.json();
 
@@ -120,6 +122,8 @@ export async function POST(request) {
     console.log("- canEditPersonalInfo:", canEditPersonalInfo);
     console.log("- personalInfoFields:", JSON.stringify(personalInfoFields, null, 2));
     console.log("- personalInfoFields.skills specifically:", personalInfoFields?.skills);
+    console.log("- canEditProjectMilestone:", canEditProjectMilestone);
+    console.log("- canEditProjectSRS:", canEditProjectSRS);
     console.log("- reason:", reason);
     console.log("===========================================");
 
@@ -170,6 +174,9 @@ export async function POST(request) {
         emergencyContact: personalInfoFields?.emergencyContact || false,
         skills: personalInfoFields?.skills || false,
       },
+      // Project Permissions
+      canEditProjectMilestone: canEditProjectMilestone || false,
+      canEditProjectSRS: canEditProjectSRS || false,
       grantedBy: decoded.userId,
       reason: reason?.trim() || "",
     });
@@ -240,6 +247,8 @@ export async function PUT(request) {
       basicInfoFields,
       canEditPersonalInfo,
       personalInfoFields,
+      canEditProjectMilestone,
+      canEditProjectSRS,
       reason,
     } = await request.json();
 
@@ -278,6 +287,9 @@ export async function PUT(request) {
       emergencyContact: personalInfoFields?.emergencyContact || false,
       skills: personalInfoFields?.skills || false,
     };
+    // Project Permissions
+    permission.canEditProjectMilestone = canEditProjectMilestone || false;
+    permission.canEditProjectSRS = canEditProjectSRS || false;
     permission.reason = reason?.trim() || permission.reason;
 
     await permission.save();

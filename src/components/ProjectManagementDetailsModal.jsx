@@ -51,6 +51,7 @@ const ProjectManagementDetailsModal = ({
   open,
   onClose,
   onRefresh,
+  user,
 }) => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -632,6 +633,7 @@ const ProjectManagementDetailsModal = ({
         open={showMilestoneModal}
         onClose={handleCloseMilestone}
         onSuccess={handleMilestoneSuccess}
+        user={user || { role: "management" }}
       />
 
       {/* SRS Document Modal */}
@@ -640,7 +642,7 @@ const ProjectManagementDetailsModal = ({
         open={showSRSDocumentModal}
         onClose={handleCloseSRSDocument}
         onSuccess={handleSRSDocumentSuccess}
-        user={{ role: "management" }}
+        user={user || { role: "management" }}
       />
 
       <CustomSnackbar

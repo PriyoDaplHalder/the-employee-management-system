@@ -65,6 +65,8 @@ const Permission = ({ user }) => {
       emergencyContact: false,
       skills: false,
     },
+    canEditProjectMilestone: false,
+    canEditProjectSRS: false,
     reason: "",
   });
   const [snackbar, setSnackbar] = useState({
@@ -127,6 +129,8 @@ const Permission = ({ user }) => {
           emergencyContact: employee.permission?.personalInfoFields?.emergencyContact || false,
           skills: employee.permission?.personalInfoFields?.skills || false,
         },
+        canEditProjectMilestone: employee.permission?.canEditProjectMilestone || false,
+        canEditProjectSRS: employee.permission?.canEditProjectSRS || false,
         reason: employee.permission?.reason || "",
       });
     } else {
@@ -139,13 +143,15 @@ const Permission = ({ user }) => {
           firstName: false,
           lastName: false,
         },
-    canEditPersonalInfo: false,
-    personalInfoFields: {
-      phone: false,
-      address: false,
-      emergencyContact: false,
-      skills: false,
-    },
+        canEditPersonalInfo: false,
+        personalInfoFields: {
+          phone: false,
+          address: false,
+          emergencyContact: false,
+          skills: false,
+        },
+        canEditProjectMilestone: false,
+        canEditProjectSRS: false,
         reason: "",
       });
     }
@@ -169,6 +175,8 @@ const Permission = ({ user }) => {
         emergencyContact: false,
         skills: false,
       },
+      canEditProjectMilestone: false,
+      canEditProjectSRS: false,
       reason: "",
     });
   };
@@ -189,11 +197,13 @@ const Permission = ({ user }) => {
     const hasPersonalPermissions = permissionData.canEditPersonalInfo && 
       (permissionData.personalInfoFields.phone || permissionData.personalInfoFields.address || 
        permissionData.personalInfoFields.emergencyContact || permissionData.personalInfoFields.skills);
+    const hasProjectPermissions = permissionData.canEditProjectMilestone ||
+      permissionData.canEditProjectSRS;
 
-    if (!hasBasicPermissions && !hasPersonalPermissions) {
+    if (!hasBasicPermissions && !hasPersonalPermissions && !hasProjectPermissions) {
       setSnackbar({
         open: true,
-        message: "Please grant at least one field permission",
+        message: "Please grant at least one permission",
         severity: "error",
       });
       return;
@@ -317,29 +327,36 @@ const Permission = ({ user }) => {
     
     if (permission.canEditBasicInfo) {
       if (permission.basicInfoFields?.firstName) {
-        chips.push(<Chip key="firstName" label="First Name" size="small" color="primary" />);
+        chips.push(<Chip key="firstName" label="First Name" sx={{pointerEvents:"none"}} size="small" color="primary" />);
       }
       if (permission.basicInfoFields?.lastName) {
-        chips.push(<Chip key="lastName" label="Last Name" size="small" color="primary" />);
+        chips.push(<Chip key="lastName" label="Last Name" sx={{pointerEvents:"none"}} size="small" color="primary" />);
       }
     }
     
     if (permission.canEditPersonalInfo) {
       if (permission.personalInfoFields?.phone) {
-        chips.push(<Chip key="phone" label="Phone" size="small" color="secondary" />);
+        chips.push(<Chip key="phone" label="Phone" sx={{pointerEvents:"none"}} size="small" color="primary" />);
       }
       if (permission.personalInfoFields?.address) {
-        chips.push(<Chip key="address" label="Address" size="small" color="secondary" />);
+        chips.push(<Chip key="address" label="Address" sx={{pointerEvents:"none"}} size="small" color="primary" />);
       }
       if (permission.personalInfoFields?.emergencyContact) {
-        chips.push(<Chip key="emergency" label="Emergency Contact" size="small" color="secondary" />);
+        chips.push(<Chip key="emergency" label="Emergency Contact" sx={{pointerEvents:"none"}} size="small" color="primary" />);
       }
       if (permission.personalInfoFields?.skills) {
-        chips.push(<Chip key="skills" label="Skills" size="small" color="secondary" />);
+        chips.push(<Chip key="skills" label="Skills" sx={{pointerEvents:"none"}} size="small" color="primary" />);
       }
     }
 
-    return chips.length > 0 ? chips : [<Chip key="none" label="No permissions" size="small" />];
+    if (permission.canEditProjectMilestone) {
+      chips.push(<Chip key="milestone" label="Project Milestone" sx={{pointerEvents:"none"}} size="small" color="secondary" />);
+    }
+    if (permission.canEditProjectSRS) {
+      chips.push(<Chip key="srs" label="SRS Document" sx={{pointerEvents:"none"}} size="small" color="secondary" />);
+    }
+
+    return chips.length > 0 ? chips : [<Chip key="none" sx={{pointerEvents:"none"}} label="No permissions" size="small" />];
   };
 
   if (!isManagement) {
@@ -713,6 +730,47 @@ const Permission = ({ user }) => {
                 </FormGroup>
               </Box>
             )}
+          </Box>
+
+          <Box sx={{ mb: 3 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={permissionData.canEditProjectMilestone}
+                  onChange={(e) => setPermissionData({
+                    ...permissionData,
+                    canEditProjectMilestone: e.target.checked,
+                  })}
+                />
+              }
+              label={
+                <Box>
+                  <Typography variant="subtitle2">Project Milestone</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Allow editing of project milestones
+                  </Typography>
+                </Box>
+              }
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={permissionData.canEditProjectSRS}
+                  onChange={(e) => setPermissionData({
+                    ...permissionData,
+                    canEditProjectSRS: e.target.checked,
+                  })}
+                />
+              }
+              label={
+                <Box>
+                  <Typography variant="subtitle2">SRS Document</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Allow editing of SRS document for assigned projects
+                  </Typography>
+                </Box>
+              }
+            />
           </Box>
 
           <TextField

@@ -795,6 +795,7 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
           open={showDetailsModal}
           onClose={handleCloseDetailsModal}
           onRefresh={fetchProjects}
+          user={user}
         />
       </Container>
 

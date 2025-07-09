@@ -306,6 +306,7 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
             assignment={selectedProject}
             open={!!selectedProject}
             onClose={handleCloseModal}
+            user={user}
           />
         )}
 

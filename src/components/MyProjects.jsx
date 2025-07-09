@@ -294,6 +294,7 @@ const MyProjects = ({ user, onBack }) => {
             assignment={selectedProject}
             open={!!selectedProject}
             onClose={handleCloseModal}
+            user={user}
           />
         )}
       </Container>

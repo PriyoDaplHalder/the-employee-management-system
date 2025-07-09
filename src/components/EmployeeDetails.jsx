@@ -90,15 +90,19 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
         await fetchPermissions();
       }
     };
-    
+
     initializeComponent();
   }, []);
 
   // Update view mode when profile completion status and permissions are both loaded
   useEffect(() => {
     if (!isManagement && profileCompleted !== null && permissions !== null) {
-      // For employees with completed profiles, set view mode based on permissions
-      setIsViewMode(!permissions);
+      // For employees with completed profiles, set view mode based on profile-related permissions
+      const hasProfilePermissions =
+        permissions &&
+        (permissions.canEditBasicInfo === true ||
+          permissions.canEditPersonalInfo === true);
+      setIsViewMode(!hasProfilePermissions);
     }
   }, [profileCompleted, permissions, isManagement]);
 
@@ -127,8 +131,6 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
           (employee.position === "Employee" || !employee.position) &&
           (employee.salary === 0 || !employee.salary) &&
           !employee.hireDate;
-
-
 
         if (isDefaultProfile) {
           // Treat as first-time creation
@@ -254,7 +256,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
       if (permissionsLoading || permissions === null) {
         return false;
       }
-      
+
       // If no permissions granted, not editable
       if (!permissions) {
         return false;
@@ -262,27 +264,51 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
 
       // Check specific field permissions
       // Basic info permissions
-      if (fieldName === "firstName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.firstName) {
+      if (
+        fieldName === "firstName" &&
+        permissions.canEditBasicInfo &&
+        permissions.basicInfoFields?.firstName
+      ) {
         return true;
       }
-      if (fieldName === "lastName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.lastName) {
+      if (
+        fieldName === "lastName" &&
+        permissions.canEditBasicInfo &&
+        permissions.basicInfoFields?.lastName
+      ) {
         return true;
       }
-      
+
       // Personal info permissions
-      if (fieldName === "phone" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.phone) {
+      if (
+        fieldName === "phone" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.phone
+      ) {
         return true;
       }
-      if (fieldName === "address" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.address) {
+      if (
+        fieldName === "address" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.address
+      ) {
         return true;
       }
-      if (fieldName === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) {
+      if (
+        fieldName === "emergencyContact" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.emergencyContact
+      ) {
         return true;
       }
-      if (fieldName === "skills" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.skills) {
+      if (
+        fieldName === "skills" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.skills
+      ) {
         return true;
       }
-      
+
       // If profile is completed but no specific permission for this field, not editable
       return false;
     }
@@ -315,42 +341,107 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
       if (profileCompleted && !isManagement && permissions) {
         // Check if this field has permission but is currently disabled for other reasons
         let hasPermission = false;
-        if (fieldName === "firstName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.firstName) hasPermission = true;
-        if (fieldName === "lastName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.lastName) hasPermission = true;
-        if (fieldName === "phone" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.phone) hasPermission = true;
-        if (fieldName === "address" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.address) hasPermission = true;
-        if (fieldName === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) hasPermission = true;
-        if (fieldName === "skills" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.skills) hasPermission = true;
-        
+        if (
+          fieldName === "firstName" &&
+          permissions.canEditBasicInfo &&
+          permissions.basicInfoFields?.firstName
+        )
+          hasPermission = true;
+        if (
+          fieldName === "lastName" &&
+          permissions.canEditBasicInfo &&
+          permissions.basicInfoFields?.lastName
+        )
+          hasPermission = true;
+        if (
+          fieldName === "phone" &&
+          permissions.canEditPersonalInfo &&
+          permissions.personalInfoFields?.phone
+        )
+          hasPermission = true;
+        if (
+          fieldName === "address" &&
+          permissions.canEditPersonalInfo &&
+          permissions.personalInfoFields?.address
+        )
+          hasPermission = true;
+        if (
+          fieldName === "emergencyContact" &&
+          permissions.canEditPersonalInfo &&
+          permissions.personalInfoFields?.emergencyContact
+        )
+          hasPermission = true;
+        if (
+          fieldName === "skills" &&
+          permissions.canEditPersonalInfo &&
+          permissions.personalInfoFields?.skills
+        )
+          hasPermission = true;
+
         if (!hasPermission) {
           return "No permission to edit this field. Contact management for access.";
         }
       }
-      
+
       if (formData[fieldName]) {
         return "Field already filled and cannot be changed";
       }
-      
-      if ((fieldName === "department" || fieldName === "salary") && !isManagement) {
-        return `${fieldName === "department" ? "Department" : "Salary"} is assigned by management`;
+
+      if (
+        (fieldName === "department" || fieldName === "salary") &&
+        !isManagement
+      ) {
+        return `${
+          fieldName === "department" ? "Department" : "Salary"
+        } is assigned by management`;
       }
     }
-    
+
     // Field is editable, check if it's due to permissions
     if (profileCompleted && !isManagement && permissions) {
       let hasPermission = false;
-      if (fieldName === "firstName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.firstName) hasPermission = true;
-      if (fieldName === "lastName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.lastName) hasPermission = true;
-      if (fieldName === "phone" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.phone) hasPermission = true;
-      if (fieldName === "address" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.address) hasPermission = true;
-      if (fieldName === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) hasPermission = true;
-      if (fieldName === "skills" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.skills) hasPermission = true;
-      
+      if (
+        fieldName === "firstName" &&
+        permissions.canEditBasicInfo &&
+        permissions.basicInfoFields?.firstName
+      )
+        hasPermission = true;
+      if (
+        fieldName === "lastName" &&
+        permissions.canEditBasicInfo &&
+        permissions.basicInfoFields?.lastName
+      )
+        hasPermission = true;
+      if (
+        fieldName === "phone" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.phone
+      )
+        hasPermission = true;
+      if (
+        fieldName === "address" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.address
+      )
+        hasPermission = true;
+      if (
+        fieldName === "emergencyContact" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.emergencyContact
+      )
+        hasPermission = true;
+      if (
+        fieldName === "skills" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.skills
+      )
+        hasPermission = true;
+
       if (hasPermission) {
         return "Edit permission granted by management";
       }
     }
-    
+
     return "";
   };
 
@@ -391,33 +482,57 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
 
       // Check if the field has specific permission
       let hasPermission = false;
-      
+
       // Check basic info permissions
-      if (name === "firstName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.firstName) {
+      if (
+        name === "firstName" &&
+        permissions.canEditBasicInfo &&
+        permissions.basicInfoFields?.firstName
+      ) {
         hasPermission = true;
       }
-      if (name === "lastName" && permissions.canEditBasicInfo && permissions.basicInfoFields?.lastName) {
+      if (
+        name === "lastName" &&
+        permissions.canEditBasicInfo &&
+        permissions.basicInfoFields?.lastName
+      ) {
         hasPermission = true;
       }
-      
+
       // Check personal info permissions
-      if (name === "phone" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.phone) {
+      if (
+        name === "phone" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.phone
+      ) {
         hasPermission = true;
       }
-      if (name === "address" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.address) {
+      if (
+        name === "address" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.address
+      ) {
         hasPermission = true;
       }
-      if (name === "emergencyContact" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.emergencyContact) {
+      if (
+        name === "emergencyContact" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.emergencyContact
+      ) {
         hasPermission = true;
       }
-      if (name === "skills" && permissions.canEditPersonalInfo && permissions.personalInfoFields?.skills) {
+      if (
+        name === "skills" &&
+        permissions.canEditPersonalInfo &&
+        permissions.personalInfoFields?.skills
+      ) {
         hasPermission = true;
       }
-      
+
       if (!hasPermission) {
         return;
       }
-      
+
       // If we reach here, the user has permission to edit this field
       // Skip the empty field check and proceed to update
     } else {
@@ -561,21 +676,24 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
           setProfileCompleted(true);
         } else {
           // Contextual success message based on whether permissions were used
-          const isPermissionUpdate = profileCompleted && permissions && !isManagement;
+          const isPermissionUpdate =
+            profileCompleted && permissions && !isManagement;
           let successMessage = "Employee details saved successfully!";
-          
+
           if (isPermissionUpdate) {
             // Check if permissions were revoked
             if (data.permissionsRevoked) {
-              successMessage = "Profile updated successfully using granted permissions! Permissions have been automatically revoked for security.";
+              successMessage =
+                "Profile updated successfully using granted permissions! Permissions have been automatically revoked for security.";
               // Clear permissions state since they were revoked
               setPermissions(false);
               setIsViewMode(true); // Switch back to view mode since no more permissions
             } else {
-              successMessage = "Profile updated successfully using granted permissions!";
+              successMessage =
+                "Profile updated successfully using granted permissions!";
             }
           }
-          
+
           setSnackbar({
             open: true,
             message: successMessage,
@@ -757,8 +875,10 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
               sx={{ color: "info.main", fontWeight: 500 }}
             >
               {profileCompleted
-                ? permissions 
-                  ? "Your profile is completed and locked. You have been granted temporary edit permissions for specific fields. These permissions will be automatically revoked after you save your changes."
+                ? permissions &&
+                  (permissions.canEditBasicInfo ||
+                    permissions.canEditPersonalInfo)
+                  ? "Your profile is completed and locked. You have been granted temporary profile edit permissions for specific fields. These permissions will be automatically revoked after you save your changes."
                   : "Your profile is completed and locked for editing. Contact management for any changes."
                 : "Fill the empty fields carefully. Once you complete your profile, it will be locked."}
             </Typography>
@@ -807,51 +927,82 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
           {/* Permissions Status Indicator for Employees */}
           {profileExists && !isManagement && profileCompleted && (
             <Box sx={{ mb: 3 }}>
-              {permissions ? (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+              {(() => {
+                // Check if user has any profile-related permissions (not project permissions)
+                const hasProfilePermissions =
+                  permissions &&
+                  (permissions.canEditBasicInfo === true ||
+                    permissions.canEditPersonalInfo === true);
+
+                return hasProfilePermissions ? (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Chip
+                      label="Profile Edit Permissions Granted"
+                      color="success"
+                      variant="outlined"
+                      size="small"
+                      sx={{ fontWeight: 500 }}
+                    />
+                    {permissions.canEditBasicInfo && (
+                      <Box sx={{ display: "flex", gap: 0.5 }}>
+                        {permissions.basicInfoFields?.firstName && (
+                          <Chip
+                            label="First Name"
+                            size="small"
+                            color="primary"
+                          />
+                        )}
+                        {permissions.basicInfoFields?.lastName && (
+                          <Chip
+                            label="Last Name"
+                            size="small"
+                            color="primary"
+                          />
+                        )}
+                      </Box>
+                    )}
+                    {permissions.canEditPersonalInfo && (
+                      <Box sx={{ display: "flex", gap: 0.5 }}>
+                        {permissions.personalInfoFields?.phone && (
+                          <Chip label="Phone" size="small" color="secondary" />
+                        )}
+                        {permissions.personalInfoFields?.address && (
+                          <Chip
+                            label="Address"
+                            size="small"
+                            color="secondary"
+                          />
+                        )}
+                        {permissions.personalInfoFields?.emergencyContact && (
+                          <Chip
+                            label="Emergency Contact"
+                            size="small"
+                            color="secondary"
+                          />
+                        )}
+                        {permissions.personalInfoFields?.skills && (
+                          <Chip label="Skills" size="small" color="secondary" />
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                ) : (
                   <Chip
-                    label="Edit Permissions Granted"
-                    color="success"
+                    label="No Profile Edit Permissions"
+                    color="default"
                     variant="outlined"
                     size="small"
                     sx={{ fontWeight: 500 }}
                   />
-                  {permissions.canEditBasicInfo && (
-                    <Box sx={{ display: "flex", gap: 0.5 }}>
-                      {permissions.basicInfoFields?.firstName && (
-                        <Chip label="First Name" size="small" color="primary" />
-                      )}
-                      {permissions.basicInfoFields?.lastName && (
-                        <Chip label="Last Name" size="small" color="primary" />
-                      )}
-                    </Box>
-                  )}
-                  {permissions.canEditPersonalInfo && (
-                    <Box sx={{ display: "flex", gap: 0.5 }}>
-                      {permissions.personalInfoFields?.phone && (
-                        <Chip label="Phone" size="small" color="secondary" />
-                      )}
-                      {permissions.personalInfoFields?.address && (
-                        <Chip label="Address" size="small" color="secondary" />
-                      )}
-                      {permissions.personalInfoFields?.emergencyContact && (
-                        <Chip label="Emergency Contact" size="small" color="secondary" />
-                      )}
-                      {permissions.personalInfoFields?.skills && (
-                        <Chip label="Skills" size="small" color="secondary" />
-                      )}
-                    </Box>
-                  )}
-                </Box>
-              ) : (
-                <Chip
-                  label="No Edit Permissions"
-                  color="default"
-                  variant="outlined"
-                  size="small"
-                  sx={{ fontWeight: 500 }}
-                />
-              )}
+                );
+              })()}
             </Box>
           )}
 
@@ -1677,7 +1828,10 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           onChange={handleChange}
                           variant="outlined"
                           disabled={!isFieldEditable("skills")}
-                          helperText={getFieldHelperText("skills") || "Enter skills separated by commas"}
+                          helperText={
+                            getFieldHelperText("skills") ||
+                            "Enter skills separated by commas"
+                          }
                           placeholder="e.g., JavaScript, React, Node.js, Python"
                           multiline
                           rows={2}
@@ -1802,8 +1956,12 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                           </Button>
                         </>
                       )
-                    ) : profileCompleted && !isManagement && permissions ? (
-                      // For employees with completed profiles who have permissions
+                    ) : profileCompleted &&
+                      !isManagement &&
+                      permissions &&
+                      (permissions.canEditBasicInfo ||
+                        permissions.canEditPersonalInfo) ? (
+                      // For employees with completed profiles who have profile edit permissions
                       <Button
                         type="submit"
                         variant="contained"

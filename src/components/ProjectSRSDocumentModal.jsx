@@ -41,6 +41,8 @@ const ProjectSRSDocumentModal = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [permissions, setPermissions] = useState(null);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -53,6 +55,39 @@ const ProjectSRSDocumentModal = ({
 
   const isManagement = user?.role === "management";
   const isEmployee = user?.role === "employee";
+  const canEdit = isManagement || (isEmployee && permissions?.canEditProjectSRS);
+
+  // Fetch user permissions if employee
+  useEffect(() => {
+    if (isEmployee && open) {
+      fetchPermissions();
+    }
+  }, [isEmployee, open]);
+
+  const fetchPermissions = async () => {
+    setPermissionsLoading(true);
+    try {
+      const token = getToken();
+      const response = await fetch("/api/employee/permissions", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPermissions(data.permission || null);
+      } else {
+        setPermissions(null);
+      }
+    } catch (error) {
+      console.error("Error fetching permissions:", error);
+      setPermissions(null);
+    } finally {
+      setPermissionsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (open && project) {
@@ -64,15 +99,17 @@ const ProjectSRSDocumentModal = ({
     setLoading(true);
     try {
       const token = getToken();
-      const response = await fetch(
-        `/api/projects/${project._id}/srs-document`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // Use appropriate API endpoint based on user role
+      const endpoint = isManagement 
+        ? `/api/projects/${project._id}/srs-document`
+        : `/api/employee/projects/${project._id}/srs-document`;
+        
+      const response = await fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -115,10 +152,10 @@ const ProjectSRSDocumentModal = ({
   };
 
   const handleSave = async () => {
-    if (!isManagement) {
+    if (!canEdit) {
       setSnackbar({
         open: true,
-        message: "Only management can update SRS documents",
+        message: "You don't have permission to update SRS documents",
         severity: "error",
       });
       return;
@@ -134,27 +171,42 @@ const ProjectSRSDocumentModal = ({
         formData.append("srsFile", selectedFile);
       }
 
-      const response = await fetch(
-        `/api/projects/${project._id}/srs-document`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      // Use appropriate API endpoint based on user role and permissions
+      const endpoint = isManagement 
+        ? `/api/projects/${project._id}/srs-document`
+        : `/api/employee/projects/${project._id}/srs-document/edit`;
+
+      const response = await fetch(endpoint, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
       if (response.ok) {
         const data = await response.json();
         setExistingDocument(data.srsDocument);
         setSelectedFile(null);
+        const successMessage = isManagement 
+          ? "SRS document updated successfully!"
+          : "SRS document updated successfully using your editing permissions!";
+          
         setSnackbar({
           open: true,
-          message: "SRS document updated successfully!",
+          message: successMessage,
           severity: "success",
         });
+        
+        // Refetch the data to ensure we have the latest version
+        await fetchSRSDocument();
+        
         if (onSuccess) onSuccess();
+        
+        // Close the modal after a short delay to allow user to see the success message
+        setTimeout(() => {
+          onClose();
+        }, 1000);
       } else {
         const errorData = await response.json();
         setSnackbar({
@@ -176,10 +228,10 @@ const ProjectSRSDocumentModal = ({
   };
 
   const handleDeleteFile = async () => {
-    if (!isManagement) {
+    if (!canEdit) {
       setSnackbar({
         open: true,
-        message: "Only management can delete SRS documents",
+        message: "You don't have permission to delete SRS documents",
         severity: "error",
       });
       return;
@@ -194,6 +246,7 @@ const ProjectSRSDocumentModal = ({
     setSaveLoading(true);
     try {
       const token = getToken();
+      // Use management endpoint for delete as employee endpoint doesn't support DELETE method
       const response = await fetch(
         `/api/projects/${project._id}/srs-document`,
         {
@@ -315,7 +368,23 @@ const ProjectSRSDocumentModal = ({
                 SRS Document
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {project.name}
+                {project.name} - {canEdit ? 'Edit Mode' : 'View Mode'}
+                {isEmployee && !canEdit && (
+                  <Chip 
+                    label="No Edit Permission" 
+                    size="small" 
+                    color="warning" 
+                    sx={{ ml: 1 }}
+                  />
+                )}
+                {isEmployee && canEdit && (
+                  <Chip 
+                    label="Edit Permission Granted" 
+                    size="small" 
+                    color="success" 
+                    sx={{ ml: 1 }}
+                  />
+                )}
               </Typography>
             </Box>
           </Box>
@@ -325,12 +394,30 @@ const ProjectSRSDocumentModal = ({
         </DialogTitle>
 
         <DialogContent sx={{ p: 3 }}>
-          {loading ? (
+          {loading || (isEmployee && permissionsLoading) ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
               <CircularProgress />
+              <Typography variant="body2" sx={{ ml: 2 }}>
+                {permissionsLoading ? "Loading permissions..." : "Loading SRS document..."}
+              </Typography>
             </Box>
           ) : (
             <Grid container spacing={3}>
+              {/* Permission Alert for Employees */}
+              {isEmployee && (
+                <Grid item xs={12}>
+                  <Alert 
+                    severity={canEdit ? "success" : "info"}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    {canEdit 
+                      ? "You have been granted permission to edit SRS documents. You can modify website links and upload/replace files."
+                      : "You can view and download SRS documents but cannot edit them. Contact management if you need editing permissions."
+                    }
+                  </Alert>
+                </Grid>
+              )}
+
               {/* Website Link Section */}
               <Grid item xs={12}>
                 <Paper sx={{ p: 3, bgcolor: "grey.50" }}>
@@ -342,7 +429,7 @@ const ProjectSRSDocumentModal = ({
                     SRS Document Website Link
                   </Typography>
 
-                  {isManagement ? (
+                  {canEdit ? (
                     <TextField
                       label="Website Link (Optional)"
                       value={websiteLink}
@@ -451,7 +538,7 @@ const ProjectSRSDocumentModal = ({
                           >
                             <DownloadIcon />
                           </IconButton>
-                          {isManagement && (
+                          {canEdit && (
                             <IconButton
                               size="small"
                               color="error"
@@ -467,8 +554,8 @@ const ProjectSRSDocumentModal = ({
                     </Box>
                   )}
 
-                  {/* File Upload (Management Only) */}
-                  {isManagement && (
+                  {/* File Upload (Edit Permission Required) */}
+                  {canEdit && (
                     <Box>
                       <Typography variant="subtitle2" gutterBottom>
                         {existingDocument?.fileName
@@ -519,8 +606,8 @@ const ProjectSRSDocumentModal = ({
                     </Box>
                   )}
 
-                  {/* Employee View - No File */}
-                  {isEmployee && !existingDocument?.fileName && (
+                  {/* Non-Edit View - No File */}
+                  {!canEdit && !existingDocument?.fileName && (
                     <Alert severity="info">
                       No SRS document file has been uploaded for this project
                       yet.
@@ -531,9 +618,11 @@ const ProjectSRSDocumentModal = ({
 
               {/* Role-based Information */}
               <Grid item xs={12}>
-                <Alert severity={isManagement ? "info" : "warning"}>
-                  {isManagement
-                    ? "You can upload SRS documents and provide website links for this project."
+                <Alert severity={canEdit ? "info" : "warning"}>
+                  {canEdit
+                    ? isManagement 
+                      ? "You can upload SRS documents and provide website links for this project."
+                      : "You have editing permissions and can upload SRS documents and provide website links for this project."
                     : "You can view and download SRS documents but cannot modify them. Contact management for any changes."}
                 </Alert>
               </Grid>
@@ -549,7 +638,7 @@ const ProjectSRSDocumentModal = ({
             justifyContent: "space-between",
           }}
         >
-          {isManagement && (
+          {canEdit && (
             <Button
               onClick={handleSave}
               variant="contained"

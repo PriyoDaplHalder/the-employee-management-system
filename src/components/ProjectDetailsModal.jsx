@@ -16,7 +16,7 @@ import { Timeline as TimelineIcon, Description as DescriptionIcon } from "@mui/i
 import EmployeeMilestoneModal from "./EmployeeMilestoneModal";
 import ProjectSRSDocumentModal from "./ProjectSRSDocumentModal";
 
-const ProjectDetailsModal = ({ assignment, open, onClose }) => {
+const ProjectDetailsModal = ({ assignment, open, onClose, user }) => {
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [showSRSModal, setShowSRSModal] = useState(false);
 
@@ -295,7 +295,7 @@ const ProjectDetailsModal = ({ assignment, open, onClose }) => {
           project={project}
           open={showSRSModal}
           onClose={handleCloseSRSModal}
-          isManagementView={false}
+          user={user || { role: "employee" }}
         />
       )}
     </Dialog>
