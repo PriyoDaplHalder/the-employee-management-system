@@ -3,6 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import { Permission } from "@/model/Permission";
 import { User } from "@/model/User";
 import { Employee } from "@/model/Employee";
+import Project from "@/model/Project";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 
 // Helper function to get and verify token from request
@@ -54,6 +55,26 @@ export async function GET(request) {
           console.log("- personalInfoFields:", JSON.stringify(permission.personalInfoFields, null, 2));
           console.log("- personalInfoFields.skills:", permission.personalInfoFields.skills);
           console.log("==================================================");
+
+          // Enhance project permissions with project names
+          if (permission.projectPermissions && permission.projectPermissions.length > 0) {
+            const projectIds = permission.projectPermissions.map(p => p.projectId).filter(Boolean);
+            if (projectIds.length > 0) {
+              const projects = await Project.find(
+                { _id: { $in: projectIds } },
+                { _id: 1, name: 1 }
+              );
+              
+              // Add project names to permission data
+              permission.projectPermissions = permission.projectPermissions.map(projPerm => {
+                const project = projects.find(p => p._id.toString() === projPerm.projectId);
+                return {
+                  ...projPerm.toObject(),
+                  projectName: project ? project.name : projPerm.projectId
+                };
+              });
+            }
+          }
         }
 
         return {
@@ -87,7 +108,6 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const decoded = getAuthenticatedUser(request);
-
     await dbConnect();
 
     // Check if user is management
@@ -108,8 +128,7 @@ export async function POST(request) {
       basicInfoFields,
       canEditPersonalInfo,
       personalInfoFields,
-      canEditProjectMilestone,
-      canEditProjectSRS,
+      projectPermissions, // <-- new
       reason,
     } = await request.json();
 
@@ -122,8 +141,7 @@ export async function POST(request) {
     console.log("- canEditPersonalInfo:", canEditPersonalInfo);
     console.log("- personalInfoFields:", JSON.stringify(personalInfoFields, null, 2));
     console.log("- personalInfoFields.skills specifically:", personalInfoFields?.skills);
-    console.log("- canEditProjectMilestone:", canEditProjectMilestone);
-    console.log("- canEditProjectSRS:", canEditProjectSRS);
+    console.log("- projectPermissions:", JSON.stringify(projectPermissions, null, 2));
     console.log("- reason:", reason);
     console.log("===========================================");
 
@@ -174,9 +192,7 @@ export async function POST(request) {
         emergencyContact: personalInfoFields?.emergencyContact || false,
         skills: personalInfoFields?.skills || false,
       },
-      // Project Permissions
-      canEditProjectMilestone: canEditProjectMilestone || false,
-      canEditProjectSRS: canEditProjectSRS || false,
+      projectPermissions: Array.isArray(projectPermissions) ? projectPermissions : [],
       grantedBy: decoded.userId,
       reason: reason?.trim() || "",
     });
@@ -226,7 +242,6 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const decoded = getAuthenticatedUser(request);
-
     await dbConnect();
 
     // Check if user is management
@@ -247,8 +262,7 @@ export async function PUT(request) {
       basicInfoFields,
       canEditPersonalInfo,
       personalInfoFields,
-      canEditProjectMilestone,
-      canEditProjectSRS,
+      projectPermissions, // <-- new
       reason,
     } = await request.json();
 
@@ -287,9 +301,7 @@ export async function PUT(request) {
       emergencyContact: personalInfoFields?.emergencyContact || false,
       skills: personalInfoFields?.skills || false,
     };
-    // Project Permissions
-    permission.canEditProjectMilestone = canEditProjectMilestone || false;
-    permission.canEditProjectSRS = canEditProjectSRS || false;
+    permission.projectPermissions = Array.isArray(projectPermissions) ? projectPermissions : [];
     permission.reason = reason?.trim() || permission.reason;
 
     await permission.save();
@@ -341,9 +353,9 @@ export async function DELETE(request) {
     const employeeId = searchParams.get("employeeId");
 
     if (permissionId) {
-      // Revoke specific permission by ID
-      const permission = await Permission.findById(permissionId);
-      if (!permission) {
+      // Hard delete specific permission by ID
+      const deleted = await Permission.deleteOne({ _id: permissionId });
+      if (!deleted.deletedCount) {
         return NextResponse.json(
           {
             success: false,
@@ -352,19 +364,9 @@ export async function DELETE(request) {
           { status: 404 }
         );
       }
-
-      permission.isActive = false;
-      permission.revokedAt = new Date();
-      await permission.save();
     } else if (employeeId) {
-      // Revoke all active permissions for employee
-      await Permission.updateMany(
-        { employee: employeeId, isActive: true },
-        { 
-          isActive: false, 
-          revokedAt: new Date() 
-        }
-      );
+      // Hard delete all active permissions for employee
+      await Permission.deleteMany({ employee: employeeId, isActive: true });
     } else {
       return NextResponse.json(
         {

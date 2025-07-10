@@ -40,17 +40,23 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // Check if the employee has SRS editing permission
+    // Check if the employee has SRS editing permission for this project
     const permission = await Permission.findOne({
       employee: user.userId,
       isActive: true,
     });
 
-    if (!permission || !permission.canEditProjectSRS) {
+    const hasProjectSRS = permission && Array.isArray(permission.projectPermissions)
+      ? permission.projectPermissions.some(
+          (p) => p.projectId.toString() === projectId && p.canEditSRS
+        )
+      : false;
+
+    if (!hasProjectSRS) {
       return NextResponse.json(
         {
           success: false,
-          error: "Access denied: You don't have permission to edit SRS documents",
+          error: "Access denied: You don't have permission to edit SRS documents for this project",
         },
         { status: 403 }
       );

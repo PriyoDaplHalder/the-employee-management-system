@@ -26,15 +26,14 @@ const permissionSchema = new mongoose.Schema({
     emergencyContact: { type: Boolean, default: false },
     skills: { type: Boolean, default: false },
   },
-  // Project Permissions
-  canEditProjectMilestone: {
-    type: Boolean,
-    default: false,
-  },
-  canEditProjectSRS: {
-    type: Boolean,
-    default: false,
-  },
+  // Project Permissions (per-project)
+  projectPermissions: [
+    {
+      projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true },
+      canEditMilestone: { type: Boolean, default: false },
+      canEditSRS: { type: Boolean, default: false },
+    }
+  ],
   // Permission metadata
   grantedBy: {
     type: mongoose.Schema.Types.ObjectId,

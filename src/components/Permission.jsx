@@ -52,6 +52,11 @@ const Permission = ({ user }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPermission, setEditingPermission] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [employeeProjects, setEmployeeProjects] = useState([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [selectedProjects, setSelectedProjects] = useState([]);
+  // Cache for storing project names by project ID
+  const [projectNamesCache, setProjectNamesCache] = useState({});
   const [permissionData, setPermissionData] = useState({
     canEditBasicInfo: false,
     basicInfoFields: {
@@ -65,8 +70,7 @@ const Permission = ({ user }) => {
       emergencyContact: false,
       skills: false,
     },
-    canEditProjectMilestone: false,
-    canEditProjectSRS: false,
+    projectPermissions: [],
     reason: "",
   });
   const [snackbar, setSnackbar] = useState({
@@ -98,7 +102,25 @@ const Permission = ({ user }) => {
       if (!response.ok) throw new Error("Failed to fetch permissions");
 
       const data = await response.json();
-      setEmployees(data.employees || []);
+      const employeesData = data.employees || [];
+      setEmployees(employeesData);
+      
+      // Extract all unique project IDs from permissions and fetch their names
+      const allProjectIds = new Set();
+      employeesData.forEach(employee => {
+        if (employee.permission?.projectPermissions) {
+          employee.permission.projectPermissions.forEach(projPerm => {
+            if (projPerm.projectId) {
+              allProjectIds.add(projPerm.projectId);
+            }
+          });
+        }
+      });
+      
+      // Fetch project names for all project IDs
+      if (allProjectIds.size > 0) {
+        await fetchProjectNames(Array.from(allProjectIds));
+      }
     } catch (error) {
       console.error("Error fetching employees:", error);
       setSnackbar({
@@ -111,11 +133,100 @@ const Permission = ({ user }) => {
     }
   };
 
+  const fetchEmployeeProjects = async (employeeId, preselectProjects = null) => {
+    if (!employeeId) return;
+    
+    setProjectsLoading(true);
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/management/employee-projects?employeeId=${employeeId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      // Log the response status to help with debugging
+      console.log(`Project fetch response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error response from API: ${errorText}`);
+        throw new Error(`Failed to fetch employee projects: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Fetched projects:", data);
+      
+      const projects = data.projects || [];
+      setEmployeeProjects(projects);
+      
+      // Update project names cache with the fetched projects
+      const newCache = { ...projectNamesCache };
+      projects.forEach(project => {
+        newCache[project._id] = project.name;
+      });
+      setProjectNamesCache(newCache);
+      
+      // Always preselect projects if provided (for edit)
+      if (preselectProjects) {
+        setSelectedProjects(preselectProjects);
+      } else {
+        setSelectedProjects([]);
+      }
+    } catch (error) {
+      console.error("Error fetching employee projects:", error);
+      setSnackbar({
+        open: true,
+        message: `Failed to fetch employee projects: ${error.message}`,
+        severity: "error",
+      });
+      setEmployeeProjects([]);
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  // Function to fetch project names for given project IDs
+  const fetchProjectNames = async (projectIds) => {
+    try {
+      const token = getToken();
+      const response = await fetch("/api/management/project-names", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ projectIds }),
+      });
+
+      if (!response.ok) {
+        // If the API endpoint doesn't exist, fall back to individual project fetches
+        console.warn("Project names API not available, project IDs will be displayed");
+        return;
+      }
+
+      const data = await response.json();
+      const newCache = { ...projectNamesCache };
+      data.projects?.forEach(project => {
+        newCache[project._id] = project.name;
+      });
+      setProjectNamesCache(newCache);
+    } catch (error) {
+      console.warn("Error fetching project names:", error);
+      // Fail silently and fall back to showing project IDs
+    }
+  };
+
   const handleOpenDialog = (employee = null) => {
     if (employee) {
-      // Editing existing permission
+      // Editing existing permission (do NOT reset state)
       setEditingPermission(employee.permission);
       setSelectedEmployee(employee._id);
+      // Set selectedProjects to previously selected projects for this employee
+      const projectIds = Array.isArray(employee.permission?.projectPermissions)
+        ? employee.permission.projectPermissions.map(p => p.projectId)
+        : [];
       setPermissionData({
         canEditBasicInfo: employee.permission?.canEditBasicInfo || false,
         basicInfoFields: {
@@ -129,12 +240,16 @@ const Permission = ({ user }) => {
           emergencyContact: employee.permission?.personalInfoFields?.emergencyContact || false,
           skills: employee.permission?.personalInfoFields?.skills || false,
         },
-        canEditProjectMilestone: employee.permission?.canEditProjectMilestone || false,
-        canEditProjectSRS: employee.permission?.canEditProjectSRS || false,
+        projectPermissions: Array.isArray(employee.permission?.projectPermissions) 
+          ? employee.permission.projectPermissions 
+          : [],
         reason: employee.permission?.reason || "",
       });
+      fetchEmployeeProjects(employee._id, projectIds);
     } else {
-      // Creating new permission
+      // Resetting state when granting new permission
+      setEmployeeProjects([]);
+      setSelectedProjects([]);
       setEditingPermission(null);
       setSelectedEmployee("");
       setPermissionData({
@@ -150,8 +265,7 @@ const Permission = ({ user }) => {
           emergencyContact: false,
           skills: false,
         },
-        canEditProjectMilestone: false,
-        canEditProjectSRS: false,
+        projectPermissions: [],
         reason: "",
       });
     }
@@ -175,8 +289,7 @@ const Permission = ({ user }) => {
         emergencyContact: false,
         skills: false,
       },
-      canEditProjectMilestone: false,
-      canEditProjectSRS: false,
+      projectPermissions: [],
       reason: "",
     });
   };
@@ -193,12 +306,26 @@ const Permission = ({ user }) => {
 
     // Validate that at least one permission is granted
     const hasBasicPermissions = permissionData.canEditBasicInfo && 
-      (permissionData.basicInfoFields.firstName || permissionData.basicInfoFields.lastName);
+      (permissionData.basicInfoFields?.firstName || permissionData.basicInfoFields?.lastName);
+    
     const hasPersonalPermissions = permissionData.canEditPersonalInfo && 
-      (permissionData.personalInfoFields.phone || permissionData.personalInfoFields.address || 
-       permissionData.personalInfoFields.emergencyContact || permissionData.personalInfoFields.skills);
-    const hasProjectPermissions = permissionData.canEditProjectMilestone ||
-      permissionData.canEditProjectSRS;
+      (permissionData.personalInfoFields?.phone || 
+       permissionData.personalInfoFields?.address || 
+       permissionData.personalInfoFields?.emergencyContact || 
+       permissionData.personalInfoFields?.skills);
+    
+    // --- Ensure projectPermissions includes projectName for each entry ---
+    const projectPermissions = (permissionData.projectPermissions || []).map(p => {
+      // If projectName is already present, keep it; otherwise, look up from employeeProjects
+      if (p.projectName) return p;
+      const project = employeeProjects.find(proj => proj._id === p.projectId);
+      return {
+        ...p,
+        projectName: project ? project.name : p.projectId
+      };
+    });
+    const hasProjectPermissions = projectPermissions.length > 0 && 
+      projectPermissions.some(p => p.canEditMilestone || p.canEditSRS);
 
     if (!hasBasicPermissions && !hasPersonalPermissions && !hasProjectPermissions) {
       setSnackbar({
@@ -209,7 +336,6 @@ const Permission = ({ user }) => {
       return;
     }
 
-    // Debug: Log the permission data being sent
     console.log("=== PERMISSION SAVE DEBUG - FRONTEND ===");
     console.log("Full permissionData:", JSON.stringify(permissionData, null, 2));
     console.log("Skills permission specifically:", permissionData.personalInfoFields.skills);
@@ -230,10 +356,12 @@ const Permission = ({ user }) => {
         ? {
             permissionId: editingPermission._id,
             ...permissionData,
+            projectPermissions, // override with project names included
           }
         : {
             employeeId: selectedEmployee,
             ...permissionData,
+            projectPermissions, // override with project names included
           };
 
       // Debug: Log the exact body being sent in the request
@@ -349,15 +477,79 @@ const Permission = ({ user }) => {
       }
     }
 
-    if (permission.canEditProjectMilestone) {
-      chips.push(<Chip key="milestone" label="Project Milestone" sx={{pointerEvents:"none"}} size="small" color="primary" />);
-    }
-    if (permission.canEditProjectSRS) {
-      chips.push(<Chip key="srs" label="SRS Document" sx={{pointerEvents:"none"}} size="small" color="primary" />);
+    if (permission.projectPermissions && permission.projectPermissions.length > 0) {
+      permission.projectPermissions.forEach((projPerm) => {
+        // First try to get project name from the permission data, then from cache, then fallback to ID
+        let projectName = projPerm.projectName || projPerm.name;
+        if (!projectName && projPerm.projectId) {
+          projectName = projectNamesCache[projPerm.projectId];
+        }
+        // Final fallback to project ID
+        projectName = projectName || projPerm.projectId || 'Unknown Project';
+        
+        if (projPerm.canEditMilestone) {
+          chips.push(
+            <Chip 
+              key={`milestone-${projPerm.projectId}`} 
+              label={`${projectName} - Milestone Edit`} 
+              sx={{pointerEvents:"none"}} 
+              size="small" 
+              color="primary" 
+            />
+          );
+        }
+        if (projPerm.canEditSRS) {
+          chips.push(
+            <Chip 
+              key={`srs-${projPerm.projectId}`} 
+              label={`${projectName} - SRS Edit`} 
+              sx={{pointerEvents:"none"}} 
+              size="small" 
+              color="primary" 
+            />
+          );
+        }
+      });
+    } else {
+      chips.push(<Chip key="noProjectPermissions" sx={{pointerEvents:"none"}} label="No project permissions" size="small" />);
     }
 
     return chips.length > 0 ? chips : [<Chip key="none" sx={{pointerEvents:"none"}} label="No permissions" size="small" />];
   };
+
+  useEffect(() => {
+    if (selectedEmployee && !editingPermission) {
+      fetchEmployeeProjects(selectedEmployee);
+    }
+  }, [selectedEmployee]);
+
+  // When a project is selected or unselected, update the project permissions
+  useEffect(() => {
+    // If editing, allow updating projectPermissions when selectedProjects changes
+    if (!selectedProjects || selectedProjects.length === 0) {
+      setPermissionData(prev => ({
+        ...prev,
+        projectPermissions: []
+      }));
+      return;
+    }
+    const newProjectPermissions = selectedProjects.map(projectId => {
+      // Always try to find existing permission for this project
+      const existingPermission = permissionData.projectPermissions?.find(
+        p => p.projectId === projectId
+      );
+      // If it does, keep those permissions, otherwise set default permissions
+      return existingPermission || {
+        projectId,
+        canEditMilestone: false,
+        canEditSRS: false
+      };
+    });
+    setPermissionData(prev => ({
+      ...prev,
+      projectPermissions: newProjectPermissions
+    }));
+  }, [selectedProjects]);
 
   if (!isManagement) {
     return (
@@ -733,44 +925,129 @@ const Permission = ({ user }) => {
           </Box>
 
           <Box sx={{ mb: 3 }}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={permissionData.canEditProjectMilestone}
-                  onChange={(e) => setPermissionData({
-                    ...permissionData,
-                    canEditProjectMilestone: e.target.checked,
-                  })}
-                />
-              }
-              label={
-                <Box>
-                  <Typography variant="subtitle2">Project Milestone</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Allow editing of project milestones
-                  </Typography>
-                </Box>
-              }
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={permissionData.canEditProjectSRS}
-                  onChange={(e) => setPermissionData({
-                    ...permissionData,
-                    canEditProjectSRS: e.target.checked,
-                  })}
-                />
-              }
-              label={
-                <Box>
-                  <Typography variant="subtitle2">SRS Document</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Allow editing of SRS document for assigned projects
-                  </Typography>
-                </Box>
-              }
-            />
+            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+              Project Permissions
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: "block" }}>
+              Select projects and permissions for each selected project. The employee will only be able to edit the content of projects they are assigned to.
+            </Typography>
+            {projectsLoading ? (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CircularProgress size={20} />
+                <Typography variant="body2" color="text.secondary">
+                  Loading projects...
+                </Typography>
+              </Box>
+            ) : employeeProjects.length === 0 ? (
+              <Alert severity="info" sx={{ mt: 1, mb: 2 }}>
+                This employee has no assigned projects.
+              </Alert>
+            ) : (
+              <Box>
+                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                  Select Projects:
+                </Typography>
+                <FormGroup>
+                  {employeeProjects.map((project) => (
+                    <FormControlLabel
+                      key={project._id}
+                      control={
+                        <Checkbox
+                          checked={selectedProjects.includes(project._id)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setSelectedProjects((prev) =>
+                              checked
+                                ? [...prev, project._id]
+                                : prev.filter((id) => id !== project._id)
+                            );
+                          }}
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="subtitle2">{project.name}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {project.description}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  ))}
+                </FormGroup>
+                
+                {selectedProjects.length > 0 && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      Set Permissions for Selected Projects:
+                    </Typography>
+                    
+                    {selectedProjects.map(projectId => {
+                      const project = employeeProjects.find(p => p._id === projectId);
+                      const projectPermission = permissionData.projectPermissions.find(
+                        p => p.projectId === projectId
+                      );
+                      
+                      return (
+                        <Paper 
+                          key={projectId} 
+                          variant="outlined" 
+                          sx={{ p: 2, mb: 2, borderRadius: 2 }}
+                        >
+                          <Typography variant="subtitle2" gutterBottom>
+                            {project?.name}
+                          </Typography>
+                          
+                          <FormGroup>
+                            <FormControlLabel
+                              control={
+                                <Checkbox
+                                  checked={projectPermission?.canEditMilestone || false}
+                                  onChange={(e) => {
+                                    const newPermissions = permissionData.projectPermissions.map(p => 
+                                      p.projectId === projectId 
+                                        ? { ...p, canEditMilestone: e.target.checked }
+                                        : p
+                                    );
+                                    
+                                    setPermissionData({
+                                      ...permissionData,
+                                      projectPermissions: newPermissions
+                                    });
+                                  }}
+                                />
+                              }
+                              label="Can Edit Project Milestones"
+                            />
+                            
+                            <FormControlLabel
+                              control={
+                                <Checkbox
+                                  checked={projectPermission?.canEditSRS || false}
+                                  onChange={(e) => {
+                                    const newPermissions = permissionData.projectPermissions.map(p => 
+                                      p.projectId === projectId 
+                                        ? { ...p, canEditSRS: e.target.checked }
+                                        : p
+                                    );
+                                    
+                                    setPermissionData({
+                                      ...permissionData,
+                                      projectPermissions: newPermissions
+                                    });
+                                  }}
+                                />
+                              }
+                              label="Can Edit SRS Documents"
+                            />
+                          </FormGroup>
+                        </Paper>
+                      );
+                    })}
+                  </Box>
+                )}
+              </Box>
+            )}
           </Box>
 
           <TextField

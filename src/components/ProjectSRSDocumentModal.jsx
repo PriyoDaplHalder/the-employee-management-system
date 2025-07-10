@@ -55,7 +55,10 @@ const ProjectSRSDocumentModal = ({
 
   const isManagement = user?.role === "management";
   const isEmployee = user?.role === "employee";
-  const canEdit = isManagement || (isEmployee && permissions?.canEditProjectSRS);
+  // Check if user is management or employee with editing permissions (per-project)
+  const canEdit = isManagement || (isEmployee && permissions?.projectPermissions?.some(
+    (p) => p.projectId === project?._id || p.projectId === project?.id || p.projectId?.toString() === project?._id?.toString() && p.canEditSRS
+  ));
 
   // Fetch user permissions if employee
   useEffect(() => {

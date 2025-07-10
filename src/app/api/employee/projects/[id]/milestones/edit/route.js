@@ -53,17 +53,23 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // Check if the employee has milestone editing permission
+    // Check if the employee has milestone editing permission for this project
     const permission = await Permission.findOne({
       employee: decoded.userId,
       isActive: true,
     });
 
-    if (!permission || !permission.canEditProjectMilestone) {
+    const hasProjectMilestone = permission && Array.isArray(permission.projectPermissions)
+      ? permission.projectPermissions.some(
+          (p) => p.projectId.toString() === id && p.canEditMilestone
+        )
+      : false;
+
+    if (!hasProjectMilestone) {
       return NextResponse.json(
         {
           success: false,
-          error: "Access denied: You don't have permission to edit project milestones",
+          error: "Access denied: You don't have permission to edit project milestones for this project",
         },
         { status: 403 }
       );
