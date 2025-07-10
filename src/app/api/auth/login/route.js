@@ -47,7 +47,7 @@ export async function POST(request) {
   } catch (error) {
     console.error("Login error:", error);
 
-    // Provide more specific error messages for debugging
+    // more specific error messages for debugging
     if (error.name === "MongoServerError") {
       console.error("MongoDB connection error:", error.message);
       if (error.code === 8000) {

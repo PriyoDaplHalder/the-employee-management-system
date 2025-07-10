@@ -146,9 +146,6 @@ const Permission = ({ user }) => {
         },
       });
 
-      // Log the response status to help with debugging
-      console.log(`Project fetch response status: ${response.status}`);
-
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`Error response from API: ${errorText}`);
@@ -156,7 +153,7 @@ const Permission = ({ user }) => {
       }
 
       const data = await response.json();
-      console.log("Fetched projects:", data);
+      // console.log("Fetched projects:", data);
       
       const projects = data.projects || [];
       setEmployeeProjects(projects);
@@ -336,13 +333,6 @@ const Permission = ({ user }) => {
       return;
     }
 
-    console.log("=== PERMISSION SAVE DEBUG - FRONTEND ===");
-    console.log("Full permissionData:", JSON.stringify(permissionData, null, 2));
-    console.log("Skills permission specifically:", permissionData.personalInfoFields.skills);
-    console.log("canEditPersonalInfo:", permissionData.canEditPersonalInfo);
-    console.log("personalInfoFields object:", permissionData.personalInfoFields);
-    console.log("========================================");
-
     setActionLoading(true);
     try {
       const token = getToken();
@@ -363,12 +353,6 @@ const Permission = ({ user }) => {
             ...permissionData,
             projectPermissions, // override with project names included
           };
-
-      // Debug: Log the exact body being sent in the request
-      console.log("=== BODY BEING SENT TO API ===");
-      console.log("Body object:", JSON.stringify(body, null, 2));
-      console.log("Body.personalInfoFields.skills:", body.personalInfoFields?.skills);
-      console.log("===============================");
 
       const response = await fetch(url, {
         method,

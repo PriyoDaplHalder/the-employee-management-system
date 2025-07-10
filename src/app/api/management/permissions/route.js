@@ -46,16 +46,7 @@ export async function GET(request) {
           isActive: true,
         }).populate("grantedBy", "firstName lastName email");
 
-        // Debug: Log what permissions are being retrieved for each employee
         if (permission) {
-          console.log(`=== PERMISSION GET DEBUG - Employee ${employee.employeeId} ===`);
-          console.log("Permission found:");
-          console.log("- ID:", permission._id);
-          console.log("- canEditPersonalInfo:", permission.canEditPersonalInfo);
-          console.log("- personalInfoFields:", JSON.stringify(permission.personalInfoFields, null, 2));
-          console.log("- personalInfoFields.skills:", permission.personalInfoFields.skills);
-          console.log("==================================================");
-
           // Enhance project permissions with project names
           if (permission.projectPermissions && permission.projectPermissions.length > 0) {
             const projectIds = permission.projectPermissions.map(p => p.projectId).filter(Boolean);
@@ -132,19 +123,6 @@ export async function POST(request) {
       reason,
     } = await request.json();
 
-    // Debug: Log the exact data received by the API
-    console.log("=== PERMISSION SAVE DEBUG - BACKEND POST ===");
-    console.log("Raw request data:");
-    console.log("- employeeId:", employeeId);
-    console.log("- canEditBasicInfo:", canEditBasicInfo);
-    console.log("- basicInfoFields:", JSON.stringify(basicInfoFields, null, 2));
-    console.log("- canEditPersonalInfo:", canEditPersonalInfo);
-    console.log("- personalInfoFields:", JSON.stringify(personalInfoFields, null, 2));
-    console.log("- personalInfoFields.skills specifically:", personalInfoFields?.skills);
-    console.log("- projectPermissions:", JSON.stringify(projectPermissions, null, 2));
-    console.log("- reason:", reason);
-    console.log("===========================================");
-
     // Validate required fields
     if (!employeeId) {
       return NextResponse.json(
@@ -197,23 +175,7 @@ export async function POST(request) {
       reason: reason?.trim() || "",
     });
 
-    // Debug: Log what we're about to save
-    console.log("=== PERMISSION SAVE DEBUG - BEFORE SAVE ===");
-    console.log("Permission object being saved:");
-    console.log("- canEditPersonalInfo:", permission.canEditPersonalInfo);
-    console.log("- personalInfoFields:", JSON.stringify(permission.personalInfoFields, null, 2));
-    console.log("- personalInfoFields.skills:", permission.personalInfoFields.skills);
-    console.log("==========================================");
-
     await permission.save();
-
-    // Debug: Log what was actually saved
-    console.log("=== PERMISSION SAVE DEBUG - AFTER SAVE ===");
-    console.log("Saved permission ID:", permission._id);
-    console.log("- canEditPersonalInfo:", permission.canEditPersonalInfo);
-    console.log("- personalInfoFields:", JSON.stringify(permission.personalInfoFields, null, 2));
-    console.log("- personalInfoFields.skills:", permission.personalInfoFields.skills);
-    console.log("=========================================");
 
     // Populate the response
     await permission.populate([

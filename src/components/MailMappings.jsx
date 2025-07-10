@@ -112,7 +112,7 @@ const MailMappings = ({ user, onBack }) => {
   const fetchPositionMappings = async () => {
     try {
       setLoading(true); // Always show loading when fetching
-      console.log("Fetching position mappings...");
+      // console.log("Fetching position mappings...");
       const token = getToken();
 
       // Add timestamp to prevent caching
@@ -135,7 +135,7 @@ const MailMappings = ({ user, onBack }) => {
       }
 
       const data = await response.json();
-      console.log("Fetched position mappings:", data.mappings);
+      // console.log("Fetched position mappings:", data.mappings);
       setPositionMappings(data.mappings || []);
     } catch (err) {
       console.error("Error fetching position mappings:", err);
