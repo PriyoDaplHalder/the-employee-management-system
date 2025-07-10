@@ -3,6 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import { Employee } from "@/model/Employee";
 import { User } from "@/model/User";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
+import { synchronizeEmployeeName, synchronizeEmployeePosition, fullEmployeeDataSync } from "@/lib/dataSynchronization";
 
 // GET FUNCTION: Fetch Employee Profile
 export async function GET(request) {
@@ -414,6 +415,19 @@ export async function PATCH(request) {
       // Update user information if there are permitted changes
       if (Object.keys(permittedUserUpdates).length > 0) {
         await User.findByIdAndUpdate(existingEmployee.user._id, permittedUserUpdates);
+        
+        // Trigger synchronization if name changed
+        if (permittedUserUpdates.firstName || permittedUserUpdates.lastName) {
+          try {
+            await synchronizeEmployeeName(
+              existingEmployee.user._id.toString(),
+              permittedUserUpdates.firstName || existingEmployee.user.firstName,
+              permittedUserUpdates.lastName || existingEmployee.user.lastName
+            );
+          } catch (syncError) {
+            console.error('Error synchronizing employee name:', syncError);
+          }
+        }
       }
 
       // Update employee information if there are permitted changes
@@ -423,6 +437,19 @@ export async function PATCH(request) {
           permittedUpdates,
           { new: true }
         ).populate("user", "email firstName lastName");
+
+        // Trigger synchronization if position changed
+        if (permittedUpdates.position) {
+          try {
+            await synchronizeEmployeePosition(
+              existingEmployee.user._id.toString(),
+              existingEmployee.position,
+              permittedUpdates.position
+            );
+          } catch (syncError) {
+            console.error('Error synchronizing employee position:', syncError);
+          }
+        }
 
         // Revoke the permission after successful update
         await Permission.findByIdAndDelete(permission._id);
@@ -500,6 +527,19 @@ export async function PATCH(request) {
     // Update user information if there are changes
     if (Object.keys(userUpdateData).length > 0) {
       await User.findByIdAndUpdate(existingEmployee.user._id, userUpdateData);
+      
+      // Trigger synchronization if name changed
+      if (userUpdateData.firstName || userUpdateData.lastName) {
+        try {
+          await synchronizeEmployeeName(
+            existingEmployee.user._id.toString(),
+            userUpdateData.firstName || existingEmployee.user.firstName,
+            userUpdateData.lastName || existingEmployee.user.lastName
+          );
+        } catch (syncError) {
+          console.error('Error synchronizing employee name:', syncError);
+        }
+      }
     }
 
     // Update employee information if there are changes
@@ -509,6 +549,19 @@ export async function PATCH(request) {
         updateData,
         { new: true }
       ).populate("user", "email firstName lastName");
+
+      // Trigger synchronization if position changed
+      if (updateData.position) {
+        try {
+          await synchronizeEmployeePosition(
+            existingEmployee.user._id.toString(),
+            existingEmployee.position,
+            updateData.position
+          );
+        } catch (syncError) {
+          console.error('Error synchronizing employee position:', syncError);
+        }
+      }
 
       return NextResponse.json({
         message: completeProfile 

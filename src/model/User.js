@@ -48,6 +48,34 @@ userSchema.pre('save', async function(next) {
   }
 });
 
+// Middleware to synchronize employee name changes
+userSchema.post('findOneAndUpdate', async function(doc) {
+  if (!doc) return;
+  
+  try {
+    // Only proceed if firstName or lastName was modified
+    const update = this.getUpdate();
+    const hasNameChange = (update.$set && (update.$set.firstName || update.$set.lastName)) ||
+                         (update.firstName !== undefined || update.lastName !== undefined);
+    
+    if (hasNameChange) {
+      // Import the synchronization function dynamically to avoid circular dependency
+      const { synchronizeEmployeeName } = await import('@/lib/dataSynchronization');
+      
+      const newFirstName = update.$set?.firstName || update.firstName || doc.firstName;
+      const newLastName = update.$set?.lastName || update.lastName || doc.lastName;
+      
+      if (newFirstName && newLastName) {
+        await synchronizeEmployeeName(doc._id.toString(), newFirstName, newLastName);
+        console.log(`Synchronized name change for user ${doc._id}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error in User post-update middleware:', error);
+    // Don't throw error to avoid breaking the update operation
+  }
+});
+
 // Checking password after bcrypt hash and comparing
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);

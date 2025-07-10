@@ -3,6 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import { Employee } from "@/model/Employee";
 import { User } from "@/model/User";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
+import { synchronizeEmployeeName, synchronizeEmployeePosition, fullEmployeeDataSync } from "@/lib/dataSynchronization";
 
 // GET FUNCTION: Fetch Specific Employee Profile (Management Only)
 export async function GET(request, { params }) {
@@ -108,7 +109,8 @@ export async function PUT(request, { params }) {
         { error: "Employee not found" },
         { status: 404 }
       );
-    } // Update user information
+    }    // Update user information
+    const oldUserData = { ...employee.user.toObject() };
     await User.findByIdAndUpdate(employee.user._id, {
       firstName: firstName?.trim(),
       lastName: lastName?.trim(),
@@ -116,6 +118,7 @@ export async function PUT(request, { params }) {
     });
 
     // Update employee information
+    const oldEmployeeData = { ...employee.toObject() };
     const updateData = {
       department: department?.trim(),
       position: position?.trim(),
@@ -145,6 +148,43 @@ export async function PUT(request, { params }) {
       updateData,
       { new: true }
     ).populate("user", "email firstName lastName isActive");
+
+    // Perform data synchronization if name or position changed
+    try {
+      const nameChanged = 
+        oldUserData.firstName !== firstName?.trim() || 
+        oldUserData.lastName !== lastName?.trim();
+      
+      const positionChanged = oldEmployeeData.position !== position?.trim();
+
+      if (nameChanged || positionChanged) {
+        console.log('Employee data changed, triggering synchronization...');
+        
+        if (nameChanged) {
+          await synchronizeEmployeeName(
+            employee.user._id.toString(), 
+            firstName?.trim(), 
+            lastName?.trim()
+          );
+        }
+        
+        if (positionChanged) {
+          await synchronizeEmployeePosition(
+            employee.user._id.toString(),
+            oldEmployeeData.position,
+            position?.trim()
+          );
+        }
+        
+        // Also perform a full sync to ensure everything is consistent
+        await fullEmployeeDataSync(employee.user._id.toString());
+        
+        console.log('Data synchronization completed successfully');
+      }
+    } catch (syncError) {
+      console.error('Error during data synchronization:', syncError);
+      // Log the error but don't fail the update operation
+    }
 
     return NextResponse.json({
       message: "Employee profile updated successfully",

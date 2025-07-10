@@ -4,6 +4,7 @@ import { PositionEmailMapping } from "@/model/PositionEmailMapping";
 import { User } from "@/model/User";
 import { Employee } from "@/model/Employee";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
+import { synchronizeEmployeeName } from "@/lib/dataSynchronization";
 
 // Helper function to get and verify token from request
 const getAuthenticatedUser = (request) => {
@@ -88,6 +89,31 @@ export async function POST(request) {
       );
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid email format",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Find the actual employee to ensure name consistency
+    const employee = await Employee.findOne({
+      position: position.trim(),
+      isActive: true
+    }).populate('user', 'firstName lastName email');
+
+    let finalEmployeeName = employeeName.trim();
+    
+    // If we found an employee with matching email, use their actual name
+    if (employee && employee.user.email === email.trim().toLowerCase()) {
+      finalEmployeeName = `${employee.user.firstName} ${employee.user.lastName}`.trim();
+    }
+
     // Check if this specific combination of position + email already exists
     const existingMapping = await PositionEmailMapping.findOne({
       position: position.trim(),
@@ -105,7 +131,7 @@ export async function POST(request) {
         );
       } else {
         // Reactivate the existing mapping instead of creating a new one
-        existingMapping.employeeName = employeeName.trim();
+        existingMapping.employeeName = finalEmployeeName;
         existingMapping.description = description?.trim() || "";
         existingMapping.isActive = true;
         existingMapping.updatedBy = decoded.userId;
@@ -132,7 +158,7 @@ export async function POST(request) {
     // Create mapping
     const mapping = new PositionEmailMapping({
       position: position.trim(),
-      employeeName: employeeName.trim(),
+      employeeName: finalEmployeeName,
       email: email.trim().toLowerCase(),
       description: description?.trim() || "",
       createdBy: decoded.userId,
@@ -198,6 +224,31 @@ export async function PUT(request) {
       );
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid email format",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Find the actual employee to ensure name consistency
+    const employee = await Employee.findOne({
+      position: position.trim(),
+      isActive: true
+    }).populate('user', 'firstName lastName email');
+
+    let finalEmployeeName = employeeName.trim();
+    
+    // If we found an employee with matching email, use their actual name
+    if (employee && employee.user.email === email.trim().toLowerCase()) {
+      finalEmployeeName = `${employee.user.firstName} ${employee.user.lastName}`.trim();
+    }
+
     // Find the mapping
     const mapping = await PositionEmailMapping.findById(id);
     if (!mapping || !mapping.isActive) {
@@ -229,7 +280,7 @@ export async function PUT(request) {
 
     // Update mapping
     mapping.position = position.trim();
-    mapping.employeeName = employeeName.trim();
+    mapping.employeeName = finalEmployeeName;
     mapping.email = email.trim().toLowerCase();
     mapping.description = description?.trim() || "";
     mapping.updatedBy = decoded.userId;

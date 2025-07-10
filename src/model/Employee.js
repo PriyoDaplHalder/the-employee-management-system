@@ -94,4 +94,35 @@ employeeSchema.pre('save', async function(next) {
   next();
 });
 
+// Middleware to synchronize employee position changes
+employeeSchema.post('findOneAndUpdate', async function(doc) {
+  if (!doc) return;
+  
+  try {
+    // Check if position was modified
+    const update = this.getUpdate();
+    const newPosition = update.$set?.position || update.position;
+    
+    if (newPosition && this.getQuery()._id) {
+      // Get the old position from the original document
+      const originalDoc = await mongoose.model('Employee').findById(this.getQuery()._id).populate('user');
+      
+      if (originalDoc && originalDoc.position !== newPosition) {
+        // Import the synchronization function dynamically to avoid circular dependency
+        const { synchronizeEmployeePosition } = await import('@/lib/dataSynchronization');
+        
+        await synchronizeEmployeePosition(
+          originalDoc.user._id.toString(), 
+          originalDoc.position, 
+          newPosition
+        );
+        console.log(`Synchronized position change for employee ${originalDoc._id}: ${originalDoc.position} -> ${newPosition}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error in Employee post-update middleware:', error);
+    // Don't throw error to avoid breaking the update operation
+  }
+});
+
 export const Employee = mongoose.models.Employee || mongoose.model('Employee', employeeSchema);
