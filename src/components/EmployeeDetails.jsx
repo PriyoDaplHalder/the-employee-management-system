@@ -978,6 +978,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                             label="Address"
                             size="small"
                             color="secondary"
+                            sx={{ "pointerEvents": "none" }}
                           />
                         )}
                         {permissions.personalInfoFields?.emergencyContact && (

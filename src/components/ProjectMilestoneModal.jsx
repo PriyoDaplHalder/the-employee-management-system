@@ -1291,13 +1291,14 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                           },
                                         }}
                                       >
-                                        <CardContent sx={{ pb: 2 }}>
+                                        <CardContent sx={{ py: 0, px: 2 }}>
                                           <Box
                                             sx={{
                                               display: "flex",
                                               justifyContent: "space-between",
                                               alignItems: "center",
-                                              my: 1,
+                                              // bgcolor: "yellow",
+                                              p: 2,
                                               cursor: "pointer",
                                               borderRadius: 2,
                                               transition:
@@ -1633,13 +1634,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                                               sx={{
                                                                 color:
                                                                   "success.main",
-                                                                "&.Mui-checked":
-                                                                  {
-                                                                    color:
-                                                                      "success.main",
-                                                                  },
-                                                                "&.Mui-disabled": {
-                                                                  color: "grey.400",
+                                                                borderRadius: 1, // Make square
+                                                                '&.Mui-checked': {
+                                                                  color: 'success.main',
+                                                                },
+                                                                '&.Mui-disabled': {
+                                                                  color: 'grey.400',
                                                                 },
                                                               }}
                                                             />
