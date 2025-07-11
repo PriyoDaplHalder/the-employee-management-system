@@ -370,7 +370,7 @@ const ProjectSRSDocumentModal = ({
               <Typography variant="h5" component="div" sx={{ fontWeight: 600 }}>
                 SRS Document
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" component="span" color="text.secondary">
                 {project.name} - {canEdit ? 'Edit Mode' : 'View Mode'}
                 {isEmployee && !canEdit && (
                   <Chip 

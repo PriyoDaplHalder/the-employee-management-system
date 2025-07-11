@@ -346,12 +346,12 @@ const Permission = ({ user }) => {
         ? {
             permissionId: editingPermission._id,
             ...permissionData,
-            projectPermissions, // override with project names included
+            projectPermissions: projectPermissions, // override with project names included
           }
         : {
             employeeId: selectedEmployee,
             ...permissionData,
-            projectPermissions, // override with project names included
+            projectPermissions: projectPermissions, // override with project names included
           };
 
       const response = await fetch(url, {
@@ -631,6 +631,7 @@ const Permission = ({ user }) => {
                             )}
                           </Box>
                         }
+                        secondaryTypographyProps={{ component: 'span' }}
                       />
                       <ListItemSecondaryAction>
                         <Tooltip title="Edit Permissions">
@@ -666,7 +667,7 @@ const Permission = ({ user }) => {
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
         <DialogTitle sx={{ pb: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
             {editingPermission ? "Edit Permissions" : "Grant Permissions"}
           </Typography>
         </DialogTitle>
