@@ -999,7 +999,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                     color="default"
                     variant="outlined"
                     size="small"
-                    sx={{ fontWeight: 500 }}
+                    sx={{ fontWeight: 500, pointerEvents: "none" }}
                   />
                 );
               })()}

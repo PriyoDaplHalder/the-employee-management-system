@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Box, useTheme, useMediaQuery } from "@mui/material";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import { getToken } from "../utils/storage";
 
 const Layout = ({
   user,
@@ -20,6 +21,7 @@ const Layout = ({
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [employeesWithPermissions, setEmployeesWithPermissions] = useState([]);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -35,6 +37,30 @@ const Layout = ({
       setSidebarCollapsed(false);
     }
   }, [isMobile, mounted]);
+
+  useEffect(() => {
+    // Fetch employees with permissions for sidebar badge
+    const fetchEmployeesWithPermissions = async () => {
+      try {
+        const token = getToken && getToken();
+        if (!token) return;
+        const response = await fetch("/api/management/permissions", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch permissions");
+        const data = await response.json();
+        const employees = data.employees || [];
+        const withPerms = employees.filter((emp) => emp.permission);
+        setEmployeesWithPermissions(withPerms);
+      } catch (err) {
+        setEmployeesWithPermissions([]);
+      }
+    };
+    fetchEmployeesWithPermissions();
+  }, []);
 
   const handleToggleSidebar = () => {
     if (isMobile) {
@@ -90,6 +116,7 @@ const Layout = ({
         employeeCount={employeeCount}
         projectCount={projectCount}
         taskCount={taskCount}
+        employeesWithPermissions={employeesWithPermissions}
       />
 
       <Box

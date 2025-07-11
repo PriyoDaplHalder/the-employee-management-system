@@ -286,6 +286,7 @@ const ProjectDetailsModal = ({ assignment, open, onClose, user }) => {
           assignment={assignment}
           open={showMilestoneModal}
           onClose={handleCloseMilestoneModal}
+          user={user}
         />
       )}
 

@@ -41,7 +41,7 @@ import {
 } from "@mui/icons-material";
 import CustomSnackbar from "./CustomSnackbar";
 
-const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
+const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
   const [milestones, setMilestones] = useState([]);
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -110,7 +110,14 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update task item");
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          requestData: { milestoneId, featureId, itemId, completed }
+        });
+        throw new Error(errorData.error || `Failed to update task item (${response.status})`);
       }
 
       const data = await response.json();
@@ -571,14 +578,19 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
                                                     control={
                                                       <Checkbox
                                                         checked={item.completed}
-                                                        onChange={(e) =>
-                                                          updateTaskItemCompletion(
-                                                            milestone.id,
-                                                            feature.id,
-                                                            item.id,
-                                                            e.target.checked
-                                                          )
-                                                        }
+                                                        onChange={(e) => {
+                                                          // Only allow if assigned to this user
+                                                          if (item.assignedTo && String(item.assignedTo) === String(user?.id)) {
+                                                            updateTaskItemCompletion(
+                                                              milestone.id,
+                                                              feature.id,
+                                                              item.id,
+                                                              e.target.checked
+                                                            );
+                                                          }
+                                                        }}
+                                                        // Disable if unassigned or assigned to someone else
+                                                        disabled={!item.assignedTo || String(item.assignedTo) !== String(user?.id)}
                                                         icon={<RadioButtonUncheckedIcon />}
                                                         checkedIcon={<CheckCircleIcon />}
                                                         sx={{
@@ -586,26 +598,70 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose }) => {
                                                           "&.Mui-checked": {
                                                             color: "success.main",
                                                           },
+                                                          "&.Mui-disabled": {
+                                                            color: "grey.400",
+                                                          },
                                                         }}
                                                       />
                                                     }
                                                     label={
-                                                      <Typography
-                                                        variant="body2"
-                                                        sx={{
-                                                          textDecoration: item.completed
-                                                            ? "line-through"
-                                                            : "none",
-                                                          color: item.completed
-                                                            ? "text.secondary"
-                                                            : "text.primary",
-                                                          fontWeight: item.completed
-                                                            ? 400
-                                                            : 500,
-                                                        }}
-                                                      >
-                                                        {item.text || "No description"}
-                                                      </Typography>
+                                                      <Box sx={{ width: "100%" }}>
+                                                        <Typography
+                                                          variant="body2"
+                                                          sx={{
+                                                            textDecoration: item.completed
+                                                              ? "line-through"
+                                                              : "none",
+                                                            color: item.completed
+                                                              ? "text.secondary"
+                                                              : "text.primary",
+                                                            fontWeight: item.completed
+                                                              ? 400
+                                                              : 500,
+                                                          }}
+                                                        >
+                                                          {item.text || "No description"}
+                                                        </Typography>
+                                                        {/* Assignment Status */}
+                                                        <Box sx={{ mt: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
+                                                          {item.assignedTo ? (
+                                                            <>
+                                                              <Chip
+                                                                size="small"
+                                                                label={
+                                                                  String(item.assignedTo) === String(user?.id)
+                                                                    ? "Assigned to you"
+                                                                    : "Assigned to other"
+                                                                }
+                                                                color={String(item.assignedTo) === String(user?.id) ? "primary" : "default"}
+                                                                variant="outlined"
+                                                                sx={{ fontSize: "0.7rem", pointerEvents: "none" }}
+                                                              />
+                                                              {item.dueDate && (
+                                                                <Chip
+                                                                  size="small"
+                                                                  label={`Due: ${new Date(item.dueDate).toLocaleDateString()}`}
+                                                                  color={
+                                                                    new Date(item.dueDate) < new Date() && !item.completed
+                                                                      ? "error"
+                                                                      : "warning"
+                                                                  }
+                                                                  variant="outlined"
+                                                                  sx={{ fontSize: "0.7rem" }}
+                                                                />
+                                                              )}
+                                                            </>
+                                                          ) : (
+                                                            <Chip
+                                                              size="small"
+                                                              label="No assignment"
+                                                              color="default"
+                                                              variant="outlined"
+                                                              sx={{ fontSize: "0.7rem", pointerEvents: "none" }}
+                                                            />
+                                                          )}
+                                                        </Box>
+                                                      </Box>
                                                     }
                                                     sx={{ flex: 1, mr: 1 }}
                                                   />

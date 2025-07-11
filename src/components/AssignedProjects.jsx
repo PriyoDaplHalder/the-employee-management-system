@@ -34,6 +34,10 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedMilestoneProject, setSelectedMilestoneProject] = useState(null);
 
+  // Debug user object
+  useEffect(() => {
+  }, [user]);
+
   useEffect(() => {
     fetchMyProjects();
   }, []);
@@ -316,6 +320,7 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
             assignment={selectedMilestoneProject}
             open={!!selectedMilestoneProject}
             onClose={handleCloseMilestoneModal}
+            user={user}
           />
         )}
       </Container>

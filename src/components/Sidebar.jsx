@@ -49,6 +49,7 @@ const Sidebar = ({
   employeeCount,
   projectCount,
   taskCount,
+  employeesWithPermissions,
 }) => {
   const [mounted, setMounted] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState("");
@@ -218,6 +219,7 @@ const Sidebar = ({
       text: "Permissions",
       icon: <LockPersonOutlinedIcon />,
       view: "permissions",
+      badge: employeesWithPermissions?.length || "0",
     },
   ];
 

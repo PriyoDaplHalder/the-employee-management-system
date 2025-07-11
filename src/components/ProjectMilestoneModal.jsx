@@ -55,6 +55,7 @@ import {
 import CustomSnackbar from "./CustomSnackbar";
 import ConfirmationModal from "./ConfirmationModal";
 import DebouncedTextField from "./DebouncedTextField";
+import TaskAssignmentModal from "./TaskAssignmentModal";
 
 const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
   const [milestones, setMilestones] = useState([]);
@@ -70,6 +71,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
   const [expandedMilestone, setExpandedMilestone] = useState(null);
   const [expandedFeature, setExpandedFeature] = useState({});
   const [expandedNote, setExpandedNote] = useState({});
+  const [assignmentModal, setAssignmentModal] = useState({
+    open: false,
+    taskItem: null,
+    milestone: null,
+    feature: null,
+  });
   const [deleteConfirmation, setDeleteConfirmation] = useState({
     open: false,
     type: "", // 'milestone', 'feature', 'item', 'note'
@@ -82,6 +89,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
     message: "",
     severity: "info",
   });
+  const [assignedEmployees, setAssignedEmployees] = useState([]);
 
   // useRef for performance optimization
   const milestoneTitleRefs = useRef({});
@@ -155,6 +163,57 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
     }
   };
 
+  // Fetch assigned employees for the project
+  const fetchAssignedEmployees = async () => {
+    try {
+      const token = getToken();
+      const response = await fetch("/api/management/projects/assign", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const projectAssignments = data.assignments?.filter(
+          assignment => 
+            assignment.projectId?._id === project._id || 
+            assignment.projectId === project._id
+        ) || [];
+        setAssignedEmployees(projectAssignments);
+        return projectAssignments;
+      }
+    } catch (error) {
+      console.error("Error fetching assigned employees:", error);
+    }
+    return [];
+  };
+
+  // Populate employee names in milestone items
+  const populateEmployeeNames = (milestones, employees) => {
+    return milestones.map(milestone => ({
+      ...milestone,
+      features: milestone.features?.map(feature => ({
+        ...feature,
+        items: feature.items?.map(item => {
+          if (item.assignedTo) {
+            const assignedEmployee = employees.find(emp => 
+              emp.employeeId?._id === item.assignedTo
+            );
+            return {
+              ...item,
+              assignedToName: assignedEmployee 
+                ? `${assignedEmployee.employeeId?.firstName} ${assignedEmployee.employeeId?.lastName}`
+                : 'Employee Removed'
+            };
+          }
+          return item;
+        }) || []
+      })) || []
+    }));
+  };
+
   useEffect(() => {
     if (open && project) {
       fetchMilestones();
@@ -165,6 +224,10 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
     setLoading(true);
     try {
       const token = getToken();
+      
+      // Fetch assigned employees first
+      const employees = await fetchAssignedEmployees();
+      
       // Use appropriate API endpoint based on user role and permissions
       const endpoint = isManagement 
         ? `/api/projects/${project._id}/milestones`
@@ -182,7 +245,11 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
       }
 
       const data = await response.json();
-      setMilestones(data.milestones || []);
+      
+      // Populate employee names in milestone data
+      const milestonesWithNames = populateEmployeeNames(data.milestones || [], employees);
+      
+      setMilestones(milestonesWithNames);
       setNotes(data.notes || []);
     } catch (err) {
       console.error("Error fetching milestones:", err);
@@ -200,6 +267,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
     setSaveLoading(true);
     try {
       const token = getToken();
+      
       // Use appropriate API endpoint based on user role and permissions
       const endpoint = isManagement 
         ? `/api/projects/${project._id}/milestones`
@@ -445,6 +513,11 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
       id: `item_${Date.now()}`,
       text: "",
       completed: false,
+      assignedTo: null,
+      assignedToName: null,
+      dueDate: null,
+      assignedAt: null,
+      assignedBy: null,
     };
 
     const milestone = milestones.find((m) => m.id === milestoneId);
@@ -512,12 +585,86 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
     });
   };
 
+  const openAssignmentModal = (milestone, feature, item) => {
+    setAssignmentModal({
+      open: true,
+      taskItem: item,
+      milestone: milestone,
+      feature: feature,
+    });
+  };
+
+  const closeAssignmentModal = () => {
+    setAssignmentModal({
+      open: false,
+      taskItem: null,
+      milestone: null,
+      feature: null,
+    });
+  };
+
+  const handleTaskAssignment = async (milestoneId, featureId, itemId, assignmentData) => {
+    try {
+      const milestone = milestones.find((m) => m.id === milestoneId);
+      const feature = milestone?.features.find((f) => f.id === featureId);
+      const item = feature?.items.find((i) => i.id === itemId);
+
+      if (item) {
+        let assignedToName = null;
+        if (assignmentData.assignedTo) {
+          const assignedEmployee = assignedEmployees.find(emp => 
+            emp.employeeId?._id === assignmentData.assignedTo
+          );
+          assignedToName = assignedEmployee 
+            ? `${assignedEmployee.employeeId?.firstName} ${assignedEmployee.employeeId?.lastName}`
+            : 'Unknown Employee';
+        }
+
+        const updatedItem = {
+          ...item,
+          assignedTo: assignmentData.assignedTo,
+          assignedToName: assignedToName,
+          dueDate: assignmentData.dueDate,
+          assignedAt: assignmentData.assignedAt,
+          assignedBy: user?._id,
+        };
+
+        updateFeatureItem(milestoneId, featureId, itemId, updatedItem);
+
+        setSnackbar({
+          open: true,
+          message: assignmentData.assignedTo 
+            ? "Task assigned successfully! Click 'Save Changes' to persist." 
+            : "Task unassigned successfully! Click 'Save Changes' to persist.",
+          severity: "success",
+        });
+
+        // Close the assignment modal
+        closeAssignmentModal();
+      }
+    } catch (error) {
+      console.error("Error assigning task:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to assign task: " + error.message,
+        severity: "error",
+      });
+      throw error;
+    }
+  };
+
   const handleClose = () => {
     setEditingMilestone(null);
     setEditingFeature(null);
     setEditingItem(null);
     setExpandedMilestone(null);
     setExpandedFeature({});
+    setAssignmentModal({
+      open: false,
+      taskItem: null,
+      milestone: null,
+      feature: null,
+    });
     setDeleteConfirmation({
       open: false,
       type: "",
@@ -1498,77 +1645,111 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                                             />
                                                           }
                                                           label={
-                                                            editingItem?.milestoneId ===
-                                                              milestone.id &&
-                                                            editingItem?.featureId ===
-                                                              feature.id &&
-                                                            editingItem?.itemId ===
-                                                              item.id &&
-                                                            canEdit ? (
-                                                              <TextField
-                                                                size="small"
-                                                                value={
-                                                                  item.text
-                                                                }
-                                                                onChange={(e) =>
-                                                                  handleFeatureItemUpdate(
-                                                                    milestone.id,
-                                                                    feature.id,
-                                                                    item.id,
-                                                                    "text",
-                                                                    e.target.value
-                                                                  )
-                                                                }
-                                                                onBlur={() =>
-                                                                  setEditingItem(
-                                                                    null
-                                                                  )
-                                                                }
-                                                                onKeyDown={(
-                                                                  e
-                                                                ) => {
-                                                                  if (
-                                                                    e.key ===
-                                                                    "Enter"
-                                                                  ) {
+                                                            <Box sx={{ width: "100%" }}>
+                                                              {editingItem?.milestoneId ===
+                                                                milestone.id &&
+                                                              editingItem?.featureId ===
+                                                                feature.id &&
+                                                              editingItem?.itemId ===
+                                                                item.id &&
+                                                              canEdit ? (
+                                                                <TextField
+                                                                  size="small"
+                                                                  value={
+                                                                    item.text
+                                                                  }
+                                                                  onChange={(e) =>
+                                                                    handleFeatureItemUpdate(
+                                                                      milestone.id,
+                                                                      feature.id,
+                                                                      item.id,
+                                                                      "text",
+                                                                      e.target.value
+                                                                    )
+                                                                  }
+                                                                  onBlur={() =>
                                                                     setEditingItem(
                                                                       null
-                                                                    );
+                                                                    )
                                                                   }
-                                                                }}
-                                                                autoFocus
-                                                                variant="standard"
-                                                                disabled={!canEdit}
-                                                                sx={{
-                                                                  "& .MuiInput-underline:before":
-                                                                    {
-                                                                      borderBottomColor:
-                                                                        "primary.main",
-                                                                    },
-                                                                }}
-                                                              />
-                                                            ) : (
-                                                              <Typography
-                                                                variant="body2"
-                                                                sx={{
-                                                                  textDecoration:
-                                                                    item.completed
-                                                                      ? "line-through"
-                                                                      : "none",
-                                                                  color:
-                                                                    item.completed
-                                                                      ? "text.secondary"
-                                                                      : "text.primary",
-                                                                  fontWeight:
-                                                                    item.completed
-                                                                      ? 400
-                                                                      : 500,
-                                                                }}
-                                                              >
-                                                                {item.text ||
-                                                                  "No text provided"}
-                                                              </Typography>
-                                                            )
+                                                                  onKeyDown={(
+                                                                    e
+                                                                  ) => {
+                                                                    if (
+                                                                      e.key ===
+                                                                      "Enter"
+                                                                    ) {
+                                                                      setEditingItem(
+                                                                        null
+                                                                      );
+                                                                    }
+                                                                  }}
+                                                                  autoFocus
+                                                                  variant="standard"
+                                                                  disabled={!canEdit}
+                                                                  sx={{
+                                                                    "& .MuiInput-underline:before":
+                                                                      {
+                                                                        borderBottomColor:
+                                                                          "primary.main",
+                                                                      },
+                                                                  }}
+                                                                />
+                                                              ) : (
+                                                                <Box>
+                                                                  <Typography
+                                                                    variant="body2"
+                                                                    sx={{
+                                                                      textDecoration:
+                                                                        item.completed
+                                                                          ? "line-through"
+                                                                          : "none",
+                                                                      color:
+                                                                        item.completed
+                                                                          ? "text.secondary"
+                                                                          : "text.primary",
+                                                                      fontWeight:
+                                                                        item.completed
+                                                                          ? 400
+                                                                          : 500,
+                                                                    }}
+                                                                  >
+                                                                    {item.text ||
+                                                                      "No text provided"}
+                                                                  </Typography>
+                                                                  {/* Assignment Status Chip */}
+                                                                  <Box sx={{ mt: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
+                                                                    {item.assignedTo ? (
+                                                                      <Chip
+                                                                        size="small"
+                                                                        label={`Assigned to: ${item.assignedToName || 'Employee'}`}
+                                                                        color="primary"
+                                                                        variant="outlined"
+                                                                        sx={{ fontSize: "0.7rem", pointerEvents: "none" }}
+                                                                      />
+                                                                    ) : (
+                                                                      <Chip
+                                                                        size="small"
+                                                                        label="None assigned"
+                                                                        color="default"
+                                                                        variant="outlined"
+                                                                        sx={{ fontSize: "0.7rem", pointerEvents: "none" }}
+                                                                      />
+                                                                    )}
+                                                                    {item.dueDate && (
+                                                                      <Chip
+                                                                        size="small"
+                                                                        label={`Due: ${new Date(item.dueDate).toLocaleDateString()}`}
+                                                                        color="warning"
+                                                                        variant="outlined"
+                                                                        icon={<CalendarIcon />}
+                                                                        sx={{ fontSize: "0.7rem" }}
+                                                                      />
+                                                                    )}
+                                                                  </Box>
+                                                                </Box>
+                                                              )}
+                                                            </Box>
                                                           }
                                                           sx={{
                                                             flex: 1,
@@ -1579,6 +1760,13 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                                         <ListItemSecondaryAction>
                                                           {canEdit && (
                                                             <Box sx={{ display: "flex", gap: 0.5 }}>
+                                                              <Button 
+                                                                variant="outlined" 
+                                                                size="small"
+                                                                onClick={() => openAssignmentModal(milestone, feature, item)}
+                                                              >
+                                                                Assign
+                                                              </Button>
                                                               <Tooltip title="Edit item">
                                                                 <IconButton
                                                                   size="small"
@@ -1985,6 +2173,17 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         message={snackbar.message}
         severity={snackbar.severity}
+      />
+
+      {/* Task Assignment Modal */}
+      <TaskAssignmentModal
+        open={assignmentModal.open}
+        onClose={closeAssignmentModal}
+        onAssign={handleTaskAssignment}
+        project={project}
+        taskItem={assignmentModal.taskItem}
+        milestone={assignmentModal.milestone}
+        feature={assignmentModal.feature}
       />
     </LocalizationProvider>
   );

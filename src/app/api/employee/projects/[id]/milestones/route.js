@@ -92,7 +92,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// PUT - Update milestone feature items completion status only (employee can only check/uncheck items)
+// PUT - Update milestone feature items completion status only (employee can only check/uncheck items assigned to them)
 export async function PUT(request, { params }) {
   try {
     // Verify token
@@ -187,6 +187,28 @@ export async function PUT(request, { params }) {
       return NextResponse.json(
         { success: false, error: 'Item not found' },
         { status: 404 }
+      );
+    }
+
+    // Check if the task is assigned to this employee or if no assignment is required
+    if (item.assignedTo && String(item.assignedTo) !== String(decoded.userId)) {
+      console.log('Access denied - Assignment mismatch:', {
+        itemAssignedTo: item.assignedTo,
+        itemAssignedToType: typeof item.assignedTo,
+        itemAssignedToString: String(item.assignedTo),
+        decodedUserId: decoded.userId,
+        decodedUserIdType: typeof decoded.userId,
+        decodedUserIdString: String(decoded.userId),
+        areEqual: String(item.assignedTo) === String(decoded.userId),
+        itemText: item.text
+      });
+      
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Access denied: You can only update tasks assigned to you",
+        },
+        { status: 403 }
       );
     }
 
