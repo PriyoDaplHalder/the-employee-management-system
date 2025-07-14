@@ -39,12 +39,14 @@ import {
   Info as InfoIcon,
   DocumentScanner as DocumentScannerIcon,
 } from "@mui/icons-material";
+import FileCopyIcon from '@mui/icons-material/FileCopy';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import ConfirmationModal from "./ConfirmationModal";
 import ProjectRelatedInfoModal from "./ProjectRelatedInfoModal";
 import EmployeeAssignmentModal from "./EmployeeAssignmentModal";
 import ProjectMilestoneModal from "./ProjectMilestoneModal";
 import ProjectSRSDocumentModal from "./ProjectSRSDocumentModal";
+import ProjectOtherDocumentModal from "./ProjectOtherDocumentModal";
 
 const ProjectManagementDetailsModal = ({
   project,
@@ -69,6 +71,7 @@ const ProjectManagementDetailsModal = ({
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [showEmployeeAssignModal, setShowEmployeeAssignModal] = useState(false);
   const [showSRSDocumentModal, setShowSRSDocumentModal] = useState(false);
+  const [otherDocuments, setOtherDocuments] = useState(false);
 
   useEffect(() => {
     if (open && project) {
@@ -225,6 +228,14 @@ const ProjectManagementDetailsModal = ({
     setTimeout(() => setSuccess(""), 3000);
     setShowSRSDocumentModal(false);
   };
+
+  const handleOtherDocumentsClick = () => {
+    setOtherDocuments(true);
+  }
+
+  const handleCloseOtherDocuments = () => {
+    setOtherDocuments(false);
+  }
 
   if (!project) return null;
 
@@ -590,6 +601,18 @@ const ProjectManagementDetailsModal = ({
           >
             SRS Document
           </Button>
+          <Button
+            onClick={handleOtherDocumentsClick}
+            variant="contained"
+            startIcon={<FileCopyIcon />}
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 500,
+            }}
+          >
+            Other Documents
+          </Button>
         </Box>
         <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2 }}>
           Close
@@ -642,6 +665,14 @@ const ProjectManagementDetailsModal = ({
         open={showSRSDocumentModal}
         onClose={handleCloseSRSDocument}
         onSuccess={handleSRSDocumentSuccess}
+        user={user || { role: "management" }}
+      />
+
+      {/* Other Documents Modal */}
+      <ProjectOtherDocumentModal 
+        project={project}
+        open={otherDocuments}
+        onClose={handleCloseOtherDocuments}
         user={user || { role: "management" }}
       />
 

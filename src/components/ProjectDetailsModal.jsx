@@ -13,12 +13,15 @@ import {
   Chip,
 } from "@mui/material";
 import { Timeline as TimelineIcon, Description as DescriptionIcon } from "@mui/icons-material";
+import FileCopyIcon from '@mui/icons-material/FileCopy';
 import EmployeeMilestoneModal from "./EmployeeMilestoneModal";
 import ProjectSRSDocumentModal from "./ProjectSRSDocumentModal";
+import ProjectOtherDocumentModal from "./ProjectOtherDocumentModal";
 
 const ProjectDetailsModal = ({ assignment, open, onClose, user }) => {
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [showSRSModal, setShowSRSModal] = useState(false);
+  const [showOtherDocsModal, setShowOtherDocsModal] = useState(false);
 
   if (!assignment) return null;
 
@@ -40,11 +43,19 @@ const ProjectDetailsModal = ({ assignment, open, onClose, user }) => {
     setShowSRSModal(false);
   };
 
+  const handleViewOtherDocuments = () => {
+    setShowOtherDocsModal(true);
+  };
+
+  const handleCloseOtherDocsModal = () => {
+    setShowOtherDocsModal(false);
+  };
+
   return (
     <Dialog 
       open={open} 
       onClose={onClose} 
-      maxWidth="sm" 
+      maxWidth="md" 
       fullWidth
       PaperProps={{
         sx: {
@@ -265,6 +276,20 @@ const ProjectDetailsModal = ({ assignment, open, onClose, user }) => {
             SRS Document
           </Button>
           <Button 
+            onClick={handleViewOtherDocuments}
+            variant="outlined"
+            startIcon={<FileCopyIcon />}
+            sx={{
+              textTransform: "none",
+              fontWeight: 500,
+              borderRadius: 1.5,
+              py: 1.2,
+              flex: 1,
+            }}
+          >
+            Other Documents
+          </Button>
+          <Button 
             onClick={onClose} 
             variant="contained" 
             sx={{
@@ -297,6 +322,17 @@ const ProjectDetailsModal = ({ assignment, open, onClose, user }) => {
           open={showSRSModal}
           onClose={handleCloseSRSModal}
           user={user || { role: "employee" }}
+        />
+      )}
+
+      {/* Other Documents Modal */}
+      {showOtherDocsModal && (
+        <ProjectOtherDocumentModal
+          project={project}
+          open={showOtherDocsModal}
+          onClose={handleCloseOtherDocsModal}
+          user={user || { role: "employee" }}
+          employeeViewOnly
         />
       )}
     </Dialog>
