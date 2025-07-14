@@ -1291,13 +1291,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                           },
                                         }}
                                       >
-                                        <CardContent sx={{ py: 0, px: 2 }}>
+                                        <CardContent sx={{ py: 0, px: 1, pb: "0!important" }}>
                                           <Box
                                             sx={{
                                               display: "flex",
                                               justifyContent: "space-between",
                                               alignItems: "center",
-                                              // bgcolor: "yellow",
                                               p: 2,
                                               cursor: "pointer",
                                               borderRadius: 2,

@@ -426,7 +426,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                 {milestone.features.map((feature) => (
                                   <Card key={feature.id} sx={{ borderRadius: 2 }}>
-                                    <CardContent sx={{ p: 0 }}>
+                                    <CardContent sx={{ p: 0, pb: "0!important" }}>
                                       <Box
                                         sx={{
                                           p: 2,
