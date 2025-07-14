@@ -56,6 +56,8 @@ import CustomSnackbar from "./CustomSnackbar";
 import ConfirmationModal from "./ConfirmationModal";
 import DebouncedTextField from "./DebouncedTextField";
 import TaskAssignmentModal from "./TaskAssignmentModal";
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
 
 const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
   const [milestones, setMilestones] = useState([]);
@@ -1625,10 +1627,10 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                                               }
                                                               disabled={!canEdit}
                                                               icon={
-                                                                <RadioButtonUncheckedIcon />
+                                                                <CheckBoxOutlineBlankIcon />
                                                               }
                                                               checkedIcon={
-                                                                <CheckCircleIcon />
+                                                                <CheckBoxIcon />
                                                               }
                                                               sx={{
                                                                 color:

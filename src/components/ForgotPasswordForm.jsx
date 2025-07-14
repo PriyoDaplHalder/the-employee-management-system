@@ -65,16 +65,19 @@ const ForgotPasswordForm = ({ onBack, onSuccess }) => {
     const hasUpperCase = /[A-Z]/.test(password);
     const hasNumber = /\d/.test(password);
     const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    // Block curly braces for SQL injection prevention
+    const hasCurlyBraces = /[{}]/.test(password);
 
     return {
       isValid:
-        minLength && hasLowerCase && hasUpperCase && hasNumber && hasSymbol,
+        minLength && hasLowerCase && hasUpperCase && hasNumber && hasSymbol && !hasCurlyBraces,
       errors: {
         minLength,
         hasLowerCase,
         hasUpperCase,
         hasNumber,
         hasSymbol,
+        hasCurlyBraces,
       },
     };
   };
@@ -123,7 +126,8 @@ const ForgotPasswordForm = ({ onBack, onSuccess }) => {
           missingRequirements.push("1 number");
         if (!validation.errors.hasSymbol)
           missingRequirements.push("1 symbol");
-        
+        if (validation.errors.hasCurlyBraces)
+          missingRequirements.push("no curly braces { or }");
         setPasswordError(`Password must contain at least ${missingRequirements.join(", ")}`);
       }
     }

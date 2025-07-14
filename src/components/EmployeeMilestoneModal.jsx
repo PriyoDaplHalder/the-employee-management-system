@@ -40,6 +40,8 @@ import {
   Notes as NotesIcon,
 } from "@mui/icons-material";
 import CustomSnackbar from "./CustomSnackbar";
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
 
 const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
   const [milestones, setMilestones] = useState([]);
@@ -591,8 +593,8 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                         }}
                                                         // Disable if unassigned or assigned to someone else
                                                         disabled={!item.assignedTo || String(item.assignedTo) !== String(user?.id)}
-                                                        icon={<RadioButtonUncheckedIcon />}
-                                                        checkedIcon={<CheckCircleIcon />}
+                                                        icon={<CheckBoxOutlineBlankIcon />}
+                                                        checkedIcon={<CheckBoxIcon />}
                                                         sx={{
                                                           color: "success.main",
                                                           "&.Mui-checked": {

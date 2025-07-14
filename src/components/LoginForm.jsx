@@ -52,16 +52,18 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit, onForgo
     const hasUpperCase = /[A-Z]/.test(password);
     const hasNumber = /\d/.test(password);
     const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-
+    // Block curly braces for SQL injection prevention
+    const hasCurlyBraces = /[{}]/.test(password);
     return {
       isValid:
-        minLength && hasLowerCase && hasUpperCase && hasNumber && hasSymbol,
+        minLength && hasLowerCase && hasUpperCase && hasNumber && hasSymbol && !hasCurlyBraces,
       errors: {
         minLength,
         hasLowerCase,
         hasUpperCase,
         hasNumber,
         hasSymbol,
+        hasCurlyBraces,
       },
     };
   };
@@ -108,7 +110,8 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit, onForgo
           missingRequirements.push("1 number");
         if (!passwordValidation.errors.hasSymbol)
           missingRequirements.push("1 symbol");
-
+        if (passwordValidation.errors.hasCurlyBraces)
+          missingRequirements.push("no curly braces { or }");
         setSnackbar({
           open: true,
           message: `Password must contain at least ${missingRequirements.join(
