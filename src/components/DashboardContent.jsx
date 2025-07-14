@@ -9,79 +9,95 @@ import {
   CircularProgress,
   Divider,
 } from "@mui/material";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+// import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { getToken } from "../utils/storage";
 
-const COLORS = ["#4caf50", "#2196f3", "#f44336", "#ff9800"];
+const COLORS = ["#75ac13","#FF5733", "#13ac97", "#ff9800"];
+import { PieChart } from '@mui/x-charts/PieChart';
 
-const StatCard = ({ title, data, loading }) => (
-  <Card
-    sx={{
-      borderRadius: 4,
-      boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-      p: 3,
-      backgroundColor: "#ffffff",
-      height: "100%",
-      transition: "0.3s",
-      "&:hover": {
-        boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-        transform: "translateY(-3px)",
-      },
-      minWidth: "250px"
+const StatCard = ({ title, data, loading }) => {
+  // Separate "Total" from the rest of the segments
+  const totalEntry = data.find((item) => item.label.toLowerCase() === "total");
+  const pieSegments = data.filter((item) => item.label.toLowerCase() !== "total");
+  const total = totalEntry?.value || 0;
 
-    }}
-  >
-    <Typography variant="h6" fontWeight={600} mb={2} align="center">
-      {title}
-    </Typography>
-    {loading ? (
-      <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-        <CircularProgress />
-      </Box>
-    ) : (
-      <>
-        <Box sx={{ width: "100%", height: 200 }}>
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie
-                data={data}
-                dataKey="value"
-                nameKey="label"
-                innerRadius={40}
-                outerRadius={70}
-                paddingAngle={4}
+  const pieData = pieSegments.map((item, index) => ({
+    id: index,
+    value: item.value,
+    label: item.label,
+    color: COLORS[index % COLORS.length],
+  }));
+
+  return (
+    <Card
+      sx={{
+        borderRadius: 4,
+        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+        p: 3,
+        backgroundColor: "#ffffff",
+        height: "100%",
+        transition: "0.3s",
+        "&:hover": {
+          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+          transform: "translateY(-3px)",
+        },
+        minWidth: "250px",
+      }}
+    >
+      <Typography variant="h6" fontWeight={600} mb={2} align="center">
+        {title}
+      </Typography>
+
+      {loading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          <PieChart
+            series={[
+              {
+                data: pieData,
+                highlightScope: { faded: 'global', highlighted: 'item' },
+                faded: { additionalRadius: -10, color: 'gray' },
+              },
+            ]}
+            width={250}
+            height={200}
+            slotProps={{ legend: { hidden: true } }}
+            sx={{
+              [`& .MuiPieArc-root`]: {
+                stroke: '#fff',
+                strokeWidth: 1,
+              },
+            }}
+          />
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="body2" textAlign="center" fontWeight={600} mb={1}>
+            Total: {total}
+          </Typography>
+          <Box>
+            {pieSegments.map((item, index) => (
+              <Typography
+                key={index}
+                variant="body2"
+                sx={{
+                  color: COLORS[index % COLORS.length],
+                  fontWeight: 500,
+                  textAlign: "center",
+                }}
               >
-                {data.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </Box>
-        <Divider sx={{ my: 2 }} />
-        <Box>
-          {data.map((item, index) => (
-            <Typography
-              key={index}
-              variant="body2"
-              sx={{
-                color: COLORS[index % COLORS.length],
-                fontWeight: 500,
-                textAlign: "center",
-              }}
-            >
-              {item.label}: {item.value}
-            </Typography>
-          ))}
-        </Box>
-      </>
-    )}
-  </Card>
-);
+                {item.label}: {item.value}
+              </Typography>
+            ))}
+          </Box>
+        </>
+      )}
+    </Card>
+  );
+};
+
+
 
 const DashboardContent = ({ user }) => {
   const [weather, setWeather] = useState(null);
@@ -275,10 +291,10 @@ const DashboardContent = ({ user }) => {
             title="Tasks"
             loading={statsLoading}
             data={[
+              { label: "Completed", value: stats.taskCountCompleted },
               { label: "Total", value: stats.taskCount },
               { label: "Overdue", value: stats.taskCountOverdue },
               { label: "Due Today", value: stats.taskCountDueToday },
-              { label: "Completed", value: stats.taskCountCompleted },
             ]}
           />
         </Grid>
