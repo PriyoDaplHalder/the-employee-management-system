@@ -86,6 +86,7 @@ const StatCard = ({ title, data, loading }) => (
 const DashboardContent = ({ user }) => {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dateTime, setDateTime] = useState(new Date().toLocaleString());
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     employeeCount: 0,
@@ -121,6 +122,14 @@ const DashboardContent = ({ user }) => {
         setLoading(false);
       });
   }, []);
+
+  useEffect(()=>{
+    const updateDateTime = () => {
+      setDateTime(new Date().toLocaleString());
+    };
+    const intervalId = setInterval(updateDateTime, 1000);
+    return () => clearInterval(intervalId); 
+  },[])
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -186,10 +195,7 @@ const DashboardContent = ({ user }) => {
               })}
             </Typography>
             <Typography variant="h5" mt={2} fontWeight={700}>
-              {currentDate.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {dateTime.split(",")[1].trim()}
             </Typography>
           </Card>
         </Grid>
@@ -223,11 +229,12 @@ const DashboardContent = ({ user }) => {
                     <strong>Wind:</strong> {Math.round(weather.wind.speed)} km/h
                   </Typography>
                 </Grid>
-                <Grid item xs={4} textAlign="center">
+                <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column", alignItems: "center" }} >
                   <img
                     src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
                     alt={weather.weather[0].description}
                     width={80}
+                    style={{ borderRadius: "50%", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
                   />
                   <Typography variant="caption" fontStyle="italic">
                     {weather.weather[0].main}
