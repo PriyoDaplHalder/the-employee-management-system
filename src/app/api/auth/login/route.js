@@ -27,6 +27,14 @@ export async function POST(request) {
       );
     }
 
+    // Check if user is active (after password is validated)
+    if (!user.isActive) {
+      return NextResponse.json(
+        { error: "Please contact management, Error: Status-inactive" },
+        { status: 403 }
+      );
+    }
+
     // Generate token with appropriate expiration
     const token = signToken({
       userId: user._id,

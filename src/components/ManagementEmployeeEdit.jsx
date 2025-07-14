@@ -829,8 +829,8 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
                       }}
                     >
                       {formData.isActive
-                        ? "Employee can access (Not implemented yet)"
-                        : "Employee cannot access (Not implemented yet)"}
+                        ? "Employee is currently active and can login to the system."
+                        : "Employee is inactive and cannot login to the system."}
                     </Typography>
                   </Box>
                 </Paper>

@@ -496,8 +496,8 @@ const EmployeeDetailsModal = ({ employee, user, onClose, onEmployeeUpdate }) => 
                         ? employee.isActive
                         : employeeData.isActive
                     )
-                      ? "Employee has access to the system"
-                      : "Employee access is restricted"}
+                      ? "Employee is currently active and can login to the system."
+                      : "Employee is inactive and cannot login to the system."}
                   </Typography>
                 </Box>
               </Paper>

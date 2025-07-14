@@ -154,12 +154,20 @@ const LoginForm = ({ userType, isSignup, onToggleMode, onBack, onSubmit, onForgo
         console.log("Final userData:", userData);
         onSubmit(data.token, userData, isSignup ? false : formData.rememberMe);
       } else {
-        // console.error("Login failed:", data);
-        setSnackbar({
-          open: true,
-          message: data.error || "Something went wrong",
-          severity: "error",
-        });
+        // Custom error for inactive users
+        if (data.error === "Please contact management, Error: Status-inactive") {
+          setSnackbar({
+            open: true,
+            message: data.error,
+            severity: "error",
+          });
+        } else {
+          setSnackbar({
+            open: true,
+            message: data.error || "Something went wrong",
+            severity: "error",
+          });
+        }
       }
     } catch (error) {
       setSnackbar({
