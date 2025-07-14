@@ -804,9 +804,15 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
           <Box>
             <TableContainer
               component={Paper}
-              sx={{ boxShadow: 3, borderRadius: 2 }}
+              sx={{
+                boxShadow: 3,
+                borderRadius: 2,
+                maxWidth: { xs: '100vw', md: 'calc(100vw - 290px)' }, //for the sidebar width
+                overflowX: 'auto',
+                marginLeft: { md: '0px' },
+              }}
             >
-              <Table sx={{ minWidth: 650 }} aria-label="employees table">
+              <Table sx={{ minWidth: 900 }} aria-label="employees table">
                 <TableHead>
                   <TableRow sx={{ bgcolor: "primary.main" }}>
                     <TableCell sx={{ fontWeight: "bold", color: "white" }}>
