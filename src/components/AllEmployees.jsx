@@ -530,12 +530,12 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
           )}
         </Toolbar>{" "}
       </AppBar>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: 2, mb: 2 }}>
         <Typography
           variant="h4"
           component="h2"
           gutterBottom
-          sx={{ mb: 4, color: "primary.main" }}
+          sx={{ mb: 1, color: "primary.main" }}
         >
           Employee Management ({filteredEmployees.length}
           {employees.length !== filteredEmployees.length
@@ -545,7 +545,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
         </Typography>
 
         {/* Statistics Cards */}
-        <Grid container spacing={3} sx={{ mb: 4, textAlign: "center" }}>
+        <Grid container spacing={3} sx={{ mb: 1, textAlign: "center" }}>
           <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
@@ -595,7 +595,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
         </Grid>
 
         {/* Enhanced Filters */}
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Paper sx={{ p: 2, mb: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
             <FilterListIcon color="primary" />
             <Typography variant="h6">Filters & Search</Typography>
@@ -628,7 +628,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
                   onChange={(e) => setDepartmentFilter(e.target.value)}
                   label="Department"
                 >
-                  <MenuItem value="all">All Departments</MenuItem>
+                  <MenuItem sx={{ maxHeight: 300 }} value="all">All Departments</MenuItem>
                   {getUniqueDepartments().map((department) => (
                     <MenuItem key={department} value={department}>
                       {department}
