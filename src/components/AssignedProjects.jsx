@@ -173,17 +173,17 @@ const AssignedProjects = ({ user, onBack, onProjectCountChange }) => {
             </Typography>
           </Paper>
         ) : (
-          <TableContainer component={Paper} sx={{ mt: 2 }}>
+          <TableContainer component={Paper} sx={{ mt: 2, borderRadius: 2, overflow: "hidden" }}>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: "primary.main" }}>
                 <TableRow>
-                  <TableCell>Project Name</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Assigned Date</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }}>Project Name</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }}>Description</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }}>Assigned Date</TableCell>
                   {/* <TableCell>Assigned By</TableCell> */}
-                  <TableCell>Notes</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }}>Notes</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600, color: "white" }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

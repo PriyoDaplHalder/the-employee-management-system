@@ -816,7 +816,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
                 overflowX: 'auto',
                 marginLeft: { md: '0px' },
                 cursor: 'grab', // Add grab cursor for drag
-                WebkitOverflowScrolling: 'touch', // Enable momentum scroll on iOS
+                WebkitOverflowScrolling: 'touch', // Momentum scroll on iOS
               }}
               ref={dragScrollRef}
             >
