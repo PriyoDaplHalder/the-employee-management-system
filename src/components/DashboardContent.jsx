@@ -203,6 +203,7 @@ const DashboardContent = ({ user }) => {
               Hello, {user.email?.split("@")[0] || "User"}!
             </Typography>
             <Typography variant="body1" mt={1}>
+              It's &nbsp;
               {currentDate.toLocaleDateString(undefined, {
                 weekday: "long",
                 year: "numeric",
