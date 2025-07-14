@@ -7,8 +7,81 @@ import {
   CardContent,
   Grid,
   CircularProgress,
+  Divider,
 } from "@mui/material";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { getToken } from "../utils/storage";
+
+const COLORS = ["#4caf50", "#2196f3", "#f44336", "#ff9800"];
+
+const StatCard = ({ title, data, loading }) => (
+  <Card
+    sx={{
+      borderRadius: 4,
+      boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+      p: 3,
+      backgroundColor: "#ffffff",
+      height: "100%",
+      transition: "0.3s",
+      "&:hover": {
+        boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+        transform: "translateY(-3px)",
+      },
+      minWidth: "250px"
+
+    }}
+  >
+    <Typography variant="h6" fontWeight={600} mb={2} align="center">
+      {title}
+    </Typography>
+    {loading ? (
+      <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+        <CircularProgress />
+      </Box>
+    ) : (
+      <>
+        <Box sx={{ width: "100%", height: 200 }}>
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="label"
+                innerRadius={40}
+                outerRadius={70}
+                paddingAngle={4}
+              >
+                {data.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </Box>
+        <Divider sx={{ my: 2 }} />
+        <Box>
+          {data.map((item, index) => (
+            <Typography
+              key={index}
+              variant="body2"
+              sx={{
+                color: COLORS[index % COLORS.length],
+                fontWeight: 500,
+                textAlign: "center",
+              }}
+            >
+              {item.label}: {item.value}
+            </Typography>
+          ))}
+        </Box>
+      </>
+    )}
+  </Card>
+);
 
 const DashboardContent = ({ user }) => {
   const [weather, setWeather] = useState(null);
@@ -50,7 +123,6 @@ const DashboardContent = ({ user }) => {
   }, []);
 
   useEffect(() => {
-    // Fetch dashboard stats
     const fetchStats = async () => {
       setStatsLoading(true);
       try {
@@ -94,161 +166,116 @@ const DashboardContent = ({ user }) => {
     fetchStats();
   }, []);
 
+  const currentDate = new Date();
+
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ textAlign: "center", mt: 4, mb: 2 }}>
-        {loading ? (
-          <Typography variant="body1">Loading weather...</Typography>
-        ) : error ? (
-          <Typography variant="body2" color="error">
-            {error}
-          </Typography>
-        ) : weather ? (
-          <Card sx={{ boxShadow: 3, p: 2  }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                mb: 2
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  textAlign: "left",
-                }}
-              >
-                <Typography variant="h10" sx={{ fontWeight: 500 }}>
-                  Welcome,{" "}
-                  <span style={{ color: "#1976d2" }}>
-                    {user?.name || user?.email}
-                  </span>
-                </Typography>
-                <Typography
-                  variant="h10"
-                  sx={{ fontWeight: 500, color: "#555" }}
-                >
-                  I have prepared a quick weather report for{" "}
-                  <span style={{ color: "#1976d2" }}>{weather.name}</span>{" "}
-                  Today. <br />
-                  Hope you're having a great day 👋 <br />
-                  Outdoor temperature: <span style={{ color: "#1976d2" }}>{Math.round(weather.main.temp)}°C</span>
-                </Typography>
-              </Box>
-              <Box sx={{ display: "flex", flexDirection: "column" }}>
-                <img
-                  src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
-                  alt={weather.weather[0].description}
-                  style={{ width: 70, height: 70 }}
-                />
-                {weather.weather[0].main}
-              </Box>
-            </Box>
+    <Container maxWidth="lg" sx={{ py: 5 }}>
+      {/* Header Section */}
+      <Grid container spacing={3} mb={4}>
+        <Grid item xs={12} md={6}>
+          <Card sx={{ p: 3, backgroundColor: "#fdfdfd", borderRadius: 4 }}>
+            <Typography variant="h6" color="primary" fontWeight={600}>
+              Hello, {user.email?.split("@")[0] || "User"}!
+            </Typography>
+            <Typography variant="body1" mt={1}>
+              {currentDate.toLocaleDateString(undefined, {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </Typography>
+            <Typography variant="h5" mt={2} fontWeight={700}>
+              {currentDate.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Typography>
           </Card>
-        ) : null}
-      </Box>
-      {/* Main content area */}
-      <Box sx={{ mb: 4 }}>
-        <Grid container spacing={3} justifyContent="center">
-          <Grid item xs={12} md={4}>
-            <Card
-              sx={{ minHeight: 120, textAlign: "center", bgcolor: "#f5f5f5" }}
-            >
-              <CardContent>
-                <Typography variant="h4">Employees</Typography>
-                {statsLoading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  <Typography variant="h6">
-                    Total: {stats.employeeCount}
-                  </Typography>
-                )}
-                {statsLoading ? (
-                  ""
-                ) : (
-                  <Typography variant="h6">
-                    Active: {stats.activeEmployeeCount}
-                  </Typography>
-                )}
-                {statsLoading ? (
-                  ""
-                ) : (
-                  <Typography variant="h6">
-                    Inactive: {stats.inactiveEmployeeCount}
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Card
-              sx={{ minHeight: 120, textAlign: "center", bgcolor: "#f5f5f5" }}
-            >
-              <CardContent>
-                <Typography variant="h4">Projects</Typography>
-                {statsLoading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  <Typography variant="h6">
-                    Total: {stats.projectCount}
-                  </Typography>
-                )}
-                {statsLoading ? (
-                  ""
-                ) : (
-                  <Typography variant="h6">
-                    Active: {stats.activeProjectCount}
-                  </Typography>
-                )}
-                {statsLoading ? (
-                  ""
-                ) : (
-                  <Typography variant="h6">
-                    Inactive: {stats.inactiveProjectCount}
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Card
-              sx={{ minHeight: 120, textAlign: "center", bgcolor: "#f5f5f5" }}
-            >
-              <CardContent>
-                <Typography variant="h4">Tasks</Typography>
-                {statsLoading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  <Typography variant="h6">Total :{stats.taskCount}</Typography>
-                )}
-                {statsLoading ? (
-                  ""
-                ) : (
-                  <Typography variant="h6">
-                    Overdue: {stats.taskCountOverdue}
-                  </Typography>
-                )}
-                {statsLoading ? (
-                  ""
-                ) : (
-                  <Typography variant="h6">
-                    Due Today: {stats.taskCountDueToday}
-                  </Typography>
-                )}
-                {statsLoading ? (
-                  ""
-                ) : (
-                  <Typography variant="h6">
-                    Completed: {stats.taskCountCompleted}
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
         </Grid>
-      </Box>
+        <Grid item xs={12} md={6}>
+          <Card sx={{ p: 3, backgroundColor: "#fdfdfd", borderRadius: 4 }}>
+            {loading ? (
+              <Typography>Loading weather...</Typography>
+            ) : error ? (
+              <Typography color="error">{error}</Typography>
+            ) : (
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={8}>
+                  <Typography variant="h6" fontWeight={600} color="primary">
+                    Weather in {weather.name}
+                  </Typography>
+                  <Typography variant="body2" mt={1}>
+                    <strong>Condition:</strong> {weather.weather[0].description}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Temperature:</strong>{" "}
+                    <span style={{ color: "#f57c00", fontWeight: 600 }}>
+                      {Math.round(weather.main.temp)}°C
+                    </span>
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Feels like:</strong>{" "}
+                    {Math.round(weather.main.feels_like)}°C
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Humidity:</strong> {weather.main.humidity}% <br />
+                    <strong>Wind:</strong> {Math.round(weather.wind.speed)} km/h
+                  </Typography>
+                </Grid>
+                <Grid item xs={4} textAlign="center">
+                  <img
+                    src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
+                    alt={weather.weather[0].description}
+                    width={80}
+                  />
+                  <Typography variant="caption" fontStyle="italic">
+                    {weather.weather[0].main}
+                  </Typography>
+                </Grid>
+              </Grid>
+            )}
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Stat Section */}
+      <Grid container spacing={4} sx={{marginBottom:"50px"}}>
+        <Grid item xs={12} md={4}>
+          <StatCard
+            title="Employees"
+            loading={statsLoading}
+            data={[
+              { label: "Total", value: stats.employeeCount },
+              { label: "Active", value: stats.activeEmployeeCount },
+              { label: "Inactive", value: stats.inactiveEmployeeCount },
+            ]}
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <StatCard
+            title="Projects"
+            loading={statsLoading}
+            data={[
+              { label: "Total", value: stats.projectCount },
+              { label: "Active", value: stats.activeProjectCount },
+              { label: "Inactive", value: stats.inactiveProjectCount },
+            ]}
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <StatCard
+            title="Tasks"
+            loading={statsLoading}
+            data={[
+              { label: "Total", value: stats.taskCount },
+              { label: "Overdue", value: stats.taskCountOverdue },
+              { label: "Due Today", value: stats.taskCountDueToday },
+              { label: "Completed", value: stats.taskCountCompleted },
+            ]}
+          />
+        </Grid>
+      </Grid>
     </Container>
   );
 };
