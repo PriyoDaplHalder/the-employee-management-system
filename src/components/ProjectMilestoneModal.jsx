@@ -58,6 +58,8 @@ import DebouncedTextField from "./DebouncedTextField";
 import TaskAssignmentModal from "./TaskAssignmentModal";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 
 const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
   const [milestones, setMilestones] = useState([]);
@@ -114,7 +116,13 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
     }
   };
 
-  const handleFeatureItemUpdate = (milestoneId, featureId, itemId, field, value) => {
+  const handleFeatureItemUpdate = (
+    milestoneId,
+    featureId,
+    itemId,
+    field,
+    value
+  ) => {
     if (canEdit) {
       updateFeatureItem(milestoneId, featureId, itemId, { [field]: value });
     }
@@ -129,9 +137,16 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
   // Check if user is management or employee with editing permissions (per-project)
   const isManagement = user?.role === "management";
   const isEmployee = user?.role === "employee";
-  const canEdit = isManagement || (isEmployee && permissions?.projectPermissions?.some(
-    (p) => p.projectId === project?._id || p.projectId === project?.id || p.projectId?.toString() === project?._id?.toString() && p.canEditMilestone
-  ));
+  const canEdit =
+    isManagement ||
+    (isEmployee &&
+      permissions?.projectPermissions?.some(
+        (p) =>
+          p.projectId === project?._id ||
+          p.projectId === project?.id ||
+          (p.projectId?.toString() === project?._id?.toString() &&
+            p.canEditMilestone)
+      ));
 
   // Fetch user permissions if employee
   useEffect(() => {
@@ -178,11 +193,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
 
       if (response.ok) {
         const data = await response.json();
-        const projectAssignments = data.assignments?.filter(
-          assignment => 
-            assignment.projectId?._id === project._id || 
-            assignment.projectId === project._id
-        ) || [];
+        const projectAssignments =
+          data.assignments?.filter(
+            (assignment) =>
+              assignment.projectId?._id === project._id ||
+              assignment.projectId === project._id
+          ) || [];
         setAssignedEmployees(projectAssignments);
         return projectAssignments;
       }
@@ -194,25 +210,27 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
 
   // Populate employee names in milestone items
   const populateEmployeeNames = (milestones, employees) => {
-    return milestones.map(milestone => ({
+    return milestones.map((milestone) => ({
       ...milestone,
-      features: milestone.features?.map(feature => ({
-        ...feature,
-        items: feature.items?.map(item => {
-          if (item.assignedTo) {
-            const assignedEmployee = employees.find(emp => 
-              emp.employeeId?._id === item.assignedTo
-            );
-            return {
-              ...item,
-              assignedToName: assignedEmployee 
-                ? `${assignedEmployee.employeeId?.firstName} ${assignedEmployee.employeeId?.lastName}`
-                : 'Employee Removed'
-            };
-          }
-          return item;
-        }) || []
-      })) || []
+      features:
+        milestone.features?.map((feature) => ({
+          ...feature,
+          items:
+            feature.items?.map((item) => {
+              if (item.assignedTo) {
+                const assignedEmployee = employees.find(
+                  (emp) => emp.employeeId?._id === item.assignedTo
+                );
+                return {
+                  ...item,
+                  assignedToName: assignedEmployee
+                    ? `${assignedEmployee.employeeId?.firstName} ${assignedEmployee.employeeId?.lastName}`
+                    : "Employee Removed",
+                };
+              }
+              return item;
+            }) || [],
+        })) || [],
     }));
   };
 
@@ -226,15 +244,15 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
     setLoading(true);
     try {
       const token = getToken();
-      
+
       // Fetch assigned employees first
       const employees = await fetchAssignedEmployees();
-      
+
       // Use appropriate API endpoint based on user role and permissions
-      const endpoint = isManagement 
+      const endpoint = isManagement
         ? `/api/projects/${project._id}/milestones`
         : `/api/employee/projects/${project._id}/milestones`;
-        
+
       const response = await fetch(endpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -247,10 +265,13 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
       }
 
       const data = await response.json();
-      
+
       // Populate employee names in milestone data
-      const milestonesWithNames = populateEmployeeNames(data.milestones || [], employees);
-      
+      const milestonesWithNames = populateEmployeeNames(
+        data.milestones || [],
+        employees
+      );
+
       setMilestones(milestonesWithNames);
       setNotes(data.notes || []);
     } catch (err) {
@@ -269,12 +290,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
     setSaveLoading(true);
     try {
       const token = getToken();
-      
+
       // Use appropriate API endpoint based on user role and permissions
-      const endpoint = isManagement 
+      const endpoint = isManagement
         ? `/api/projects/${project._id}/milestones`
         : `/api/employee/projects/${project._id}/milestones/edit`;
-        
+
       const response = await fetch(endpoint, {
         method: "PUT",
         headers: {
@@ -290,11 +311,11 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
       }
 
       const data = await response.json();
-      
-      const successMessage = isManagement 
+
+      const successMessage = isManagement
         ? "Milestones and notes saved successfully!"
         : "Milestones and notes updated successfully using your editing permissions!";
-        
+
       setSnackbar({
         open: true,
         message: successMessage,
@@ -305,7 +326,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
       await fetchMilestones();
 
       if (onSuccess) onSuccess();
-      
+
       // Close the modal after a short delay to allow user to see the success message
       setTimeout(() => {
         handleClose();
@@ -579,6 +600,24 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
     }
   };
 
+  const handleReorderFeatureItems = (
+    milestoneId,
+    featureId,
+    sourceIdx,
+    destIdx
+  ) => {
+    const milestone = milestones.find((m) => m.id === milestoneId);
+    const feature = milestone?.features.find((f) => f.id === featureId);
+
+    if (!feature) return;
+
+    const reordered = [...feature.items];
+    const [moved] = reordered.splice(sourceIdx, 1);
+    reordered.splice(destIdx, 0, moved);
+
+    updateFeature(milestoneId, featureId, { items: reordered });
+  };
+
   const toggleFeatureExpansion = (milestoneId, featureId) => {
     const key = `${milestoneId}_${featureId}`;
     setExpandedFeature({
@@ -605,7 +644,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
     });
   };
 
-  const handleTaskAssignment = async (milestoneId, featureId, itemId, assignmentData) => {
+  const handleTaskAssignment = async (
+    milestoneId,
+    featureId,
+    itemId,
+    assignmentData
+  ) => {
     try {
       const milestone = milestones.find((m) => m.id === milestoneId);
       const feature = milestone?.features.find((f) => f.id === featureId);
@@ -614,12 +658,12 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
       if (item) {
         let assignedToName = null;
         if (assignmentData.assignedTo) {
-          const assignedEmployee = assignedEmployees.find(emp => 
-            emp.employeeId?._id === assignmentData.assignedTo
+          const assignedEmployee = assignedEmployees.find(
+            (emp) => emp.employeeId?._id === assignmentData.assignedTo
           );
-          assignedToName = assignedEmployee 
+          assignedToName = assignedEmployee
             ? `${assignedEmployee.employeeId?.firstName} ${assignedEmployee.employeeId?.lastName}`
-            : 'Unknown Employee';
+            : "Unknown Employee";
         }
 
         const updatedItem = {
@@ -635,8 +679,8 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
 
         setSnackbar({
           open: true,
-          message: assignmentData.assignedTo 
-            ? "Task assigned successfully! Click 'Save Changes' to persist." 
+          message: assignmentData.assignedTo
+            ? "Task assigned successfully! Click 'Save Changes' to persist."
             : "Task unassigned successfully! Click 'Save Changes' to persist.",
           severity: "success",
         });
@@ -766,20 +810,20 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                 Project Milestones
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {project.name} - {canEdit ? 'Edit Mode' : 'View Mode'}
+                {project.name} - {canEdit ? "Edit Mode" : "View Mode"}
                 {isEmployee && !canEdit && (
-                  <Chip 
-                    label="No Edit Permission" 
-                    size="small" 
-                    color="warning" 
+                  <Chip
+                    label="No Edit Permission"
+                    size="small"
+                    color="warning"
                     sx={{ ml: 1 }}
                   />
                 )}
                 {isEmployee && canEdit && (
-                  <Chip 
-                    label="Edit Permission Granted" 
-                    size="small" 
-                    color="success" 
+                  <Chip
+                    label="Edit Permission Granted"
+                    size="small"
+                    color="success"
                     sx={{ ml: 1 }}
                   />
                 )}
@@ -796,7 +840,9 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
             <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
               <CircularProgress size={48} />
               <Typography variant="body2" sx={{ ml: 2 }}>
-                {permissionsLoading ? "Loading permissions..." : "Loading milestones..."}
+                {permissionsLoading
+                  ? "Loading permissions..."
+                  : "Loading milestones..."}
               </Typography>
             </Box>
           ) : (
@@ -804,14 +850,13 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
               {/* Permission Alert for Employees */}
               {isEmployee && (
                 <Box sx={{ mb: 3 }}>
-                  <Alert 
+                  <Alert
                     severity={canEdit ? "success" : "info"}
                     sx={{ borderRadius: 2 }}
                   >
-                    {canEdit 
+                    {canEdit
                       ? "You have been granted permission to edit project milestones. You can add, modify, and delete milestones and notes."
-                      : "You can view project milestones but cannot edit them. Contact management if you need editing permissions."
-                    }
+                      : "You can view project milestones but cannot edit them. Contact management if you need editing permissions."}
                   </Alert>
                 </Box>
               )}
@@ -1082,7 +1127,11 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                     label="Milestone Title"
                                     value={milestone.title}
                                     onChange={(value) =>
-                                      handleMilestoneUpdate(milestone.id, "title", value)
+                                      handleMilestoneUpdate(
+                                        milestone.id,
+                                        "title",
+                                        value
+                                      )
                                     }
                                     variant="outlined"
                                     disabled={!canEdit}
@@ -1094,7 +1143,11 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                     label="Milestone Name"
                                     value={milestone.name}
                                     onChange={(value) =>
-                                      handleMilestoneUpdate(milestone.id, "name", value)
+                                      handleMilestoneUpdate(
+                                        milestone.id,
+                                        "name",
+                                        value
+                                      )
                                     }
                                     variant="outlined"
                                     disabled={!canEdit}
@@ -1108,7 +1161,11 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                     label="Description"
                                     value={milestone.description}
                                     onChange={(value) =>
-                                      handleMilestoneUpdate(milestone.id, "description", value)
+                                      handleMilestoneUpdate(
+                                        milestone.id,
+                                        "description",
+                                        value
+                                      )
                                     }
                                     variant="outlined"
                                     disabled={!canEdit}
@@ -1123,7 +1180,8 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                         : null
                                     }
                                     onChange={(date) =>
-                                      canEdit && updateMilestone(milestone.id, {
+                                      canEdit &&
+                                      updateMilestone(milestone.id, {
                                         startDate: date,
                                       })
                                     }
@@ -1145,7 +1203,8 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                         : null
                                     }
                                     onChange={(date) =>
-                                      canEdit && updateMilestone(milestone.id, {
+                                      canEdit &&
+                                      updateMilestone(milestone.id, {
                                         endDate: date,
                                       })
                                     }
@@ -1293,7 +1352,13 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                           },
                                         }}
                                       >
-                                        <CardContent sx={{ py: 0, px: 1, pb: "0!important" }}>
+                                        <CardContent
+                                          sx={{
+                                            py: 0,
+                                            px: 1,
+                                            pb: "0!important",
+                                          }}
+                                        >
                                           <Box
                                             sx={{
                                               display: "flex",
@@ -1402,7 +1467,8 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                                     onClick={(e) => {
                                                       e.stopPropagation();
                                                       setEditingFeature({
-                                                        milestoneId: milestone.id,
+                                                        milestoneId:
+                                                          milestone.id,
                                                         featureId: feature.id,
                                                       });
                                                     }}
@@ -1547,276 +1613,379 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                                   Item" to create a checklist.
                                                 </Typography>
                                               ) : (
-                                                <List
-                                                  dense
-                                                  sx={{
-                                                    bgcolor: "white",
-                                                    borderRadius: 2,
-                                                    p: 1,
-                                                    "& .MuiListItem-root": {
-                                                      animation:
-                                                        "fadeInUp 0.3s ease-out",
-                                                      animationFillMode: "both",
-                                                    },
-                                                    "@keyframes fadeInUp": {
-                                                      "0%": {
-                                                        opacity: 0,
-                                                        transform:
-                                                          "translateY(10px)",
-                                                      },
-                                                      "100%": {
-                                                        opacity: 1,
-                                                        transform:
-                                                          "translateY(0)",
-                                                      },
-                                                    },
+                                                <DragDropContext
+                                                  onDragEnd={(result) => {
+                                                    if (!result.destination)
+                                                      return;
+                                                    const {
+                                                      source,
+                                                      destination,
+                                                    } = result;
+                                                    handleReorderFeatureItems(
+                                                      milestone.id,
+                                                      feature.id,
+                                                      source.index,
+                                                      destination.index
+                                                    );
                                                   }}
                                                 >
-                                                  {feature.items.map(
-                                                    (item, itemIndex) => (
-                                                      <ListItem
-                                                        key={item.id}
+                                                  <Droppable
+                                                    droppableId={`droppable-${feature.id}`}
+                                                  >
+                                                    {(provided) => (
+                                                      <List
+                                                        dense
+                                                        ref={provided.innerRef}
+                                                        {...provided.droppableProps}
                                                         sx={{
-                                                          px: 2,
-                                                          py: 1,
-                                                          mb: 1,
-                                                          bgcolor:
-                                                            item.completed
-                                                              ? "success.50"
-                                                              : "grey.50",
+                                                          bgcolor: "white",
                                                           borderRadius: 2,
-                                                          border: "1px solid",
-                                                          borderColor:
-                                                            item.completed
-                                                              ? "success.200"
-                                                              : "grey.200",
-                                                          transition:
-                                                            "all 0.2s ease-in-out",
-                                                          animationDelay: `${
-                                                            itemIndex * 0.05
-                                                          }s`,
-                                                          "&:hover": {
-                                                            bgcolor:
-                                                              item.completed
-                                                                ? "success.100"
-                                                                : "grey.100",
-                                                            transform:
-                                                              "translateX(4px)",
-                                                            boxShadow:
-                                                              "0 2px 4px rgba(0,0,0,0.1)",
-                                                          },
+                                                          p: 1,
                                                         }}
                                                       >
-                                                        <FormControlLabel
-                                                          control={
-                                                            <Checkbox
-                                                              checked={
-                                                                item.completed
-                                                              }
-                                                              onChange={(e) =>
-                                                                canEdit && updateFeatureItem(
-                                                                  milestone.id,
-                                                                  feature.id,
-                                                                  item.id,
-                                                                  {
-                                                                    completed:
-                                                                      e.target
-                                                                        .checked,
+                                                        {feature.items.map(
+                                                          (item, itemIndex) => (
+                                                            <Draggable
+                                                              draggableId={item.id.toString()}
+                                                              index={itemIndex}
+                                                              key={item.id}
+                                                            >
+                                                              {(
+                                                                provided,
+                                                                snapshot
+                                                              ) => (
+                                                                <ListItem
+                                                                  ref={
+                                                                    provided.innerRef
                                                                   }
-                                                                )
-                                                              }
-                                                              disabled={!canEdit}
-                                                              icon={
-                                                                <CheckBoxOutlineBlankIcon />
-                                                              }
-                                                              checkedIcon={
-                                                                <CheckBoxIcon />
-                                                              }
-                                                              sx={{
-                                                                color:
-                                                                  "success.main",
-                                                                borderRadius: 1, // Make square
-                                                                '&.Mui-checked': {
-                                                                  color: 'success.main',
-                                                                },
-                                                                '&.Mui-disabled': {
-                                                                  color: 'grey.400',
-                                                                },
-                                                              }}
-                                                            />
-                                                          }
-                                                          label={
-                                                            <Box sx={{ width: "100%" }}>
-                                                              {editingItem?.milestoneId ===
-                                                                milestone.id &&
-                                                              editingItem?.featureId ===
-                                                                feature.id &&
-                                                              editingItem?.itemId ===
-                                                                item.id &&
-                                                              canEdit ? (
-                                                                <TextField
-                                                                  size="small"
-                                                                  value={
-                                                                    item.text
-                                                                  }
-                                                                  onChange={(e) =>
-                                                                    handleFeatureItemUpdate(
-                                                                      milestone.id,
-                                                                      feature.id,
-                                                                      item.id,
-                                                                      "text",
-                                                                      e.target.value
-                                                                    )
-                                                                  }
-                                                                  onBlur={() =>
-                                                                    setEditingItem(
-                                                                      null
-                                                                    )
-                                                                  }
-                                                                  onKeyDown={(
-                                                                    e
-                                                                  ) => {
-                                                                    if (
-                                                                      e.key ===
-                                                                      "Enter"
-                                                                    ) {
-                                                                      setEditingItem(
-                                                                        null
-                                                                      );
-                                                                    }
-                                                                  }}
-                                                                  autoFocus
-                                                                  variant="standard"
-                                                                  disabled={!canEdit}
+                                                                  {...provided.draggableProps}
                                                                   sx={{
-                                                                    "& .MuiInput-underline:before":
-                                                                      {
-                                                                        borderBottomColor:
-                                                                          "primary.main",
-                                                                      },
+                                                                    px: 2,
+                                                                    py: 1,
+                                                                    mb: 1,
+                                                                    bgcolor:
+                                                                      item.completed
+                                                                        ? "success.50"
+                                                                        : "grey.50",
+                                                                    borderRadius: 2,
+                                                                    border:
+                                                                      "1px solid",
+                                                                    borderColor:
+                                                                      item.completed
+                                                                        ? "success.200"
+                                                                        : "grey.200",
+                                                                    transition:
+                                                                      "all 0.2s ease-in-out",
+                                                                    opacity:
+                                                                      snapshot.isDragging
+                                                                        ? 0.8
+                                                                        : 1,
+                                                                    display:
+                                                                      "flex",
+                                                                    alignItems:
+                                                                      "center",
                                                                   }}
-                                                                />
-                                                              ) : (
-                                                                <Box>
-                                                                  <Typography
-                                                                    variant="body2"
+                                                                >
+                                                                  <Box
+                                                                    {...provided.dragHandleProps}
                                                                     sx={{
-                                                                      textDecoration:
-                                                                        item.completed
-                                                                          ? "line-through"
-                                                                          : "none",
-                                                                      color:
-                                                                        item.completed
-                                                                          ? "text.secondary"
-                                                                          : "text.primary",
-                                                                      fontWeight:
-                                                                        item.completed
-                                                                          ? 400
-                                                                          : 500,
+                                                                      mr: 1,
+                                                                      display:
+                                                                        "flex",
+                                                                      alignItems:
+                                                                        "center",
+                                                                      cursor:
+                                                                        "grab",
                                                                     }}
                                                                   >
-                                                                    {item.text ||
-                                                                      "No text provided"}
-                                                                  </Typography>
-                                                                  {/* Assignment Status Chip */}
-                                                                  <Box sx={{ mt: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
-                                                                    {item.assignedTo ? (
-                                                                      <Chip
-                                                                        size="small"
-                                                                        label={`Assigned to: ${item.assignedToName || 'Employee'}`}
-                                                                        color="primary"
-                                                                        variant="outlined"
-                                                                        sx={{ fontSize: "0.7rem", pointerEvents: "none" }}
-                                                                      />
-                                                                    ) : (
-                                                                      <Chip
-                                                                        size="small"
-                                                                        label="None assigned"
-                                                                        color="default"
-                                                                        variant="outlined"
-                                                                        sx={{ fontSize: "0.7rem", pointerEvents: "none" }}
-                                                                      />
-                                                                    )}
-                                                                    {item.dueDate && (
-                                                                      <Chip
-                                                                        size="small"
-                                                                        label={`Due: ${new Date(item.dueDate).toLocaleDateString()}`}
-                                                                        color="warning"
-                                                                        variant="outlined"
-                                                                        icon={<CalendarIcon />}
-                                                                        sx={{ fontSize: "0.7rem" }}
-                                                                      />
-                                                                    )}
+                                                                    <DragIndicatorIcon
+                                                                      fontSize="small"
+                                                                      sx={{
+                                                                        color:
+                                                                          "grey.600",
+                                                                      }}
+                                                                    />
                                                                   </Box>
-                                                                </Box>
-                                                              )}
-                                                            </Box>
-                                                          }
-                                                          sx={{
-                                                            flex: 1,
-                                                            mr: 1,
-                                                          }}
-                                                        />
 
-                                                        <ListItemSecondaryAction>
-                                                          {canEdit && (
-                                                            <Box sx={{ display: "flex", gap: 0.5 }}>
-                                                              <Button 
-                                                                variant="outlined" 
-                                                                size="small"
-                                                                onClick={() => openAssignmentModal(milestone, feature, item)}
-                                                              >
-                                                                Assign
-                                                              </Button>
-                                                              <Tooltip title="Edit item">
-                                                                <IconButton
-                                                                  size="small"
-                                                                  onClick={() =>
-                                                                    setEditingItem({
-                                                                      milestoneId: milestone.id,
-                                                                      featureId: feature.id,
-                                                                      itemId: item.id,
-                                                                    })
-                                                                  }
-                                                                  sx={{
-                                                                    color: "info.main",
-                                                                    "&:hover": {
-                                                                      color: "info.dark",
-                                                                    },
-                                                                  }}
-                                                                >
-                                                                  <EditIcon fontSize="small" />
-                                                                </IconButton>
-                                                              </Tooltip>
-                                                              <Tooltip title="Delete item">
-                                                                <IconButton
-                                                                  size="small"
-                                                                  onClick={() =>
-                                                                    deleteFeatureItem(
-                                                                      milestone.id,
-                                                                      feature.id,
-                                                                      item.id
-                                                                    )
-                                                                  }
-                                                                  sx={{
-                                                                    color:
-                                                                      "error.main",
-                                                                    "&:hover": {
-                                                                      color:
-                                                                        "error.dark",
-                                                                    },
-                                                                  }}
-                                                                >
-                                                                  <DeleteIcon fontSize="small" />
-                                                                </IconButton>
-                                                              </Tooltip>
-                                                            </Box>
-                                                          )}
-                                                        </ListItemSecondaryAction>
-                                                      </ListItem>
-                                                    )
-                                                  )}
-                                                </List>
+                                                                  <FormControlLabel
+                                                                    control={
+                                                                      <Checkbox
+                                                                        checked={
+                                                                          item.completed
+                                                                        }
+                                                                        onChange={(
+                                                                          e
+                                                                        ) =>
+                                                                          canEdit &&
+                                                                          updateFeatureItem(
+                                                                            milestone.id,
+                                                                            feature.id,
+                                                                            item.id,
+                                                                            {
+                                                                              completed:
+                                                                                e
+                                                                                  .target
+                                                                                  .checked,
+                                                                            }
+                                                                          )
+                                                                        }
+                                                                        disabled={
+                                                                          !canEdit
+                                                                        }
+                                                                        icon={
+                                                                          <CheckBoxOutlineBlankIcon />
+                                                                        }
+                                                                        checkedIcon={
+                                                                          <CheckBoxIcon />
+                                                                        }
+                                                                        sx={{
+                                                                          color:
+                                                                            "success.main",
+                                                                          "&.Mui-disabled":
+                                                                            {
+                                                                              color:
+                                                                                "grey.400",
+                                                                            },
+                                                                        }}
+                                                                      />
+                                                                    }
+                                                                    label={
+                                                                      <Box
+                                                                        sx={{
+                                                                          width:
+                                                                            "100%",
+                                                                        }}
+                                                                      >
+                                                                        {editingItem?.milestoneId ===
+                                                                          milestone.id &&
+                                                                        editingItem?.featureId ===
+                                                                          feature.id &&
+                                                                        editingItem?.itemId ===
+                                                                          item.id &&
+                                                                        canEdit ? (
+                                                                          <TextField
+                                                                            size="small"
+                                                                            value={
+                                                                              item.text
+                                                                            }
+                                                                            onChange={(
+                                                                              e
+                                                                            ) =>
+                                                                              handleFeatureItemUpdate(
+                                                                                milestone.id,
+                                                                                feature.id,
+                                                                                item.id,
+                                                                                "text",
+                                                                                e
+                                                                                  .target
+                                                                                  .value
+                                                                              )
+                                                                            }
+                                                                            onBlur={() =>
+                                                                              setEditingItem(
+                                                                                null
+                                                                              )
+                                                                            }
+                                                                            onKeyDown={(
+                                                                              e
+                                                                            ) => {
+                                                                              if (
+                                                                                e.key ===
+                                                                                "Enter"
+                                                                              )
+                                                                                setEditingItem(
+                                                                                  null
+                                                                                );
+                                                                            }}
+                                                                            autoFocus
+                                                                            variant="standard"
+                                                                            disabled={
+                                                                              !canEdit
+                                                                            }
+                                                                            sx={{
+                                                                              "& .MuiInput-underline:before":
+                                                                                {
+                                                                                  borderBottomColor:
+                                                                                    "primary.main",
+                                                                                },
+                                                                            }}
+                                                                          />
+                                                                        ) : (
+                                                                          <Box>
+                                                                            <Typography
+                                                                              variant="body2"
+                                                                              sx={{
+                                                                                textDecoration:
+                                                                                  item.completed
+                                                                                    ? "line-through"
+                                                                                    : "none",
+                                                                                color:
+                                                                                  item.completed
+                                                                                    ? "text.secondary"
+                                                                                    : "text.primary",
+                                                                                fontWeight:
+                                                                                  item.completed
+                                                                                    ? 400
+                                                                                    : 500,
+                                                                              }}
+                                                                            >
+                                                                              {item.text ||
+                                                                                "No text provided"}
+                                                                            </Typography>
+                                                                            <Box
+                                                                              sx={{
+                                                                                mt: 1,
+                                                                                display:
+                                                                                  "flex",
+                                                                                gap: 1,
+                                                                                flexWrap:
+                                                                                  "wrap",
+                                                                              }}
+                                                                            >
+                                                                              {item.assignedTo ? (
+                                                                                <Chip
+                                                                                  size="small"
+                                                                                  label={`Assigned to: ${
+                                                                                    item.assignedToName ||
+                                                                                    "Employee"
+                                                                                  }`}
+                                                                                  color="primary"
+                                                                                  variant="outlined"
+                                                                                  sx={{
+                                                                                    fontSize:
+                                                                                      "0.7rem",
+                                                                                    pointerEvents:
+                                                                                      "none",
+                                                                                  }}
+                                                                                />
+                                                                              ) : (
+                                                                                <Chip
+                                                                                  size="small"
+                                                                                  label="None assigned"
+                                                                                  color="default"
+                                                                                  variant="outlined"
+                                                                                  sx={{
+                                                                                    fontSize:
+                                                                                      "0.7rem",
+                                                                                    pointerEvents:
+                                                                                      "none",
+                                                                                  }}
+                                                                                />
+                                                                              )}
+                                                                              {item.dueDate && (
+                                                                                <Chip
+                                                                                  size="small"
+                                                                                  label={`Due: ${new Date(
+                                                                                    item.dueDate
+                                                                                  ).toLocaleDateString()}`}
+                                                                                  color="warning"
+                                                                                  variant="outlined"
+                                                                                  icon={
+                                                                                    <CalendarIcon />
+                                                                                  }
+                                                                                  sx={{
+                                                                                    fontSize:
+                                                                                      "0.7rem",
+                                                                                  }}
+                                                                                />
+                                                                              )}
+                                                                            </Box>
+                                                                          </Box>
+                                                                        )}
+                                                                      </Box>
+                                                                    }
+                                                                    sx={{
+                                                                      flex: 1,
+                                                                      mr: 1,
+                                                                    }}
+                                                                  />
+
+                                                                  <ListItemSecondaryAction>
+                                                                    {canEdit && (
+                                                                      <Box
+                                                                        sx={{
+                                                                          display:
+                                                                            "flex",
+                                                                          gap: 0.5,
+                                                                        }}
+                                                                      >
+                                                                        <Button
+                                                                          variant="outlined"
+                                                                          size="small"
+                                                                          onClick={() =>
+                                                                            openAssignmentModal(
+                                                                              milestone,
+                                                                              feature,
+                                                                              item
+                                                                            )
+                                                                          }
+                                                                        >
+                                                                          Assign
+                                                                        </Button>
+                                                                        <Tooltip title="Edit item">
+                                                                          <IconButton
+                                                                            size="small"
+                                                                            onClick={() =>
+                                                                              setEditingItem(
+                                                                                {
+                                                                                  milestoneId:
+                                                                                    milestone.id,
+                                                                                  featureId:
+                                                                                    feature.id,
+                                                                                  itemId:
+                                                                                    item.id,
+                                                                                }
+                                                                              )
+                                                                            }
+                                                                            sx={{
+                                                                              color:
+                                                                                "info.main",
+                                                                              "&:hover":
+                                                                                {
+                                                                                  color:
+                                                                                    "info.dark",
+                                                                                },
+                                                                            }}
+                                                                          >
+                                                                            <EditIcon fontSize="small" />
+                                                                          </IconButton>
+                                                                        </Tooltip>
+                                                                        <Tooltip title="Delete item">
+                                                                          <IconButton
+                                                                            size="small"
+                                                                            onClick={() =>
+                                                                              deleteFeatureItem(
+                                                                                milestone.id,
+                                                                                feature.id,
+                                                                                item.id
+                                                                              )
+                                                                            }
+                                                                            sx={{
+                                                                              color:
+                                                                                "error.main",
+                                                                              "&:hover":
+                                                                                {
+                                                                                  color:
+                                                                                    "error.dark",
+                                                                                },
+                                                                            }}
+                                                                          >
+                                                                            <DeleteIcon fontSize="small" />
+                                                                          </IconButton>
+                                                                        </Tooltip>
+                                                                      </Box>
+                                                                    )}
+                                                                  </ListItemSecondaryAction>
+                                                                </ListItem>
+                                                              )}
+                                                            </Draggable>
+                                                          )
+                                                        )}
+                                                        {provided.placeholder}
+                                                      </List>
+                                                    )}
+                                                  </Droppable>
+                                                </DragDropContext>
                                               )}
                                             </Box>
                                           )}
@@ -1941,7 +2110,11 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                       size="small"
                                       value={note.title}
                                       onChange={(value) =>
-                                        handleNoteUpdate(note.id, "title", value)
+                                        handleNoteUpdate(
+                                          note.id,
+                                          "title",
+                                          value
+                                        )
                                       }
                                       onBlur={() => setEditingNote(null)}
                                       onKeyDown={(e) => {
@@ -2053,7 +2226,11 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                     label="Note Description"
                                     value={note.description}
                                     onChange={(value) =>
-                                      handleNoteUpdate(note.id, "description", value)
+                                      handleNoteUpdate(
+                                        note.id,
+                                        "description",
+                                        value
+                                      )
                                     }
                                     placeholder="Add your note content here..."
                                     variant="outlined"
