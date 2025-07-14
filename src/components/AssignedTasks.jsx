@@ -416,11 +416,11 @@ const AssignedTasks = ({ user, onBack, onTaskCountChange }) => {
             </Typography>
           </Paper>
         ) : (
-          <TableContainer component={Paper} sx={{ mt: 2 }}>
+          <TableContainer component={Paper} sx={{ mt: 2, borderRadius: 2, overflow: "hidden" }}>
             <Table>
-              <TableHead>
+              <TableHead sx={{ bgcolor: "primary.main" }}>
                 <TableRow>
-                  <TableCell>
+                  <TableCell sx={{ color: "white" }}>
                     <TableSortLabel
                       active={sortBy === "title"}
                       direction={sortBy === "title" ? sortOrder : "asc"}
@@ -436,7 +436,7 @@ const AssignedTasks = ({ user, onBack, onTaskCountChange }) => {
                       Task Title
                     </TableSortLabel>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }}>
                     <TableSortLabel
                       active={sortBy === "status"}
                       direction={sortBy === "status" ? sortOrder : "asc"}
@@ -452,7 +452,7 @@ const AssignedTasks = ({ user, onBack, onTaskCountChange }) => {
                       Status
                     </TableSortLabel>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }}>
                     <TableSortLabel
                       active={sortBy === "priority"}
                       direction={sortBy === "priority" ? sortOrder : "asc"}
@@ -468,7 +468,7 @@ const AssignedTasks = ({ user, onBack, onTaskCountChange }) => {
                       Priority
                     </TableSortLabel>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }}>
                     <TableSortLabel
                       active={sortBy === "dueDate"}
                       direction={sortBy === "dueDate" ? sortOrder : "asc"}
@@ -484,9 +484,9 @@ const AssignedTasks = ({ user, onBack, onTaskCountChange }) => {
                       Due Date
                     </TableSortLabel>
                   </TableCell>
-                  <TableCell>Project</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }}>Project</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }}>Description</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: "white" }} align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

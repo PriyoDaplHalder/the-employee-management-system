@@ -637,18 +637,18 @@ const MailManagement = ({ user, onBack }) => {
                   </Typography>
                 </Box>
               ) : (
-                <TableContainer>
+                <TableContainer sx={{ borderRadius: 2, overflow: "hidden" }}>
                   <Table>
-                    <TableHead>
+                    <TableHead sx={{ bgcolor: "primary.main" }}>
                       <TableRow>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Request Type</TableCell>
-                        <TableCell>Subject</TableCell>
-                        <TableCell>Department</TableCell>
-                        <TableCell>Sent To Positions</TableCell>
-                        <TableCell>Priority</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Actions</TableCell>
+                        <TableCell sx={{fontWeight: 600,color: "white"}}>Date</TableCell>
+                        <TableCell sx={{fontWeight: 600,color: "white"}}>Request Type</TableCell>
+                        <TableCell sx={{fontWeight: 600,color: "white"}}>Subject</TableCell>
+                        <TableCell sx={{fontWeight: 600,color: "white"}}>Department</TableCell>
+                        <TableCell sx={{fontWeight: 600,color: "white"}}>Sent To Positions</TableCell>
+                        <TableCell sx={{fontWeight: 600,color: "white"}}>Priority</TableCell>
+                        <TableCell sx={{fontWeight: 600,color: "white"}}>Status</TableCell>
+                        <TableCell sx={{fontWeight: 600,color: "white"}}>Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>

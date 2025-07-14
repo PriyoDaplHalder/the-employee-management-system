@@ -192,16 +192,16 @@ const InboxManagement = ({ user, onBack }) => {
                 </Typography>
               </Box>
             ) : (
-              <TableContainer>
+              <TableContainer sx={{ borderRadius: 2, overflow: "hidden" }}>
                 <Table>
-                  <TableHead>
+                  <TableHead sx={{ bgcolor: "primary.main" }}>
                     <TableRow>
-                      <TableCell>Date</TableCell>
-                      <TableCell>From</TableCell>
-                      <TableCell>Request Type</TableCell>
-                      <TableCell>Subject</TableCell>
-                      <TableCell>Priority</TableCell>
-                      <TableCell>Actions</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "white" }}>Date</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "white" }}>From</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "white" }}>Request Type</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "white" }}>Subject</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "white" }}>Priority</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "white" }}>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
