@@ -51,6 +51,7 @@ import ProjectAssignmentModal from "./ProjectAssignmentModal";
 import EmployeeProjectsModal from "./EmployeeProjectsModal";
 import CustomSnackbar from "./CustomSnackbar";
 import { getToken } from "../utils/storage";
+import useDragScroll from "../hooks/useDragScroll";
 
 const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   const [employees, setEmployees] = useState([]);
@@ -82,6 +83,10 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
   // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Drag-to-scroll ref
+  const dragScrollRef = useDragScroll();
+
   useEffect(() => {
     fetchEmployees();
   }, []);
@@ -810,7 +815,10 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
                 maxWidth: { xs: '100vw', md: 'calc(100vw - 290px)' }, //for the sidebar width
                 overflowX: 'auto',
                 marginLeft: { md: '0px' },
+                cursor: 'grab', // Add grab cursor for drag
+                WebkitOverflowScrolling: 'touch', // Enable momentum scroll on iOS
               }}
+              ref={dragScrollRef}
             >
               <Table sx={{ minWidth: 900 }} aria-label="employees table">
                 <TableHead>
