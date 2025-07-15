@@ -928,7 +928,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                                     border: "1px solid",
                                                                     borderColor: snapshot.isDragging ? "primary.main" : "divider",
                                                                     transition: "all 0.2s ease",
-                                                                    opacity: !item.assignedTo ? 0.5 : 1,
+                                                                    opacity: !item.assignedTo ? 0.5 : (isAssignedToUser ? 1 : 0.7),
                                                                     "&:hover": {
                                                                       bgcolor: !item.assignedTo ? undefined : "grey.50",
                                                                       borderColor: !item.assignedTo ? undefined : "primary.light"
@@ -1038,7 +1038,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                                               label={
                                                                                 isAssignedToUser 
                                                                                   ? "Assigned to You" 
-                                                                                  : item.assignedToName || "Assigned to Other"
+                                                                                  : "Assigned to Other"
                                                                               }
                                                                               size="small"
                                                                               color={isAssignedToUser ? "success" : "default"}
@@ -1046,7 +1046,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                                               sx={{ 
                                                                                 fontSize: "0.7rem", 
                                                                                 height: "20px",
-                                                                                opacity: !item.assignedTo ? 0.5 : 1
+                                                                                opacity: !item.assignedTo ? 0.5 : (isAssignedToUser ? 1 : 0.7)
                                                                               }}
                                                                             />
                                                                             {item.dueDate && (
@@ -1057,7 +1057,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                                                 sx={{ 
                                                                                   fontSize: "0.7rem", 
                                                                                   height: "20px",
-                                                                                  opacity: !item.assignedTo ? 0.5 : 1
+                                                                                  opacity: !item.assignedTo ? 0.5 : (isAssignedToUser ? 1 : 0.7)
                                                                                 }}
                                                                               />
                                                                             )}
@@ -1265,7 +1265,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                           border: "1px solid", 
                                                           borderColor: item.completed ? "success.200" : "divider", 
                                                           transition: "all 0.2s ease",
-                                                          opacity: !item.assignedTo ? 0.5 : 1,
+                                                          opacity: !item.assignedTo ? 0.5 : (isAssignedToUser ? 1 : 0.7),
                                                           "&:hover": { 
                                                             bgcolor: !item.assignedTo ? undefined : "grey.50", 
                                                             borderColor: !item.assignedTo ? undefined : "primary.light" 
@@ -1321,7 +1321,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                                     label={
                                                                       isAssignedToUser 
                                                                         ? "Assigned to You" 
-                                                                        : item.assignedToName || "Assigned to Other"
+                                                                        : "Assigned to Other"
                                                                     }
                                                                     size="small"
                                                                     color={isAssignedToUser ? "success" : "default"}
@@ -1329,7 +1329,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                                     sx={{ 
                                                                       fontSize: "0.7rem", 
                                                                       height: "20px",
-                                                                      opacity: !item.assignedTo ? 0.5 : 1
+                                                                      opacity: !item.assignedTo ? 0.5 : (isAssignedToUser ? 1 : 0.7)
                                                                     }}
                                                                   />
                                                                   {item.dueDate && (
@@ -1340,7 +1340,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                                       sx={{ 
                                                                         fontSize: "0.7rem", 
                                                                         height: "20px",
-                                                                        opacity: !item.assignedTo ? 0.5 : 1
+                                                                        opacity: !item.assignedTo ? 0.5 : (isAssignedToUser ? 1 : 0.7)
                                                                       }}
                                                                     />
                                                                   )}
