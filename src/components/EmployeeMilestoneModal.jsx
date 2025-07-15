@@ -931,7 +931,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                                     opacity: !item.assignedTo ? 0.5 : (isAssignedToUser ? 1 : 0.7),
                                                                     "&:hover": {
                                                                       bgcolor: !item.assignedTo ? undefined : "grey.50",
-                                                                      borderColor: !item.assignedTo ? undefined : "primary.light"
+                                                                      // borderColor: !item.assignedTo ? undefined : "primary.light"
                                                                     },
                                                                     cursor: canEditItem ? "grab" : "default",
                                                                     "&:active": { cursor: canEditItem ? "grabbing" : "default" }
@@ -1262,13 +1262,13 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                           mb: 1, 
                                                           bgcolor: item.completed ? "success.50" : "background.paper", 
                                                           borderRadius: 1, 
-                                                          border: "1px solid", 
+                                                          border: "1px dashed gray", 
                                                           borderColor: item.completed ? "success.200" : "divider", 
                                                           transition: "all 0.2s ease",
                                                           opacity: !item.assignedTo ? 0.5 : (isAssignedToUser ? 1 : 0.7),
                                                           "&:hover": { 
                                                             bgcolor: !item.assignedTo ? undefined : "grey.50", 
-                                                            borderColor: !item.assignedTo ? undefined : "primary.light" 
+                                                            // borderColor: !item.assignedTo ? undefined : "primary.light" 
                                                           }
                                                         }}
                                                       >
