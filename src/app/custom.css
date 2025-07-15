@@ -108,3 +108,23 @@
 .error-button:hover {
   background-color: #c62828;
 }
+
+.error-link {
+  color: #e53935;
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.error-link:hover {
+  color: #c62828;
+  text-decoration: underline;
+}
+
+.error-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}

@@ -1,6 +1,7 @@
 'use client'; // required for error components
 
 import './custom.css'; // custom CSS file
+import Link from 'next/link';
 
 export default function GlobalError({ error, reset }) {
   return (
@@ -14,7 +15,7 @@ export default function GlobalError({ error, reset }) {
           <button className="error-button" onClick={() => reset()}>
             Try Again
           </button>
-          <a className="error-link" href="/">Go to Homepage</a>
+          <Link className="error-link" href="/">Go to Homepage</Link>
         </div>
       </div>
     </div>

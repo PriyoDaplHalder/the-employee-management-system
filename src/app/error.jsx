@@ -1,6 +1,7 @@
 "use client"
 
 import "./custom.css";
+import Link from "next/link";
 
 const ErrorPage = () => {
   return (
@@ -11,7 +12,7 @@ const ErrorPage = () => {
         <p className="error-message">
           An unexpected error has occurred. Please try again later.
         </p>
-        <a className="error-button" href="/">Go to Homepage</a>
+        <Link className="error-button" href="/">Go to Homepage</Link>
       </div>
     </div>
   );
