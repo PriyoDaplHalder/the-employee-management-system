@@ -32,15 +32,14 @@ export default function RootLayout({ children }) {
               margin: "10px",
               color: "blue",
               textAlign: "center",
-              border: "2px solid blue",
-              borderRadius: "10px",
               marginTop: "20px",
+              textDecoration: "underline",
             }}
           >
             Employee Management System
           </h1>
           <h2
-            style={{ padding: "20px", textAlign: "center", color: "#ff5733" }}
+            style={{ padding:"5px", margin: "20px", textAlign: "center", color: "#ff5733", boxShadow: "0 0 10px rgba(255, 87, 51, 0.5)" , borderRadius: "10px" }}
           >
             Please enable JavaScript to use this application.
           </h2>
