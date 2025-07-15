@@ -3,6 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import Project from '@/model/Project';
 import ProjectAssignment from '@/model/ProjectAssignment';
 import { User } from '@/model/User';
+import { Permission } from '@/model/Permission';
 import { verifyToken, getTokenFromHeaders } from '@/lib/auth';
 
 // Helper function to get and verify token from request
@@ -22,7 +23,7 @@ export async function GET(request, { params }) {
     
     await dbConnect();
 
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json(
@@ -100,7 +101,7 @@ export async function PUT(request, { params }) {
     
     await dbConnect();
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { milestoneId, featureId, itemId, completed } = body;
 
@@ -190,14 +191,28 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // Check if the task is assigned to this employee or if no assignment is required
-    if (item.assignedTo && String(item.assignedTo) !== String(decoded.userId)) {
-      console.log('Access denied - Assignment mismatch:', {
+    // Check if the employee has edit permissions for this project
+    const userPermission = await Permission.findOne({ employeeId: decoded.userId });
+    const hasEditPermission = userPermission?.projectPermissions?.some(
+      p => (String(p.projectId) === String(id)) && p.canEditMilestone
+    );
+
+    // Check access permissions for task completion:
+    if (!item.assignedTo) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "You cannot complete or update unassigned tasks. Please assign the task first.",
+        },
+        { status: 403 }
+      );
+    }
+    if (!hasEditPermission && String(item.assignedTo) !== String(decoded.userId)) {
+      console.log('Access denied - Assignment mismatch (no edit permission):', {
+        hasEditPermission,
         itemAssignedTo: item.assignedTo,
-        itemAssignedToType: typeof item.assignedTo,
         itemAssignedToString: String(item.assignedTo),
         decodedUserId: decoded.userId,
-        decodedUserIdType: typeof decoded.userId,
         decodedUserIdString: String(decoded.userId),
         areEqual: String(item.assignedTo) === String(decoded.userId),
         itemText: item.text
@@ -206,7 +221,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json(
         {
           success: false,
-          error: "Access denied: You can only update tasks assigned to you",
+          error: "Access denied: You can only update tasks assigned to you. Contact management for edit permissions to modify all tasks.",
         },
         { status: 403 }
       );
