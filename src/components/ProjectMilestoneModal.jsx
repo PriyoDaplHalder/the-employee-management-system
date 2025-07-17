@@ -1514,6 +1514,8 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
                                               sx={{
                                                 pl: 4,
                                                 pt: 2,
+                                                pb: 2,
+                                                mb: 2,
                                                 bgcolor: "grey.50",
                                                 borderRadius: 2,
                                                 border: "1px solid",
