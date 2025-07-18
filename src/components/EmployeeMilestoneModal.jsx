@@ -551,19 +551,6 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
             </Box>
           ) : (
             <>
-              {user?.role === "employee" && (
-                <Box sx={{ mb: 3 }}>
-                  <Alert
-                    severity={canEdit ? "success" : "info"}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    {canEdit
-                      ? "You have been granted permission to edit project milestones. You can add, modify, and delete milestones and notes."
-                      : "You can view project milestones but cannot edit them. Contact management if you need editing permissions."}
-                  </Alert>
-                </Box>
-              )}
-
               <Box
                 sx={{
                   display: "flex",

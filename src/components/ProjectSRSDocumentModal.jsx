@@ -418,21 +418,7 @@ const ProjectSRSDocumentModal = ({
               </Typography>
             </Box>
           ) : (
-            <Grid container spacing={3}>
-              {/* Permission Alert for Employees */}
-              {isEmployee && (
-                <Grid item xs={12}>
-                  <Alert
-                    severity={canEdit ? "success" : "info"}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    {canEdit
-                      ? "You have been granted permission to edit SRS documents. You can modify website links and upload/replace files."
-                      : "You can view and download SRS documents but cannot edit them. Contact management if you need editing permissions."}
-                  </Alert>
-                </Grid>
-              )}
-
+            <Grid container spacing={3} sx={{ mt: 2 }}>
               {/* Website Link Section */}
               <Grid item xs={12}>
                 <Paper sx={{ p: 3, bgcolor: "grey.50" }}>
