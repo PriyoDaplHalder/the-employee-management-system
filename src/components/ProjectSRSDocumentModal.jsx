@@ -56,9 +56,16 @@ const ProjectSRSDocumentModal = ({
   const isManagement = user?.role === "management";
   const isEmployee = user?.role === "employee";
   // Check if user is management or employee with editing permissions (per-project)
-  const canEdit = isManagement || (isEmployee && permissions?.projectPermissions?.some(
-    (p) => (p.projectId === project?._id || p.projectId === project?.id || p.projectId?.toString() === project?._id?.toString()) && p.canEditSRS === true
-  ));
+  const canEdit =
+    isManagement ||
+    (isEmployee &&
+      permissions?.projectPermissions?.some(
+        (p) =>
+          (p.projectId === project?._id ||
+            p.projectId === project?.id ||
+            p.projectId?.toString() === project?._id?.toString()) &&
+          p.canEditSRS === true
+      ));
 
   // Fetch user permissions if employee
   useEffect(() => {
@@ -103,10 +110,10 @@ const ProjectSRSDocumentModal = ({
     try {
       const token = getToken();
       // Use appropriate API endpoint based on user role
-      const endpoint = isManagement 
+      const endpoint = isManagement
         ? `/api/projects/${project._id}/srs-document`
         : `/api/employee/projects/${project._id}/srs-document`;
-        
+
       const response = await fetch(endpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -175,7 +182,7 @@ const ProjectSRSDocumentModal = ({
       }
 
       // Use appropriate API endpoint based on user role and permissions
-      const endpoint = isManagement 
+      const endpoint = isManagement
         ? `/api/projects/${project._id}/srs-document`
         : `/api/employee/projects/${project._id}/srs-document/edit`;
 
@@ -191,21 +198,21 @@ const ProjectSRSDocumentModal = ({
         const data = await response.json();
         setExistingDocument(data.srsDocument);
         setSelectedFile(null);
-        const successMessage = isManagement 
+        const successMessage = isManagement
           ? "SRS document updated successfully!"
           : "SRS document updated successfully using your editing permissions!";
-          
+
         setSnackbar({
           open: true,
           message: successMessage,
           severity: "success",
         });
-        
+
         // Refetch the data to ensure we have the latest version
         await fetchSRSDocument();
-        
+
         if (onSuccess) onSuccess();
-        
+
         // Close the modal after a short delay to allow user to see the success message
         setTimeout(() => {
           onClose();
@@ -370,21 +377,25 @@ const ProjectSRSDocumentModal = ({
               <Typography variant="h5" component="div" sx={{ fontWeight: 600 }}>
                 SRS Document
               </Typography>
-              <Typography variant="body2" component="span" color="text.secondary">
-                {project.name} - {canEdit ? 'Edit Mode' : 'View Mode'}
+              <Typography
+                variant="body2"
+                component="span"
+                color="text.secondary"
+              >
+                {project.name} - {canEdit ? "Edit Mode" : "View Mode"}
                 {isEmployee && !canEdit && (
-                  <Chip 
-                    label="No Edit Permission" 
-                    size="small" 
-                    color="warning" 
+                  <Chip
+                    label="No Edit Permission"
+                    size="small"
+                    color="warning"
                     sx={{ ml: 1 }}
                   />
                 )}
                 {isEmployee && canEdit && (
-                  <Chip 
-                    label="Edit Permission Granted" 
-                    size="small" 
-                    color="success" 
+                  <Chip
+                    label="Edit Permission Granted"
+                    size="small"
+                    color="success"
                     sx={{ ml: 1 }}
                   />
                 )}
@@ -401,7 +412,9 @@ const ProjectSRSDocumentModal = ({
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
               <CircularProgress />
               <Typography variant="body2" sx={{ ml: 2 }}>
-                {permissionsLoading ? "Loading permissions..." : "Loading SRS document..."}
+                {permissionsLoading
+                  ? "Loading permissions..."
+                  : "Loading SRS document..."}
               </Typography>
             </Box>
           ) : (
@@ -409,14 +422,13 @@ const ProjectSRSDocumentModal = ({
               {/* Permission Alert for Employees */}
               {isEmployee && (
                 <Grid item xs={12}>
-                  <Alert 
+                  <Alert
                     severity={canEdit ? "success" : "info"}
                     sx={{ borderRadius: 2 }}
                   >
-                    {canEdit 
+                    {canEdit
                       ? "You have been granted permission to edit SRS documents. You can modify website links and upload/replace files."
-                      : "You can view and download SRS documents but cannot edit them. Contact management if you need editing permissions."
-                    }
+                      : "You can view and download SRS documents but cannot edit them. Contact management if you need editing permissions."}
                   </Alert>
                 </Grid>
               )}
@@ -441,7 +453,7 @@ const ProjectSRSDocumentModal = ({
                       rows={1}
                       placeholder="https://example.com/srs-document"
                       disabled={saveLoading}
-                      sx={{ mb: 2, width: "55vw" }}
+                      sx={{ mb: 2, width: "50vw" }}
                     />
                   ) : (
                     <Box sx={{ mb: 2 }}>
@@ -453,7 +465,9 @@ const ProjectSRSDocumentModal = ({
                           <Link
                             href={existingDocument.websiteLink}
                             target="_blank"
-                            rel="noopener noreferrer" // Security best practice said by ai
+                            rel="noopener noreferrer" // Security best practice said by gpt
+                            //noopener:	Prevents access to window.opener, protects against tabnabbing.
+                            //noreferrer:	Removes Referer header, also implies noopener.
                             sx={{ fontWeight: 500 }}
                           >
                             View SRS Document Online
@@ -572,7 +586,7 @@ const ProjectSRSDocumentModal = ({
                             ? "success.main"
                             : "grey.300",
                           borderRadius: 2,
-                          width: "55vw",
+                          width: "50vw",
                           p: 3,
                           textAlign: "center",
                           bgcolor: selectedFile ? "success.50" : "grey.50",
@@ -623,7 +637,7 @@ const ProjectSRSDocumentModal = ({
               <Grid item xs={12}>
                 <Alert severity={canEdit ? "info" : "warning"}>
                   {canEdit
-                    ? isManagement 
+                    ? isManagement
                       ? "You can upload SRS documents and provide website links for this project."
                       : "You have editing permissions and can upload SRS documents and provide website links for this project."
                     : "You can view and download SRS documents but cannot modify them. Contact management for any changes."}

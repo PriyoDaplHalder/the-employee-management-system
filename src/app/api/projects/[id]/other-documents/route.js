@@ -17,10 +17,20 @@ export async function GET(request, { params }) {
     await dbConnect();
     const { id } = params;
     const project = await Project.findById(id);
-    if (!project) return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 });
-    return NextResponse.json({ success: true, documents: project.otherDocuments || [] });
+    if (!project)
+      return NextResponse.json(
+        { success: false, error: "Project not found" },
+        { status: 404 }
+      );
+    return NextResponse.json({
+      success: true,
+      documents: project.otherDocuments || [],
+    });
   } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }
 
@@ -34,10 +44,18 @@ export async function POST(request, { params }) {
     const description = formData.get("description") || "";
     const file = formData.get("file");
     if (!file || !title) {
-      return NextResponse.json({ success: false, error: "Title and file are required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "Title and file are required" },
+        { status: 400 }
+      );
     }
     // Create upload directory if it doesn't exist
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "other-documents");
+    const uploadDir = path.join(
+      process.cwd(),
+      "public",
+      "uploads",
+      "other-documents"
+    );
     if (!existsSync(uploadDir)) {
       mkdirSync(uploadDir, { recursive: true });
     }
@@ -53,7 +71,10 @@ export async function POST(request, { params }) {
     // Update project
     const project = await Project.findById(id);
     if (!project) {
-      return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Project not found" },
+        { status: 404 }
+      );
     }
     const doc = {
       title,
@@ -68,7 +89,10 @@ export async function POST(request, { params }) {
     await project.save();
     return NextResponse.json({ success: true, document: doc }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }
 
@@ -79,16 +103,27 @@ export async function PUT(request, { params }) {
     const body = await request.json();
     const { docId, title, description } = body;
     const project = await Project.findById(id);
-    if (!project) return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 });
+    if (!project)
+      return NextResponse.json(
+        { success: false, error: "Project not found" },
+        { status: 404 }
+      );
     const doc = project.otherDocuments.id(docId);
-    if (!doc) return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
+    if (!doc)
+      return NextResponse.json(
+        { success: false, error: "Document not found" },
+        { status: 404 }
+      );
     doc.title = title;
     doc.description = description;
     doc.updatedAt = new Date();
     await project.save();
     return NextResponse.json({ success: true, document: doc });
   } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }
 
@@ -99,9 +134,17 @@ export async function DELETE(request, { params }) {
     const { searchParams } = new URL(request.url);
     const docId = searchParams.get("docId");
     const project = await Project.findById(id);
-    if (!project) return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 });
+    if (!project)
+      return NextResponse.json(
+        { success: false, error: "Project not found" },
+        { status: 404 }
+      );
     const doc = project.otherDocuments.id(docId);
-    if (!doc) return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
+    if (!doc)
+      return NextResponse.json(
+        { success: false, error: "Document not found" },
+        { status: 404 }
+      );
     // Delete file from disk
     if (doc.filePath) {
       const absPath = path.join(process.cwd(), "public", doc.filePath);
@@ -113,10 +156,13 @@ export async function DELETE(request, { params }) {
         // ignore
       }
     }
-    doc.remove();
+    project.otherDocuments.pull(docId);
     await project.save();
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }

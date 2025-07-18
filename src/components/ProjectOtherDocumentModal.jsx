@@ -217,13 +217,25 @@ const ProjectOtherDocumentModal = ({
       );
       const data = await res.json();
       if (data.success) {
-        setSnackbar({ open: true, message: "Deleted", severity: "success" });
+        setSnackbar({
+          open: true,
+          message: "Document deleted successfully",
+          severity: "success",
+        });
         setDeleteDoc(null);
+        setDocuments((prevDocs) =>
+          prevDocs.filter((doc) => doc._id !== deleteDoc._id)
+        );
         fetchDocuments();
       } else {
-        setSnackbar({ open: true, message: data.error, severity: "error" });
+        setSnackbar({
+          open: true,
+          message: data.error || "Delete failed",
+          severity: "error",
+        });
       }
     } catch (e) {
+      console.error("Delete error:", e);
       setSnackbar({ open: true, message: "Delete failed", severity: "error" });
     } finally {
       setDeleteLoading(false);
