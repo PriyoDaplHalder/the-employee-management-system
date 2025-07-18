@@ -62,27 +62,46 @@ const TaskAssignmentModal = ({
     setFetchingEmployees(true);
     setError("");
     try {
+      if (!project) {
+        console.error("Invalid project data:", project);
+        throw new Error("Invalid project data");
+      }
+
+      const projectId =
+        typeof project === "object" && project._id ? project._id : project;
+
       const token = getToken();
-      const response = await fetch("/api/management/projects/assign", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      console.log("Fetching assigned employees for project:", projectId);
+
+      // Use the new employee API endpoint for getting project assignments
+      const response = await fetch(
+        `/api/employee/projects/${projectId}/assignments`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch assigned employees");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("API Error:", {
+          status: response.status,
+          statusText: response.statusText,
+          projectId,
+          errorData,
+        });
+        throw new Error(
+          errorData.error || "Failed to fetch assigned employees"
+        );
       }
 
       const data = await response.json();
+      console.log("Assigned employees data:", data);
 
-      // Filter assignments for the current project
-      const projectAssignments =
-        data.assignments?.filter(
-          (assignment) =>
-            assignment.projectId?._id === project._id ||
-            assignment.projectId === project._id
-        ) || [];
+      // The API returns assignments for the specific project, no need to filter
+      const projectAssignments = data.assignments || [];
 
       setAssignedEmployees(projectAssignments);
     } catch (err) {
@@ -304,7 +323,7 @@ const TaskAssignmentModal = ({
                       {
                         name: "offset",
                         options: {
-                          offset: [0, 0], 
+                          offset: [0, 0],
                         },
                       },
                     ],

@@ -58,6 +58,7 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import ConfirmationModal from "./ConfirmationModal";
 import DebouncedTextField from "./DebouncedTextField";
+import TaskAssignmentModal from "./TaskAssignmentModal";
 
 const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
   const [milestones, setMilestones] = useState([]);
@@ -74,11 +75,32 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
   const [permissions, setPermissions] = useState(null);
   const [permissionsLoading, setPermissionsLoading] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState(null);
+  const [milestoneToDelete, setMilestoneToDelete] = useState(null);
   const [editingFeature, setEditingFeature] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
+  const [originalMilestone, setOriginalMilestone] = useState(null);
+  const [assignmentModal, setAssignmentModal] = useState({
+    open: false,
+    taskItem: null,
+    milestone: null,
+    feature: null,
+  });
 
+  // Extract project from assignment, ensuring we have a proper project object or ID
   const project = assignment?.projectId;
+
+  // For debugging
+  useEffect(() => {
+    if (project) {
+      console.log("Project data:", {
+        project,
+        type: typeof project,
+        hasId: !!project._id,
+        id: project._id || project,
+      });
+    }
+  }, [project]);
 
   useEffect(() => {
     if (open && project) {
@@ -336,6 +358,12 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
     setExpandedMilestone(null);
     setExpandedFeature({});
     setExpandedNote({});
+    setAssignmentModal({
+      open: false,
+      taskItem: null,
+      milestone: null,
+      feature: null,
+    });
     onClose();
   };
 
@@ -355,36 +383,79 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
     setEditingNote(note);
   };
 
-  const handleSaveMilestone = async (milestone) => {
-    // Save milestone logic
+  // Task assignment functions
+  const openAssignmentModal = (milestone, feature, item) => {
+    setAssignmentModal({
+      open: true,
+      taskItem: item,
+      milestone: milestone,
+      feature: feature,
+    });
   };
 
-  const handleSaveFeature = async (feature) => {
-    // Save feature logic
+  const closeAssignmentModal = () => {
+    setAssignmentModal({
+      open: false,
+      taskItem: null,
+      milestone: null,
+      feature: null,
+    });
   };
 
-  const handleSaveItem = async (item) => {
-    // Save item logic
-  };
+  const handleTaskAssignment = async (
+    milestoneId,
+    featureId,
+    itemId,
+    assignmentData
+  ) => {
+    try {
+      // Update the local state
+      setMilestones((prevMilestones) =>
+        prevMilestones.map((milestone) =>
+          milestone.id === milestoneId
+            ? {
+                ...milestone,
+                features: milestone.features.map((feature) =>
+                  feature.id === featureId
+                    ? {
+                        ...feature,
+                        items: feature.items.map((item) =>
+                          item.id === itemId
+                            ? {
+                                ...item,
+                                assignedTo: assignmentData.assignedTo,
+                                dueDate: assignmentData.dueDate,
+                                assignedAt: assignmentData.assignedAt,
+                              }
+                            : item
+                        ),
+                      }
+                    : feature
+                ),
+              }
+            : milestone
+        )
+      );
 
-  const handleSaveNote = async (note) => {
-    // Save note logic
-  };
+      setSnackbar({
+        open: true,
+        message: assignmentData.assignedTo
+          ? "Task assigned successfully! Click 'Save Changes' to persist."
+          : "Task unassigned successfully! Click 'Save Changes' to persist.",
+        severity: "success",
+      });
 
-  const handleDeleteMilestone = async (milestoneId) => {
-    // Delete milestone logic
-  };
-
-  const handleDeleteFeature = async (featureId) => {
-    // Delete feature logic
-  };
-
-  const handleDeleteItem = async (itemId) => {
-    // Delete item logic
-  };
-
-  const handleDeleteNote = async (noteId) => {
-    // Delete note logic
+      // Close the assignment modal
+      closeAssignmentModal();
+    } catch (error) {
+      console.error("Error assigning task:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to assign task: " + error.message,
+        severity: "error",
+      });
+      throw error;
+    }
   };
 
   // Permission check for milestone editing
@@ -722,13 +793,10 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                   aria-label="Edit milestone"
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    setOriginalMilestone(
+                                      JSON.parse(JSON.stringify(milestone))
+                                    );
                                     setEditingMilestone(milestone.id);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" || e.key === " ") {
-                                      e.stopPropagation();
-                                      setEditingMilestone(milestone.id);
-                                    }
                                   }}
                                 >
                                   <IconButton
@@ -755,21 +823,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                   aria-label="Delete milestone"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setMilestones(
-                                      milestones.filter(
-                                        (m) => m.id !== milestone.id
-                                      )
-                                    );
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" || e.key === " ") {
-                                      e.stopPropagation();
-                                      setMilestones(
-                                        milestones.filter(
-                                          (m) => m.id !== milestone.id
-                                        )
-                                      );
-                                    }
+                                    setMilestoneToDelete(milestone.id);
                                   }}
                                 >
                                   <IconButton
@@ -1833,6 +1887,32 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                                                             gap: 0.5,
                                                                           }}
                                                                         >
+                                                                          {canEdit && (
+                                                                            <Tooltip title="Assign task">
+                                                                              <Button
+                                                                                size="small"
+                                                                                variant="outlined"
+                                                                                onClick={() =>
+                                                                                  openAssignmentModal(
+                                                                                    milestone,
+                                                                                    feature,
+                                                                                    item
+                                                                                  )
+                                                                                }
+                                                                                sx={{
+                                                                                  color:
+                                                                                    "primary.main",
+                                                                                  "&:hover":
+                                                                                    {
+                                                                                      color:
+                                                                                        "primary.dark",
+                                                                                    },
+                                                                                }}
+                                                                              >
+                                                                                ASSIGN
+                                                                              </Button>
+                                                                            </Tooltip>
+                                                                          )}
                                                                           <Tooltip title="Edit item">
                                                                             <IconButton
                                                                               size="small"
@@ -1948,7 +2028,17 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                 <Button
                                   variant="outlined"
                                   startIcon={<CancelIcon />}
-                                  onClick={() => setEditingMilestone(null)}
+                                  onClick={() => {
+                                    setMilestones(
+                                      milestones.map((m) =>
+                                        m.id === originalMilestone.id
+                                          ? originalMilestone
+                                          : m
+                                      )
+                                    );
+                                    setEditingMilestone(null);
+                                    setOriginalMilestone(null);
+                                  }}
                                   sx={{ borderRadius: 2, px: 3 }}
                                 >
                                   Cancel
@@ -2919,11 +3009,35 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
             </Button>
           )}
         </DialogActions>
+
+        {/* Task Assignment Modal */}
+        <TaskAssignmentModal
+          open={assignmentModal.open}
+          onClose={closeAssignmentModal}
+          onAssign={handleTaskAssignment}
+          project={project}
+          taskItem={assignmentModal.taskItem}
+          milestone={assignmentModal.milestone}
+          feature={assignmentModal.feature}
+        />
+
         <CustomSnackbar
           open={snackbar.open}
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           message={snackbar.message}
           severity={snackbar.severity}
+        />
+        <ConfirmationModal
+          isOpen={!!milestoneToDelete}
+          title="Delete Milestone"
+          message="Are you sure you want to delete the milestone ? This action cannot be undone after you have pressed the main SAVE CHANGES button."
+          onConfirm={() => {
+            setMilestones(milestones.filter((m) => m.id !== milestoneToDelete));
+            setMilestoneToDelete(null);
+          }}
+          onClose={() => {
+            setMilestoneToDelete(null);
+          }}
         />
       </Dialog>
     </>
