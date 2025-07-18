@@ -125,6 +125,8 @@ const ProjectOtherDocumentModal = ({
 }) => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [permissions, setPermissions] = useState(null);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -138,6 +140,63 @@ const ProjectOtherDocumentModal = ({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
 
+  const isManagement = user?.role === "management";
+  const isEmployee = user?.role === "employee";
+
+  // Check if user is management or employee with editing permissions (per-project)
+  const canEdit =
+    !employeeViewOnly &&
+    (isManagement ||
+      (isEmployee &&
+        permissions?.projectPermissions?.some((p) => {
+          const hasPermission =
+            (p.projectId === project?._id ||
+              p.projectId === project?.id ||
+              p.projectId?.toString() === project?._id?.toString()) &&
+            p.canEditOtherDocs === true;
+
+          if (hasPermission) {
+            console.log(
+              "Found Other Docs permission for project:",
+              project?.name,
+              p
+            );
+          }
+          return hasPermission;
+        })));
+
+  // Fetch user permissions if employee
+  useEffect(() => {
+    if (isEmployee && open) {
+      fetchPermissions();
+    }
+  }, [isEmployee, open]);
+
+  const fetchPermissions = async () => {
+    setPermissionsLoading(true);
+    try {
+      const token = getToken();
+      const response = await fetch("/api/employee/permissions", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPermissions(data.permission || null);
+      } else {
+        setPermissions(null);
+      }
+    } catch (error) {
+      console.error("Error fetching permissions:", error);
+      setPermissions(null);
+    } finally {
+      setPermissionsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (open && project) fetchDocuments();
   }, [open, project]);
@@ -146,7 +205,12 @@ const ProjectOtherDocumentModal = ({
     setLoading(true);
     try {
       const token = getToken();
-      const res = await fetch(`/api/projects/${project._id}/other-documents`, {
+      // Use appropriate API endpoint based on user role
+      const endpoint = isManagement
+        ? `/api/projects/${project._id}/other-documents`
+        : `/api/employee/projects/${project._id}/other-documents`;
+
+      const res = await fetch(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -164,6 +228,15 @@ const ProjectOtherDocumentModal = ({
   };
 
   const handleAddDocument = async (form) => {
+    if (!canEdit) {
+      setSnackbar({
+        open: true,
+        message: "You don't have permission to upload documents",
+        severity: "error",
+      });
+      return;
+    }
+
     if (!form.title || !form.file) {
       setSnackbar({
         open: true,
@@ -179,16 +252,25 @@ const ProjectOtherDocumentModal = ({
       formData.append("title", form.title);
       formData.append("description", form.description);
       formData.append("file", form.file);
-      const res = await fetch(`/api/projects/${project._id}/other-documents`, {
+
+      // Use appropriate API endpoint based on user role and permissions
+      const endpoint = isManagement
+        ? `/api/projects/${project._id}/other-documents`
+        : `/api/employee/projects/${project._id}/other-documents/edit`;
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
       const data = await res.json();
       if (data.success) {
+        const successMessage = isManagement
+          ? "File uploaded successfully!"
+          : "File uploaded successfully using your editing permissions!";
         setSnackbar({
           open: true,
-          message: "File uploaded",
+          message: data.message || successMessage,
           severity: "success",
         });
         setShowAddModal(false);
@@ -204,22 +286,37 @@ const ProjectOtherDocumentModal = ({
   };
 
   const handleDelete = async () => {
+    if (!canEdit) {
+      setSnackbar({
+        open: true,
+        message: "You don't have permission to delete documents",
+        severity: "error",
+      });
+      return;
+    }
+
     if (!deleteDoc) return;
     setDeleteLoading(true);
     try {
       const token = getToken();
-      const res = await fetch(
-        `/api/projects/${project._id}/other-documents?docId=${deleteDoc._id}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+
+      // Use appropriate API endpoint based on user role and permissions
+      const endpoint = isManagement
+        ? `/api/projects/${project._id}/other-documents?docId=${deleteDoc._id}`
+        : `/api/employee/projects/${project._id}/other-documents/edit?docId=${deleteDoc._id}`;
+
+      const res = await fetch(endpoint, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       if (data.success) {
+        const successMessage = isManagement
+          ? "Document deleted successfully"
+          : "Document deleted successfully using your editing permissions!";
         setSnackbar({
           open: true,
-          message: "Document deleted successfully",
+          message: data.message || successMessage,
           severity: "success",
         });
         setDeleteDoc(null);
@@ -249,9 +346,24 @@ const ProjectOtherDocumentModal = ({
   };
 
   const handleEditSave = async () => {
+    if (!canEdit) {
+      setSnackbar({
+        open: true,
+        message: "You don't have permission to edit documents",
+        severity: "error",
+      });
+      return;
+    }
+
     try {
       const token = getToken();
-      const res = await fetch(`/api/projects/${project._id}/other-documents`, {
+
+      // Use appropriate API endpoint based on user role and permissions
+      const endpoint = isManagement
+        ? `/api/projects/${project._id}/other-documents`
+        : `/api/employee/projects/${project._id}/other-documents/edit`;
+
+      const res = await fetch(endpoint, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -261,7 +373,14 @@ const ProjectOtherDocumentModal = ({
       });
       const data = await res.json();
       if (data.success) {
-        setSnackbar({ open: true, message: "Updated", severity: "success" });
+        const successMessage = isManagement
+          ? "Document updated successfully"
+          : "Document updated successfully using your editing permissions!";
+        setSnackbar({
+          open: true,
+          message: data.message || successMessage,
+          severity: "success",
+        });
         setEditDoc(null);
         setEditModalOpen(false);
         fetchDocuments();
@@ -300,19 +419,47 @@ const ProjectOtherDocumentModal = ({
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <FileCopyIcon color="primary" />
-          <Typography variant="h5" component="div" sx={{ fontWeight: 600 }}>
-            Project Other Documents
-          </Typography>
+          <Box>
+            <Typography variant="h5" component="div" sx={{ fontWeight: 600 }}>
+              Project Other Documents
+            </Typography>
+            <Typography variant="body2" component="span" color="text.secondary">
+              {project.name} - {canEdit ? "Edit Mode" : "View Mode"}
+              {isEmployee && !canEdit && (
+                <Typography
+                  component="span"
+                  sx={{ ml: 1, color: "warning.main", fontWeight: 500 }}
+                >
+                  (No Edit Permission)
+                </Typography>
+              )}
+              {isEmployee && canEdit && (
+                <Typography
+                  component="span"
+                  sx={{ ml: 1, color: "success.main", fontWeight: 500 }}
+                >
+                  (Edit Permission Granted)
+                </Typography>
+              )}
+            </Typography>
+          </Box>
         </Box>
       </DialogTitle>
       {/* hello */}
       <DialogContent>
         <Box sx={{ p: 2 }}>
-          {loading ? (
-            <Typography>Loading Other Documents...</Typography>
+          {loading || (isEmployee && permissionsLoading) ? (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <CircularProgress size={20} />
+              <Typography>
+                {permissionsLoading
+                  ? "Loading permissions..."
+                  : "Loading Other Documents..."}
+              </Typography>
+            </Box>
           ) : (
             <>
-              {!employeeViewOnly && (
+              {canEdit && (
                 <Button
                   startIcon={<AddIcon />}
                   onClick={() => setShowAddModal(true)}
@@ -354,7 +501,7 @@ const ProjectOtherDocumentModal = ({
                       >
                         Download
                       </Button>
-                      {!employeeViewOnly && (
+                      {canEdit && (
                         <>
                           <Button
                             startIcon={<EditIcon />}
@@ -383,7 +530,7 @@ const ProjectOtherDocumentModal = ({
           )}
         </Box>
         {/* Add Document Modal */}
-        {!employeeViewOnly && (
+        {canEdit && (
           <AddDocumentModal
             open={showAddModal}
             onClose={() => setShowAddModal(false)}
@@ -392,7 +539,7 @@ const ProjectOtherDocumentModal = ({
           />
         )}
         {/* Delete Confirmation Modal */}
-        {!employeeViewOnly && (
+        {canEdit && (
           <ConfirmationModal
             open={!!deleteDoc}
             onClose={() => setDeleteDoc(null)}
@@ -406,7 +553,7 @@ const ProjectOtherDocumentModal = ({
           />
         )}
         {/* Edit Document Modal */}
-        {!employeeViewOnly && (
+        {canEdit && (
           <EditDocumentModal
             open={editModalOpen}
             onClose={() => {

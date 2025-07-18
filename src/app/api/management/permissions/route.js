@@ -48,22 +48,31 @@ export async function GET(request) {
 
         if (permission) {
           // Enhance project permissions with project names
-          if (permission.projectPermissions && permission.projectPermissions.length > 0) {
-            const projectIds = permission.projectPermissions.map(p => p.projectId).filter(Boolean);
+          if (
+            permission.projectPermissions &&
+            permission.projectPermissions.length > 0
+          ) {
+            const projectIds = permission.projectPermissions
+              .map((p) => p.projectId)
+              .filter(Boolean);
             if (projectIds.length > 0) {
               const projects = await Project.find(
                 { _id: { $in: projectIds } },
                 { _id: 1, name: 1 }
               );
-              
+
               // Add project names to permission data
-              permission.projectPermissions = permission.projectPermissions.map(projPerm => {
-                const project = projects.find(p => p._id.toString() === projPerm.projectId);
-                return {
-                  ...projPerm.toObject(),
-                  projectName: project ? project.name : projPerm.projectId
-                };
-              });
+              permission.projectPermissions = permission.projectPermissions.map(
+                (projPerm) => {
+                  const project = projects.find(
+                    (p) => p._id.toString() === projPerm.projectId
+                  );
+                  return {
+                    ...projPerm.toObject(),
+                    projectName: project ? project.name : projPerm.projectId,
+                  };
+                }
+              );
             }
           }
         }
@@ -149,9 +158,9 @@ export async function POST(request) {
     // Revoke any existing active permission for this employee
     await Permission.updateMany(
       { employee: employeeId, isActive: true },
-      { 
-        isActive: false, 
-        revokedAt: new Date() 
+      {
+        isActive: false,
+        revokedAt: new Date(),
       }
     );
 
@@ -170,7 +179,9 @@ export async function POST(request) {
         emergencyContact: personalInfoFields?.emergencyContact || false,
         skills: personalInfoFields?.skills || false,
       },
-      projectPermissions: Array.isArray(projectPermissions) ? projectPermissions : [],
+      projectPermissions: Array.isArray(projectPermissions)
+        ? projectPermissions
+        : [],
       grantedBy: decoded.userId,
       reason: reason?.trim() || "",
     });
@@ -263,7 +274,9 @@ export async function PUT(request) {
       emergencyContact: personalInfoFields?.emergencyContact || false,
       skills: personalInfoFields?.skills || false,
     };
-    permission.projectPermissions = Array.isArray(projectPermissions) ? projectPermissions : [];
+    permission.projectPermissions = Array.isArray(projectPermissions)
+      ? projectPermissions
+      : [];
     permission.reason = reason?.trim() || permission.reason;
 
     await permission.save();
