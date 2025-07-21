@@ -78,6 +78,12 @@ const MailManagement = ({ user, onBack }) => {
     selectedPosition: null,
     ccPositions: [],
     priority: "Medium",
+    // Leave specific fields
+    leaveType: "",
+    fromDate: "",
+    fromSession: "first",
+    toDate: "",
+    toSession: "second",
   });
 
   // Modal state
@@ -92,6 +98,13 @@ const MailManagement = ({ user, onBack }) => {
   ];
 
   const priorities = ["Low", "Medium", "High"];
+
+  const leaveTypes = ["Loss of Pay", "Comp-off", "Paid Leave"];
+
+  const sessionOptions = [
+    { value: "first", label: "First Session" },
+    { value: "second", label: "Second Session" },
+  ];
 
   useEffect(() => {
     setMounted(true);
@@ -240,6 +253,12 @@ const MailManagement = ({ user, onBack }) => {
       selectedPosition: null,
       ccPositions: [],
       priority: "Medium",
+      // Reset leave specific fields
+      leaveType: "",
+      fromDate: "",
+      fromSession: "first",
+      toDate: "",
+      toSession: "second",
     });
   };
 
@@ -260,6 +279,32 @@ const MailManagement = ({ user, onBack }) => {
       return;
     }
 
+    // Additional validation for leave applications
+    if (formData.requestType === "Leave Application") {
+      if (!formData.leaveType || !formData.fromDate || !formData.toDate) {
+        setSnackbar({
+          open: true,
+          message:
+            "Please fill in all leave details: leave type, from date, and to date",
+          severity: "error",
+        });
+        return;
+      }
+
+      // Validate date range
+      const fromDateObj = new Date(formData.fromDate);
+      const toDateObj = new Date(formData.toDate);
+
+      if (fromDateObj > toDateObj) {
+        setSnackbar({
+          open: true,
+          message: "From date cannot be later than to date",
+          severity: "error",
+        });
+        return;
+      }
+    }
+
     setSending(true);
     try {
       const token = getToken();
@@ -270,6 +315,17 @@ const MailManagement = ({ user, onBack }) => {
         selectedPositions: [formData.selectedPosition._id], // Convert single position to array for backend compatibility
         ccPositions: formData.ccPositions.map((pos) => pos._id),
         selectedDepartment: formData.selectedDepartment || null, // Include department filter
+        // Include leave-specific fields if it's a leave application
+        ...(formData.requestType === "Leave Application" && {
+          leaveDetails: {
+            leaveType: formData.leaveType,
+            fromDate: formData.fromDate,
+            fromSession: formData.fromSession,
+            toDate: formData.toDate,
+            toSession: formData.toSession,
+          },
+          requiresApproval: true, // Mark leave applications as requiring approval
+        }),
       };
 
       const response = await fetch("/api/mail", {
@@ -467,6 +523,98 @@ const MailManagement = ({ user, onBack }) => {
                 />
               </Grid>
 
+              {/* Leave Application Specific Fields */}
+              {formData.requestType === "Leave Application" && (
+                <>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth required>
+                      <InputLabel>Leave Type</InputLabel>
+                      <Select
+                        name="leaveType"
+                        value={formData.leaveType}
+                        onChange={handleFormChange}
+                        label="Leave Type"
+                      >
+                        {leaveTypes.map((type) => (
+                          <MenuItem key={type} value={type}>
+                            {type}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      name="fromDate"
+                      label="From Date"
+                      value={formData.fromDate}
+                      onChange={handleFormChange}
+                      InputLabelProps={{ shrink: true }}
+                      required
+                      inputProps={{
+                        min: new Date().toISOString().split("T")[0], // Prevent past dates
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>From Session</InputLabel>
+                      <Select
+                        name="fromSession"
+                        value={formData.fromSession}
+                        onChange={handleFormChange}
+                        label="From Session"
+                      >
+                        {sessionOptions.map((session) => (
+                          <MenuItem key={session.value} value={session.value}>
+                            {session.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      name="toDate"
+                      label="To Date"
+                      value={formData.toDate}
+                      onChange={handleFormChange}
+                      InputLabelProps={{ shrink: true }}
+                      required
+                      inputProps={{
+                        min:
+                          formData.fromDate ||
+                          new Date().toISOString().split("T")[0],
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>To Session</InputLabel>
+                      <Select
+                        name="toSession"
+                        value={formData.toSession}
+                        onChange={handleFormChange}
+                        label="To Session"
+                      >
+                        {sessionOptions.map((session) => (
+                          <MenuItem key={session.value} value={session.value}>
+                            {session.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </>
+              )}
+
               {/* Department Selection - Required First */}
               <Grid item xs={12}>
                 <FormControl sx={{ minWidth: "20vw" }} required>
@@ -641,14 +789,30 @@ const MailManagement = ({ user, onBack }) => {
                   <Table>
                     <TableHead sx={{ bgcolor: "primary.main" }}>
                       <TableRow>
-                        <TableCell sx={{fontWeight: 600,color: "white"}}>Date</TableCell>
-                        <TableCell sx={{fontWeight: 600,color: "white"}}>Request Type</TableCell>
-                        <TableCell sx={{fontWeight: 600,color: "white"}}>Subject</TableCell>
-                        <TableCell sx={{fontWeight: 600,color: "white"}}>Department</TableCell>
-                        <TableCell sx={{fontWeight: 600,color: "white"}}>Sent To Positions</TableCell>
-                        <TableCell sx={{fontWeight: 600,color: "white"}}>Priority</TableCell>
-                        <TableCell sx={{fontWeight: 600,color: "white"}}>Status</TableCell>
-                        <TableCell sx={{fontWeight: 600,color: "white"}}>Actions</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: "white" }}>
+                          Date
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: "white" }}>
+                          Request Type
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: "white" }}>
+                          Subject
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: "white" }}>
+                          Department
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: "white" }}>
+                          Sent To Positions
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: "white" }}>
+                          Priority
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: "white" }}>
+                          Status
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: "white" }}>
+                          Actions
+                        </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -790,6 +954,22 @@ const MailManagement = ({ user, onBack }) => {
                                   sx={{ pointerEvents: "none" }}
                                 />
                               )}
+                              {mail.requestType === "Leave Application" &&
+                                mail.approvalStatus && (
+                                  <Chip
+                                    label={`Approval: ${mail.approvalStatus}`}
+                                    color={
+                                      mail.approvalStatus === "Approved"
+                                        ? "success"
+                                        : mail.approvalStatus === "Rejected"
+                                        ? "error"
+                                        : "warning"
+                                    }
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ pointerEvents: "none" }}
+                                  />
+                                )}
                             </Box>
                           </TableCell>
                           <TableCell>
@@ -1025,6 +1205,126 @@ const MailManagement = ({ user, onBack }) => {
                           ].join(", ")}
                         </Typography>
                       </Grid>
+                    )}
+
+                  {/* Leave Application Details */}
+                  {selectedMail.requestType === "Leave Application" &&
+                    selectedMail.leaveDetails && (
+                      <>
+                        <Grid item xs={12}>
+                          <Divider sx={{ my: 2 }} />
+                          <Typography
+                            variant="h6"
+                            color="primary"
+                            fontWeight={600}
+                            sx={{ mb: 2 }}
+                          >
+                            Leave Application Details
+                          </Typography>
+                        </Grid>
+
+                        <Grid item xs={6} sm={3}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                          >
+                            Leave Type
+                          </Typography>
+                          <Box sx={{ mt: 0.5 }}>
+                            <Chip
+                              label={selectedMail.leaveDetails.leaveType}
+                              size="small"
+                              color="info"
+                              sx={{ pointerEvents: "none" }}
+                            />
+                          </Box>
+                        </Grid>
+
+                        <Grid item xs={6} sm={3}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                          >
+                            From Date
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ mt: 0.5, fontSize: "0.9rem" }}
+                          >
+                            {new Date(
+                              selectedMail.leaveDetails.fromDate
+                            ).toLocaleDateString()}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            ({selectedMail.leaveDetails.fromSession} session)
+                          </Typography>
+                        </Grid>
+
+                        <Grid item xs={6} sm={3}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                          >
+                            To Date
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ mt: 0.5, fontSize: "0.9rem" }}
+                          >
+                            {new Date(
+                              selectedMail.leaveDetails.toDate
+                            ).toLocaleDateString()}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            ({selectedMail.leaveDetails.toSession} session)
+                          </Typography>
+                        </Grid>
+
+                        <Grid item xs={6} sm={3}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                          >
+                            Approval Status
+                          </Typography>
+                          <Box sx={{ mt: 0.5 }}>
+                            <Chip
+                              label={selectedMail.approvalStatus || "Pending"}
+                              size="small"
+                              color={
+                                selectedMail.approvalStatus === "Approved"
+                                  ? "success"
+                                  : selectedMail.approvalStatus === "Rejected"
+                                  ? "error"
+                                  : "warning"
+                              }
+                              sx={{ pointerEvents: "none" }}
+                            />
+                          </Box>
+                        </Grid>
+
+                        {selectedMail.approvalComments && (
+                          <Grid item xs={12}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight={600}
+                            >
+                              Approval Comments
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{ mt: 0.5, fontSize: "0.9rem" }}
+                            >
+                              {selectedMail.approvalComments}
+                            </Typography>
+                          </Grid>
+                        )}
+                      </>
                     )}
                 </Grid>
               </Box>

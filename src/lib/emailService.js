@@ -1,11 +1,11 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 // Create reusable transporter object using SMTP transport
 const createTransporter = () => {
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
     port: parseInt(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+    secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
@@ -16,68 +16,74 @@ const createTransporter = () => {
 // Send email function
 export const sendEmail = async ({ to, cc, from, subject, html, text }) => {
   try {
-    console.log('=== EMAIL SEND ATTEMPT ===');
-    console.log('SMTP Config:', {
+    console.log("=== EMAIL SEND ATTEMPT ===");
+    console.log("SMTP Config:", {
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
       secure: process.env.SMTP_SECURE,
-      user: process.env.SMTP_USER ? process.env.SMTP_USER.substring(0, 5) + '***' : 'NOT_SET',
-      pass: process.env.SMTP_PASS ? '***SET***' : 'NOT_SET'
+      user: process.env.SMTP_USER
+        ? process.env.SMTP_USER.substring(0, 5) + "***"
+        : "NOT_SET",
+      pass: process.env.SMTP_PASS ? "***SET***" : "NOT_SET",
     });
-    
+
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      throw new Error('SMTP credentials not configured. Please check SMTP_USER and SMTP_PASS environment variables.');
+      throw new Error(
+        "SMTP credentials not configured. Please check SMTP_USER and SMTP_PASS environment variables."
+      );
     }
 
     const transporter = createTransporter();
 
     // Verify transporter configuration
-    console.log('Verifying SMTP connection...');
+    console.log("Verifying SMTP connection...");
     await transporter.verify();
-    console.log('Email server is ready to take our messages');
+    console.log("Email server is ready to take our messages");
 
     const mailOptions = {
-      from: from || `"${process.env.DEFAULT_FROM_NAME}" <${process.env.DEFAULT_FROM_EMAIL}>`,
-      to: Array.isArray(to) ? to.join(', ') : to,
-      cc: cc && Array.isArray(cc) ? cc.join(', ') : cc,
+      from:
+        from ||
+        `"${process.env.DEFAULT_FROM_NAME}" <${process.env.DEFAULT_FROM_EMAIL}>`,
+      to: Array.isArray(to) ? to.join(", ") : to,
+      cc: cc && Array.isArray(cc) ? cc.join(", ") : cc,
       subject,
       html,
       text,
     };
 
-    console.log('Mail options:', {
+    console.log("Mail options:", {
       from: mailOptions.from,
       to: mailOptions.to,
       cc: mailOptions.cc,
-      subject: mailOptions.subject
+      subject: mailOptions.subject,
     });
 
     const info = await transporter.sendMail(mailOptions);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Error type:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error code:', error.code);
-    console.error('Full error:', error);
+    console.error("Error type:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error code:", error.code);
+    console.error("Full error:", error);
     return { success: false, error: error.message };
   }
 };
 
 // Generate HTML email template
-export const generateEmailTemplate = ({ 
-  senderName, 
-  senderEmail, 
-  requestType, 
-  subject, 
-  message, 
-  priority, 
-  recipientType = 'TO' 
+export const generateEmailTemplate = ({
+  senderName,
+  senderEmail,
+  requestType,
+  subject,
+  message,
+  priority,
+  recipientType = "TO",
 }) => {
   const priorityColor = {
-    'Low': '#28a745',
-    'Medium': '#ffc107', 
-    'High': '#fd7e14',
-    'Critical': '#dc3545'
+    Low: "#28a745",
+    Medium: "#ffc107",
+    High: "#fd7e14",
+    Critical: "#dc3545",
   };
 
   const html = `
@@ -112,7 +118,7 @@ export const generateEmailTemplate = ({
           color: white;
           font-size: 12px;
           font-weight: bold;
-          background-color: ${priorityColor[priority] || '#6c757d'};
+          background-color: ${priorityColor[priority] || "#6c757d"};
         }
         .message-content {
           background-color: #f8f9fa;
