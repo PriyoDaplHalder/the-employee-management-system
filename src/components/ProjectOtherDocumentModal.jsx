@@ -8,6 +8,7 @@ import {
   DialogActions,
   Button,
   Typography,
+  Chip,
   Box,
   TextField,
   CircularProgress,
@@ -424,22 +425,22 @@ const ProjectOtherDocumentModal = ({
               Project Other Documents
             </Typography>
             <Typography variant="body2" component="span" color="text.secondary">
-              {project.name} - {canEdit ? "Edit Mode" : "View Mode"}
+              {project.name}
               {isEmployee && !canEdit && (
-                <Typography
-                  component="span"
-                  sx={{ ml: 1, color: "warning.main", fontWeight: 500 }}
-                >
-                  (No Edit Permission)
-                </Typography>
+                <Chip
+                  label="View Only"
+                  size="small"
+                  color="primary"
+                  sx={{ ml: 1 }}
+                />
               )}
               {isEmployee && canEdit && (
-                <Typography
-                  component="span"
-                  sx={{ ml: 1, color: "success.main", fontWeight: 500 }}
-                >
-                  (Edit Permission Granted)
-                </Typography>
+                <Chip
+                  label="Edit Access"
+                  size="small"
+                  color="success"
+                  sx={{ ml: 1 }}
+                />
               )}
             </Typography>
           </Box>

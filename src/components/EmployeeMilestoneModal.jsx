@@ -771,65 +771,67 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                             )}
                           </Box>
                           {canEdit && (
-                            <Box sx={{ display: "flex", gap: 1 }}>
-                              <Tooltip title="Edit milestone">
-                                {/* Use a span with style and tabIndex to avoid button nesting and allow keyboard accessibility */}
-                                <span
-                                  style={{ display: "inline-flex" }}
-                                  tabIndex={0}
-                                  aria-label="Edit milestone"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOriginalMilestone(
-                                      JSON.parse(JSON.stringify(milestone))
-                                    );
-                                    setEditingMilestone(milestone.id);
-                                  }}
-                                >
-                                  <IconButton
-                                    size="small"
-                                    tabIndex={-1}
-                                    sx={{
-                                      backgroundColor: "info.light",
-                                      color: "white",
-                                      "&:hover": {
-                                        color: "white",
-                                        backgroundColor: "info.main",
-                                      },
+                            <span>
+                              <Box sx={{ display: "flex", gap: 1 }}>
+                                <Tooltip title="Edit milestone">
+                                  {/* Use a span with style and tabIndex to avoid button nesting and allow keyboard accessibility */}
+                                  <span
+                                    style={{ display: "inline-flex" }}
+                                    tabIndex={0}
+                                    aria-label="Edit milestone"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOriginalMilestone(
+                                        JSON.parse(JSON.stringify(milestone))
+                                      );
+                                      setEditingMilestone(milestone.id);
                                     }}
                                   >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                              <Tooltip title="Delete milestone">
-                                <span
-                                  style={{ display: "inline-flex" }}
-                                  tabIndex={0}
-                                  role="button"
-                                  aria-label="Delete milestone"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setMilestoneToDelete(milestone.id);
-                                  }}
-                                >
-                                  <IconButton
-                                    size="small"
-                                    tabIndex={-1}
-                                    sx={{
-                                      backgroundColor: "error.light",
-                                      color: "white",
-                                      "&:hover": {
+                                    <IconButton
+                                      size="small"
+                                      tabIndex={-1}
+                                      sx={{
+                                        backgroundColor: "info.light",
                                         color: "white",
-                                        backgroundColor: "error.main",
-                                      },
+                                        "&:hover": {
+                                          color: "white",
+                                          backgroundColor: "info.main",
+                                        },
+                                      }}
+                                    >
+                                      <EditIcon fontSize="small" />
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                                <Tooltip title="Delete milestone">
+                                  <span
+                                    style={{ display: "inline-flex" }}
+                                    tabIndex={0}
+                                    role="button"
+                                    aria-label="Delete milestone"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setMilestoneToDelete(milestone.id);
                                     }}
                                   >
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                            </Box>
+                                    <IconButton
+                                      size="small"
+                                      tabIndex={-1}
+                                      sx={{
+                                        backgroundColor: "error.light",
+                                        color: "white",
+                                        "&:hover": {
+                                          color: "white",
+                                          backgroundColor: "error.main",
+                                        },
+                                      }}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                              </Box>
+                            </span>
                           )}
                         </AccordionSummary>
                         <AccordionDetails sx={{ p: 4, bgcolor: "grey.50" }}>

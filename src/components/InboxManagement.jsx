@@ -37,6 +37,7 @@ import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
 } from "@mui/icons-material";
+import CustomSnackbar from "./CustomSnackbar";
 
 const InboxManagement = ({ user, onBack }) => {
   const [mounted, setMounted] = useState(false);
@@ -53,6 +54,13 @@ const InboxManagement = ({ user, onBack }) => {
   // Pagination states
   const [page, setPage] = useState(0); // Current page
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Snackbar state
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -120,19 +128,26 @@ const InboxManagement = ({ user, onBack }) => {
       const data = await response.json();
 
       if (response.ok) {
-        // Show success message
-        alert(`Leave application ${action}d successfully!`);
-
-        // Refresh mail list
+        setSnackbar({
+          open: true,
+          message: `Leave application ${action}ed successfully!`,
+          severity: "success",
+        });
         fetchReceivedMails();
-
-        // Close modal
         closeMailDetail();
       } else {
-        alert(`Failed to ${action} leave application: ${data.error}`);
+        setSnackbar({
+          open: true,
+          message: `Failed to ${action} leave application: ${data.error}`,
+          severity: "error",
+        });
       }
     } catch (err) {
-      alert(`Error processing ${action}: ${err.message}`);
+      setSnackbar({
+        open: true,
+        message: `Error processing ${action}: ${err.message}`,
+        severity: "error",
+      });
     } finally {
       setProcessingApproval(false);
     }
@@ -264,6 +279,9 @@ const InboxManagement = ({ user, onBack }) => {
                         Priority
                       </TableCell>
                       <TableCell sx={{ fontWeight: 600, color: "white" }}>
+                        Status
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "white" }}>
                         Actions
                       </TableCell>
                     </TableRow>
@@ -314,6 +332,28 @@ const InboxManagement = ({ user, onBack }) => {
                             sx={{ pointerEvents: "none" }}
                             size="small"
                           />
+                        </TableCell>
+                        <TableCell>
+                          {mail.requestType === "Leave Application" ? (
+                            <Chip
+                              label={
+                                mail.approvalStatus === "Approved"
+                                  ? "Approved"
+                                  : mail.approvalStatus === "Rejected"
+                                  ? "Rejected"
+                                  : "Needs Approval"
+                              }
+                              color={
+                                mail.approvalStatus === "Approved"
+                                  ? "success"
+                                  : mail.approvalStatus === "Rejected"
+                                  ? "error"
+                                  : "warning"
+                              }
+                              size="small"
+                              sx={{ pointerEvents: "none" }}
+                            />
+                          ) : "NA"}
                         </TableCell>
                         <TableCell>
                           <Button
@@ -551,18 +591,7 @@ const InboxManagement = ({ user, onBack }) => {
                   {selectedMail.requestType === "Leave Application" &&
                     selectedMail.leaveDetails && (
                       <>
-                        <Grid item xs={12}>
-                          <Divider sx={{ my: 2 }} />
-                          <Typography
-                            variant="h6"
-                            color="primary"
-                            fontWeight={600}
-                            sx={{ mb: 2 }}
-                          >
-                            Leave Details
-                          </Typography>
-                        </Grid>
-
+                        <br />
                         <Grid item xs={6} sm={3}>
                           <Typography
                             variant="caption"
@@ -728,6 +757,14 @@ const InboxManagement = ({ user, onBack }) => {
           <Button onClick={closeMailDetail}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for approval actions */}
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </Box>
   );
 };

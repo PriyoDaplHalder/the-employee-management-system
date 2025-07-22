@@ -385,15 +385,15 @@ const ProjectSRSDocumentModal = ({
                 {project.name} - {canEdit ? "Edit Mode" : "View Mode"}
                 {isEmployee && !canEdit && (
                   <Chip
-                    label="No Edit Permission"
+                    label="Read Only"
                     size="small"
-                    color="warning"
+                    color="primary"
                     sx={{ ml: 1 }}
                   />
                 )}
                 {isEmployee && canEdit && (
                   <Chip
-                    label="Edit Permission Granted"
+                    label="Edit Access"
                     size="small"
                     color="success"
                     sx={{ ml: 1 }}

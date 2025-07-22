@@ -527,7 +527,7 @@ const MailManagement = ({ user, onBack }) => {
               {formData.requestType === "Leave Application" && (
                 <>
                   <Grid item xs={12} md={6}>
-                    <FormControl fullWidth required>
+                    <FormControl sx={{ width: "13.5vw"}} required>
                       <InputLabel>Leave Type</InputLabel>
                       <Select
                         name="leaveType"
@@ -848,7 +848,7 @@ const MailManagement = ({ user, onBack }) => {
                               <Chip
                                 label={mail.selectedDepartment}
                                 size="small"
-                                color="secondary"
+                                color="primary"
                                 variant="outlined"
                                 sx={{ pointerEvents: "none" }}
                               />
@@ -1211,18 +1211,6 @@ const MailManagement = ({ user, onBack }) => {
                   {selectedMail.requestType === "Leave Application" &&
                     selectedMail.leaveDetails && (
                       <>
-                        <Grid item xs={12}>
-                          <Divider sx={{ my: 2 }} />
-                          <Typography
-                            variant="h6"
-                            color="primary"
-                            fontWeight={600}
-                            sx={{ mb: 2 }}
-                          >
-                            Leave Application Details
-                          </Typography>
-                        </Grid>
-
                         <Grid item xs={6} sm={3}>
                           <Typography
                             variant="caption"
