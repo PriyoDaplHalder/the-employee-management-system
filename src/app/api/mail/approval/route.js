@@ -170,6 +170,7 @@ ${approverName}
         subject: emailSubject,
         message: emailMessage.trim(),
         priority: "High",
+        leaveDetails: mail.leaveDetails,
       });
 
       await sendEmail({

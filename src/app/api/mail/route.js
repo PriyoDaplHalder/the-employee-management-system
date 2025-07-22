@@ -618,7 +618,7 @@ export async function POST(request) {
       message: message.trim(),
       recipients,
       ccRecipients,
-      priority: priority || "Medium",
+      priority: priority || "None",
       selectedDepartment: selectedDepartment || null,
       // Add leave-specific fields if it's a leave application
       ...(requestType === "Leave Application" &&
@@ -668,7 +668,8 @@ export async function POST(request) {
           requestType,
           subject: subject.trim(),
           message: message.trim(),
-          priority: priority || "Medium",
+          priority: priority || "None",
+          leaveDetails,
         });
 
         // Group recipients by type (TO/CC) for separate emails
@@ -698,8 +699,9 @@ export async function POST(request) {
             requestType,
             subject: subject.trim(),
             message: message.trim(),
-            priority: priority || "Medium",
+            priority: priority || "None",
             recipientType: "TO",
+            leaveDetails,
           });
 
           const emailResult = await sendEmail({
@@ -752,8 +754,9 @@ export async function POST(request) {
             requestType,
             subject: subject.trim(),
             message: message.trim(),
-            priority: priority || "Medium",
+            priority: priority || "None",
             recipientType: "CC",
+            leaveDetails,
           });
 
           const emailResult = await sendEmail({
@@ -831,7 +834,7 @@ export async function POST(request) {
       `(${user.email})`
     );
     console.log("Request Type:", requestType);
-    console.log("Priority:", priority || "Medium");
+    console.log("Priority:", priority || "None");
     console.log("Subject:", subject);
     console.log("Recipients:", recipientInfo);
     if (ccInfo.length > 0) {

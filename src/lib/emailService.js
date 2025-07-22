@@ -78,6 +78,7 @@ export const generateEmailTemplate = ({
   message,
   priority,
   recipientType = "TO",
+  leaveDetails,
 }) => {
   const priorityColor = {
     Low: "#28a745",
@@ -85,6 +86,18 @@ export const generateEmailTemplate = ({
     High: "#fd7e14",
     Critical: "#dc3545",
   };
+
+  // Add leave summary if leaveDetails is present and requestType is Leave Application
+  let leaveSummary = "";
+  if (requestType === "Leave Application" && leaveDetails) {
+    leaveSummary = `
+      <div style="margin: 15px 0;">
+        <strong>Leave Type:</strong> ${leaveDetails.leaveType}<br/>
+        <strong>From:</strong> ${new Date(leaveDetails.fromDate).toLocaleDateString()} (${leaveDetails.fromSession} session)<br/>
+        <strong>To:</strong> ${new Date(leaveDetails.toDate).toLocaleDateString()} (${leaveDetails.toSession} session)
+      </div>
+    `;
+  }
 
   const html = `
     <!DOCTYPE html>
@@ -145,14 +158,16 @@ export const generateEmailTemplate = ({
         <div class="email-content">
           <h3>Subject: ${subject}</h3>
           
-          <div style="margin: 15px 0;">
+          ${requestType !== "Leave Application" && requestType !== "Leave Application Response" ? `<div style="margin: 15px 0;">
             <strong>Priority:</strong> <span class="priority-badge">${priority}</span>
-          </div>
+          </div>` : ''}
           
           <div style="margin: 15px 0;">
             <strong>Request Type:</strong> ${requestType}
           </div>
-          
+
+          ${leaveSummary}
+
           <div style="margin: 15px 0;">
             <strong>From:</strong> ${senderName} (${senderEmail})
           </div>
@@ -173,13 +188,19 @@ export const generateEmailTemplate = ({
   `;
 
   // Generate plain text version
+  let leaveSummaryText = "";
+  if (requestType === "Leave Application" && leaveDetails) {
+    leaveSummaryText = `\nLeave Type: ${leaveDetails.leaveType}\nFrom: ${new Date(leaveDetails.fromDate).toLocaleDateString()} (${leaveDetails.fromSession} session)\nTo: ${new Date(leaveDetails.toDate).toLocaleDateString()} (${leaveDetails.toSession} session)`;
+  }
+
   const text = `
     Employee Management System - New ${requestType} Request
     
     Subject: ${subject}
-    Priority: ${priority}
+    ${requestType !== "Leave Application" && requestType !== "Leave Application Response" ? `Priority: ${priority}` : ''}
     From: ${senderName} (${senderEmail})
     Recipient Type: ${recipientType}
+    ${leaveSummaryText}
     
     Message:
     ${message}

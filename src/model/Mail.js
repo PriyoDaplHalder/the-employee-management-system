@@ -109,8 +109,8 @@ const mailSchema = new mongoose.Schema(
     },
     priority: {
       type: String,
-      enum: ["Low", "Medium", "High"],
-      default: "Medium",
+      enum: ["None","Low", "Medium", "High"],
+      default: "None",
     },
     selectedDepartment: {
       type: String,

@@ -233,6 +233,13 @@ const MailManagement = ({ user, onBack }) => {
         newFormData.ccPositions = [];
       }
 
+      // If request type changes to Leave Application, reset priority
+      if (name === "requestType" && value === "Leave Application") {
+        newFormData.priority = ""; // Reset priority for leave applications
+      } else if (name === "requestType" && value !== "Leave Application") {
+        newFormData.priority = "Medium"; // Set default priority for non-leave requests
+      }
+
       return newFormData;
     });
   };
@@ -315,6 +322,8 @@ const MailManagement = ({ user, onBack }) => {
         selectedPositions: [formData.selectedPosition._id], // Convert single position to array for backend compatibility
         ccPositions: formData.ccPositions.map((pos) => pos._id),
         selectedDepartment: formData.selectedDepartment || null, // Include department filter
+        // No priority for leave applications - use None instead
+        priority: formData.requestType === "Leave Application" ? "None" : formData.priority,
         // Include leave-specific fields if it's a leave application
         ...(formData.requestType === "Leave Application" && {
           leaveDetails: {
@@ -493,23 +502,25 @@ const MailManagement = ({ user, onBack }) => {
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Priority</InputLabel>
-                  <Select
-                    name="priority"
-                    value={formData.priority}
-                    onChange={handleFormChange}
-                    label="Priority"
-                  >
-                    {priorities.map((priority) => (
-                      <MenuItem key={priority} value={priority}>
-                        {priority}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+              {formData.requestType !== "Leave Application" && (
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Priority</InputLabel>
+                    <Select
+                      name="priority"
+                      value={formData.priority}
+                      onChange={handleFormChange}
+                      label="Priority"
+                    >
+                      {priorities.map((priority) => (
+                        <MenuItem key={priority} value={priority}>
+                          {priority}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <TextField
