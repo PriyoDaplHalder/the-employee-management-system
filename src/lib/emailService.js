@@ -79,6 +79,7 @@ export const generateEmailTemplate = ({
   priority,
   recipientType = "TO",
   leaveDetails,
+  wfhDetails,
 }) => {
   const priorityColor = {
     Low: "#28a745",
@@ -95,6 +96,28 @@ export const generateEmailTemplate = ({
         <strong>Leave Type:</strong> ${leaveDetails.leaveType}<br/>
         <strong>From:</strong> ${new Date(leaveDetails.fromDate).toLocaleDateString()} (${leaveDetails.fromSession} session)<br/>
         <strong>To:</strong> ${new Date(leaveDetails.toDate).toLocaleDateString()} (${leaveDetails.toSession} session)
+      </div>
+    `;
+  }
+
+  // Add WFH summary if wfhDetails is present and requestType is Work from Home
+  let wfhSummary = "";
+  if (requestType === "Work from Home" && wfhDetails) {
+    wfhSummary = `
+      <div style="margin: 15px 0;">
+        <strong>From Date:</strong> ${new Date(wfhDetails.fromDate).toLocaleDateString()}<br/>
+        <strong>To Date:</strong> ${new Date(wfhDetails.toDate).toLocaleDateString()}
+      </div>
+    `;
+  }
+
+  // Handle WFH Response emails
+  if (requestType === "Work from Home Response" && wfhDetails) {
+    wfhSummary = `
+      <div style="margin: 15px 0;">
+        <strong>WFH Period:</strong><br/>
+        <strong>From Date:</strong> ${new Date(wfhDetails.fromDate).toLocaleDateString()}<br/>
+        <strong>To Date:</strong> ${new Date(wfhDetails.toDate).toLocaleDateString()}
       </div>
     `;
   }
@@ -158,7 +181,7 @@ export const generateEmailTemplate = ({
         <div class="email-content">
           <h3>Subject: ${subject}</h3>
           
-          ${requestType !== "Leave Application" && requestType !== "Leave Application Response" ? `<div style="margin: 15px 0;">
+          ${requestType !== "Leave Application" && requestType !== "Leave Application Response" && requestType !== "Work from Home" && requestType !== "Work from Home Response" ? `<div style="margin: 15px 0;">
             <strong>Priority:</strong> <span class="priority-badge">${priority}</span>
           </div>` : ''}
           
@@ -167,6 +190,7 @@ export const generateEmailTemplate = ({
           </div>
 
           ${leaveSummary}
+          ${wfhSummary}
 
           <div style="margin: 15px 0;">
             <strong>From:</strong> ${senderName} (${senderEmail})
@@ -193,14 +217,24 @@ export const generateEmailTemplate = ({
     leaveSummaryText = `\nLeave Type: ${leaveDetails.leaveType}\nFrom: ${new Date(leaveDetails.fromDate).toLocaleDateString()} (${leaveDetails.fromSession} session)\nTo: ${new Date(leaveDetails.toDate).toLocaleDateString()} (${leaveDetails.toSession} session)`;
   }
 
+  let wfhSummaryText = "";
+  if (requestType === "Work from Home" && wfhDetails) {
+    wfhSummaryText = `\nFrom Date: ${new Date(wfhDetails.fromDate).toLocaleDateString()}\nTo Date: ${new Date(wfhDetails.toDate).toLocaleDateString()}`;
+  }
+
+  // Handle WFH Response emails
+  if (requestType === "Work from Home Response" && wfhDetails) {
+    wfhSummaryText = `\nWFH Period:\nFrom Date: ${new Date(wfhDetails.fromDate).toLocaleDateString()}\nTo Date: ${new Date(wfhDetails.toDate).toLocaleDateString()}`;
+  }
+
   const text = `
     Employee Management System - New ${requestType} Request
     
     Subject: ${subject}
-    ${requestType !== "Leave Application" && requestType !== "Leave Application Response" ? `Priority: ${priority}` : ''}
+    ${requestType !== "Leave Application" && requestType !== "Leave Application Response" && requestType !== "Work from Home" && requestType !== "Work from Home Response" ? `Priority: ${priority}` : ''}
     From: ${senderName} (${senderEmail})
     Recipient Type: ${recipientType}
-    ${leaveSummaryText}
+    ${leaveSummaryText}${wfhSummaryText}
     
     Message:
     ${message}

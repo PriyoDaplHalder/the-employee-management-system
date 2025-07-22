@@ -279,6 +279,7 @@ export async function POST(request) {
       priority,
       selectedDepartment,
       leaveDetails,
+      wfhDetails,
       requiresApproval,
     } = body;
 
@@ -314,6 +315,20 @@ export async function POST(request) {
           success: false,
           error:
             "Leave applications require leave type, from date, and to date",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Additional validation for Work from Home applications
+    if (
+      requestType === "Work from Home" &&
+      (!wfhDetails || !wfhDetails.fromDate || !wfhDetails.toDate)
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Work from Home requests require from date and to date",
         },
         { status: 400 }
       );
@@ -633,6 +648,16 @@ export async function POST(request) {
           requiresApproval: true,
           approvalStatus: "Pending",
         }),
+      // Add WFH-specific fields if it's a Work from Home request
+      ...(requestType === "Work from Home" &&
+        wfhDetails && {
+          wfhDetails: {
+            fromDate: new Date(wfhDetails.fromDate),
+            toDate: new Date(wfhDetails.toDate),
+          },
+          requiresApproval: true,
+          approvalStatus: "Pending",
+        }),
       emailStatus: "Not Sent",
       emailResults: {
         sent: [],
@@ -669,7 +694,8 @@ export async function POST(request) {
           subject: subject.trim(),
           message: message.trim(),
           priority: priority || "None",
-          leaveDetails,
+          leaveDetails: requestType === "Leave Application" ? leaveDetails : undefined,
+          wfhDetails: requestType === "Work from Home" ? wfhDetails : undefined,
         });
 
         // Group recipients by type (TO/CC) for separate emails
@@ -701,7 +727,8 @@ export async function POST(request) {
             message: message.trim(),
             priority: priority || "None",
             recipientType: "TO",
-            leaveDetails,
+            leaveDetails: requestType === "Leave Application" ? leaveDetails : undefined,
+            wfhDetails: requestType === "Work from Home" ? wfhDetails : undefined,
           });
 
           const emailResult = await sendEmail({
@@ -756,7 +783,8 @@ export async function POST(request) {
             message: message.trim(),
             priority: priority || "None",
             recipientType: "CC",
-            leaveDetails,
+            leaveDetails: requestType === "Leave Application" ? leaveDetails : undefined,
+            wfhDetails: requestType === "Work from Home" ? wfhDetails : undefined,
           });
 
           const emailResult = await sendEmail({

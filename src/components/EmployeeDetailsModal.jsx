@@ -87,6 +87,7 @@ const EmployeeDetailsModal = ({ employee, user, onClose, onEmployeeUpdate }) => 
               bgcolor: "rgba(255,255,255,0.2)",
               color: "white",
               fontWeight: 500,
+              pointerEvents: "none",
             }}
           />
         </Box>
@@ -483,7 +484,7 @@ const EmployeeDetailsModal = ({ employee, user, onClose, onEmployeeUpdate }) => 
                       }
                       variant="filled"
                       size="medium"
-                      sx={{ fontWeight: 600 }}
+                      sx={{ fontWeight: 600, pointerEvents: "none" }}
                     />
                   </Box>
                   <Typography
@@ -644,6 +645,7 @@ const EmployeeDetailsModal = ({ employee, user, onClose, onEmployeeUpdate }) => 
                                   color: "primary.main",
                                   border: "1px solid",
                                   borderColor: "primary.200",
+                                  pointerEvents: "none",
                                   fontWeight: 500,
                                   fontSize: "0.875rem",
                                   "&:hover": {

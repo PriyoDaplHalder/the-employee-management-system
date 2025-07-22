@@ -54,6 +54,11 @@ const mailSchema = new mongoose.Schema(
         enum: ["first", "second"],
       },
     },
+    // Work from Home specific fields
+    wfhDetails: {
+      fromDate: Date,
+      toDate: Date,
+    },
     // Approval system
     requiresApproval: {
       type: Boolean,

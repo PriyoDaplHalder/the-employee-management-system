@@ -130,7 +130,7 @@ const InboxManagement = ({ user, onBack }) => {
       if (response.ok) {
         setSnackbar({
           open: true,
-          message: `Leave application ${action}ed successfully!`,
+          message: `${selectedMail.requestType} ${action}ed successfully!`,
           severity: "success",
         });
         fetchReceivedMails();
@@ -138,7 +138,7 @@ const InboxManagement = ({ user, onBack }) => {
       } else {
         setSnackbar({
           open: true,
-          message: `Failed to ${action} leave application: ${data.error}`,
+          message: `Failed to ${action} ${selectedMail.requestType.toLowerCase()}: ${data.error}`,
           severity: "error",
         });
       }
@@ -334,7 +334,7 @@ const InboxManagement = ({ user, onBack }) => {
                           />
                         </TableCell>
                         <TableCell>
-                          {mail.requestType === "Leave Application" ? (
+                          {(mail.requestType === "Leave Application" || mail.requestType === "Work from Home") ? (
                             <Chip
                               label={
                                 mail.approvalStatus === "Approved"
@@ -677,10 +677,77 @@ const InboxManagement = ({ user, onBack }) => {
                         </Grid>
                       </>
                     )}
+
+                  {/* Work from Home Details */}
+                  {selectedMail.requestType === "Work from Home" &&
+                    selectedMail.wfhDetails && (
+                      <>
+                        <br />
+                        <Grid item xs={6} sm={3}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                          >
+                            From Date
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ mt: 0.5, fontSize: "0.9rem" }}
+                          >
+                            {new Date(
+                              selectedMail.wfhDetails.fromDate
+                            ).toLocaleDateString()}
+                          </Typography>
+                        </Grid>
+
+                        <Grid item xs={6} sm={3}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                          >
+                            To Date
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ mt: 0.5, fontSize: "0.9rem" }}
+                          >
+                            {new Date(
+                              selectedMail.wfhDetails.toDate
+                            ).toLocaleDateString()}
+                          </Typography>
+                        </Grid>
+
+                        <Grid item xs={6} sm={3}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                          >
+                            Approval Status
+                          </Typography>
+                          <Box sx={{ mt: 0.5 }}>
+                            <Chip
+                              label={selectedMail.approvalStatus || "Pending"}
+                              size="small"
+                              color={
+                                selectedMail.approvalStatus === "Approved"
+                                  ? "success"
+                                  : selectedMail.approvalStatus === "Rejected"
+                                  ? "error"
+                                  : "warning"
+                              }
+                              sx={{ pointerEvents: "none" }}
+                            />
+                          </Box>
+                        </Grid>
+                      </>
+                    )}
                 </Grid>
 
-                {/* Approval Actions for Leave Applications */}
-                {selectedMail.requestType === "Leave Application" &&
+                {/* Approval Actions for Leave Applications and WFH Requests */}
+                {(selectedMail.requestType === "Leave Application" || selectedMail.requestType === "Work from Home") &&
                   selectedMail.requiresApproval &&
                   selectedMail.approvalStatus === "Pending" && (
                     <Box

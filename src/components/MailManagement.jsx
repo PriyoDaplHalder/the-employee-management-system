@@ -84,6 +84,9 @@ const MailManagement = ({ user, onBack }) => {
     fromSession: "first",
     toDate: "",
     toSession: "second",
+    // Work from Home specific fields
+    wfhFromDate: "",
+    wfhToDate: "",
   });
 
   // Modal state
@@ -236,8 +239,27 @@ const MailManagement = ({ user, onBack }) => {
       // If request type changes to Leave Application, reset priority
       if (name === "requestType" && value === "Leave Application") {
         newFormData.priority = ""; // Reset priority for leave applications
-      } else if (name === "requestType" && value !== "Leave Application") {
-        newFormData.priority = "Medium"; // Set default priority for non-leave requests
+        // Clear WFH fields when switching to Leave Application
+        newFormData.wfhFromDate = "";
+        newFormData.wfhToDate = "";
+      } else if (name === "requestType" && value === "Work from Home") {
+        newFormData.priority = ""; // Reset priority for WFH applications
+        // Clear Leave fields when switching to Work from Home
+        newFormData.leaveType = "";
+        newFormData.fromDate = "";
+        newFormData.fromSession = "first";
+        newFormData.toDate = "";
+        newFormData.toSession = "second";
+      } else if (name === "requestType" && value !== "Leave Application" && value !== "Work from Home") {
+        newFormData.priority = "Medium"; // Set default priority for non-leave/WFH requests
+        // Clear both Leave and WFH fields for other request types
+        newFormData.leaveType = "";
+        newFormData.fromDate = "";
+        newFormData.fromSession = "first";
+        newFormData.toDate = "";
+        newFormData.toSession = "second";
+        newFormData.wfhFromDate = "";
+        newFormData.wfhToDate = "";
       }
 
       return newFormData;
@@ -266,6 +288,9 @@ const MailManagement = ({ user, onBack }) => {
       fromSession: "first",
       toDate: "",
       toSession: "second",
+      // Reset WFH specific fields
+      wfhFromDate: "",
+      wfhToDate: "",
     });
   };
 
@@ -312,6 +337,31 @@ const MailManagement = ({ user, onBack }) => {
       }
     }
 
+    // Additional validation for Work from Home applications
+    if (formData.requestType === "Work from Home") {
+      if (!formData.wfhFromDate || !formData.wfhToDate) {
+        setSnackbar({
+          open: true,
+          message: "Please fill in both from date and to date for Work from Home request",
+          severity: "error",
+        });
+        return;
+      }
+
+      // Validate date range
+      const wfhFromDateObj = new Date(formData.wfhFromDate);
+      const wfhToDateObj = new Date(formData.wfhToDate);
+
+      if (wfhFromDateObj > wfhToDateObj) {
+        setSnackbar({
+          open: true,
+          message: "From date cannot be later than to date",
+          severity: "error",
+        });
+        return;
+      }
+    }
+
     setSending(true);
     try {
       const token = getToken();
@@ -322,8 +372,8 @@ const MailManagement = ({ user, onBack }) => {
         selectedPositions: [formData.selectedPosition._id], // Convert single position to array for backend compatibility
         ccPositions: formData.ccPositions.map((pos) => pos._id),
         selectedDepartment: formData.selectedDepartment || null, // Include department filter
-        // No priority for leave applications - use None instead
-        priority: formData.requestType === "Leave Application" ? "None" : formData.priority,
+        // No priority for leave applications or WFH - use None instead
+        priority: (formData.requestType === "Leave Application" || formData.requestType === "Work from Home") ? "None" : formData.priority,
         // Include leave-specific fields if it's a leave application
         ...(formData.requestType === "Leave Application" && {
           leaveDetails: {
@@ -334,6 +384,14 @@ const MailManagement = ({ user, onBack }) => {
             toSession: formData.toSession,
           },
           requiresApproval: true, // Mark leave applications as requiring approval
+        }),
+        // Include WFH-specific fields if it's a Work from Home request
+        ...(formData.requestType === "Work from Home" && {
+          wfhDetails: {
+            fromDate: formData.wfhFromDate,
+            toDate: formData.wfhToDate,
+          },
+          requiresApproval: true, // Mark WFH requests as requiring approval
         }),
       };
 
@@ -502,7 +560,7 @@ const MailManagement = ({ user, onBack }) => {
                 </FormControl>
               </Grid>
 
-              {formData.requestType !== "Leave Application" && (
+              {formData.requestType !== "Leave Application" && formData.requestType !== "Work from Home" && (
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
                     <InputLabel>Priority</InputLabel>
@@ -622,6 +680,45 @@ const MailManagement = ({ user, onBack }) => {
                         ))}
                       </Select>
                     </FormControl>
+                  </Grid>
+                </>
+              )}
+
+              {/* Work from Home Specific Fields */}
+              {formData.requestType === "Work from Home" && (
+                <>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      name="wfhFromDate"
+                      label="From Date"
+                      value={formData.wfhFromDate}
+                      onChange={handleFormChange}
+                      InputLabelProps={{ shrink: true }}
+                      required
+                      inputProps={{
+                        min: new Date().toISOString().split("T")[0], // Prevent past dates
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      name="wfhToDate"
+                      label="To Date"
+                      value={formData.wfhToDate}
+                      onChange={handleFormChange}
+                      InputLabelProps={{ shrink: true }}
+                      required
+                      inputProps={{
+                        min:
+                          formData.wfhFromDate ||
+                          new Date().toISOString().split("T")[0],
+                      }}
+                    />
                   </Grid>
                 </>
               )}
@@ -965,7 +1062,7 @@ const MailManagement = ({ user, onBack }) => {
                                   sx={{ pointerEvents: "none" }}
                                 />
                               )}
-                              {mail.requestType === "Leave Application" &&
+                              {(mail.requestType === "Leave Application" || mail.requestType === "Work from Home") &&
                                 mail.approvalStatus && (
                                   <Chip
                                     label={`Approval: ${mail.approvalStatus}`}
@@ -1279,6 +1376,90 @@ const MailManagement = ({ user, onBack }) => {
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             ({selectedMail.leaveDetails.toSession} session)
+                          </Typography>
+                        </Grid>
+
+                        <Grid item xs={6} sm={3}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                          >
+                            Approval Status
+                          </Typography>
+                          <Box sx={{ mt: 0.5 }}>
+                            <Chip
+                              label={selectedMail.approvalStatus || "Pending"}
+                              size="small"
+                              color={
+                                selectedMail.approvalStatus === "Approved"
+                                  ? "success"
+                                  : selectedMail.approvalStatus === "Rejected"
+                                  ? "error"
+                                  : "warning"
+                              }
+                              sx={{ pointerEvents: "none" }}
+                            />
+                          </Box>
+                        </Grid>
+
+                        {selectedMail.approvalComments && (
+                          <Grid item xs={12}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight={600}
+                            >
+                              Approval Comments
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{ mt: 0.5, fontSize: "0.9rem" }}
+                            >
+                              {selectedMail.approvalComments}
+                            </Typography>
+                          </Grid>
+                        )}
+                      </>
+                    )}
+
+                  {/* Work from Home Details */}
+                  {selectedMail.requestType === "Work from Home" &&
+                    selectedMail.wfhDetails && (
+                      <>
+                        <Grid item xs={6} sm={3}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                          >
+                            From Date
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ mt: 0.5, fontSize: "0.9rem" }}
+                          >
+                            {new Date(
+                              selectedMail.wfhDetails.fromDate
+                            ).toLocaleDateString()}
+                          </Typography>
+                        </Grid>
+
+                        <Grid item xs={6} sm={3}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                          >
+                            To Date
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ mt: 0.5, fontSize: "0.9rem" }}
+                          >
+                            {new Date(
+                              selectedMail.wfhDetails.toDate
+                            ).toLocaleDateString()}
                           </Typography>
                         </Grid>
 

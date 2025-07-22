@@ -63,8 +63,12 @@ export async function POST(request) {
       );
     }
 
-    // Check if this is a leave application that requires approval
-    if (mail.requestType !== "Leave Application" || !mail.requiresApproval) {
+    // Check if this is a request that requires approval
+    if (
+      (mail.requestType !== "Leave Application" &&
+        mail.requestType !== "Work from Home") ||
+      !mail.requiresApproval
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -94,8 +98,7 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "You are not authorized to approve/reject this leave application",
+          error: "You are not authorized to approve/reject this request",
         },
         { status: 403 }
       );
@@ -106,7 +109,7 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          error: `This leave application has already been ${mail.approvalStatus.toLowerCase()}`,
+          error: `This request has already been ${mail.approvalStatus.toLowerCase()}`,
         },
         { status: 400 }
       );
@@ -130,27 +133,38 @@ export async function POST(request) {
       const approverName =
         `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email;
 
-      // Create leave summary for email
-      const leaveSummary = mail.leaveDetails
-        ? `
+      // Create request details summary for email
+      let requestSummary = "";
+      if (mail.requestType === "Leave Application" && mail.leaveDetails) {
+        requestSummary = `
         Leave Type: ${mail.leaveDetails.leaveType}
         From: ${new Date(mail.leaveDetails.fromDate).toLocaleDateString()} (${
-            mail.leaveDetails.fromSession
-          } session)
+          mail.leaveDetails.fromSession
+        } session)
         To: ${new Date(mail.leaveDetails.toDate).toLocaleDateString()} (${
-            mail.leaveDetails.toSession
-          } session)
-      `
-        : "";
+          mail.leaveDetails.toSession
+        } session)
+      `;
+      } else if (mail.requestType === "Work from Home" && mail.wfhDetails) {
+        requestSummary = `
+        Work from Home Period:
+        From Date: ${new Date(mail.wfhDetails.fromDate).toLocaleDateString()}
+        To Date: ${new Date(mail.wfhDetails.toDate).toLocaleDateString()}
+      `;
+      }
 
-      const emailSubject = `Leave Application ${approvalStatus} - ${mail.subject}`;
+      const requestTypeForEmail =
+        mail.requestType === "Work from Home"
+          ? "Work from Home Request"
+          : "Leave Application";
+      const emailSubject = `${requestTypeForEmail} ${approvalStatus} - ${mail.subject}`;
       const emailMessage = `
 Dear ${senderName},
 
-Your leave application has been ${approvalStatus.toLowerCase()} by ${approverName}.
+Your ${mail.requestType.toLowerCase()} has been ${approvalStatus.toLowerCase()} by ${approverName}.
 
 Original Request:
-${leaveSummary}
+${requestSummary}
 Subject: ${mail.subject}
 Message: ${mail.message}
 
@@ -166,11 +180,16 @@ ${approverName}
       const { html, text } = generateEmailTemplate({
         senderName: approverName,
         senderEmail: user.email,
-        requestType: "Leave Application Response",
+        requestType: `${mail.requestType} Response`,
         subject: emailSubject,
         message: emailMessage.trim(),
         priority: "High",
-        leaveDetails: mail.leaveDetails,
+        leaveDetails:
+          mail.requestType === "Leave Application"
+            ? mail.leaveDetails
+            : undefined,
+        wfhDetails:
+          mail.requestType === "Work from Home" ? mail.wfhDetails : undefined,
       });
 
       await sendEmail({
@@ -182,37 +201,17 @@ ${approverName}
       });
 
       console.log(
-        `Leave ${action} notification sent to ${mail.senderUserId.email}`
+        `${mail.requestType} ${action} notification sent to ${mail.senderUserId.email}`
       );
     } catch (emailError) {
       console.error("Failed to send approval notification email:", emailError);
       // Don't fail the approval process if email fails
     }
 
-    // Log the approval action
-    console.log("=== LEAVE APPROVAL LOG ===");
-    console.log("Mail ID:", mailId);
-    console.log("Action:", approvalStatus);
-    console.log(
-      "Approver:",
-      `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email
-    );
-    console.log(
-      "Applicant:",
-      `${mail.senderUserId.firstName || ""} ${
-        mail.senderUserId.lastName || ""
-      }`.trim() || mail.senderUserId.email
-    );
-    console.log("Timestamp:", new Date().toISOString());
-    if (comments) {
-      console.log("Comments:", comments);
-    }
-    console.log("=== END LEAVE APPROVAL LOG ===");
-
     return NextResponse.json(
       {
         success: true,
-        message: `Leave application ${action}d successfully`,
+        message: `${mail.requestType} ${action}d successfully`,
         approval: {
           mailId: mail._id,
           status: approvalStatus,
@@ -268,9 +267,9 @@ export async function GET(request) {
       );
     }
 
-    // Find leave applications pending approval where user's position is in recipients
+    // Find leave applications and WFH requests pending approval where user's position is in recipients
     const pendingApprovals = await Mail.find({
-      requestType: "Leave Application",
+      requestType: { $in: ["Leave Application", "Work from Home"] },
       requiresApproval: true,
       approvalStatus: "Pending",
       "recipients.position": userEmployee.position,
@@ -284,7 +283,9 @@ export async function GET(request) {
       _id: mail._id,
       subject: mail.subject,
       message: mail.message,
+      requestType: mail.requestType,
       leaveDetails: mail.leaveDetails,
+      wfhDetails: mail.wfhDetails,
       applicant: {
         name:
           `${mail.senderUserId.firstName || ""} ${
