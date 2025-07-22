@@ -230,10 +230,10 @@ const MailManagement = ({ user, onBack }) => {
         [name]: value,
       };
 
-      // If department changes, clear position selections
+      // If department changes, clear only the main recipient position, NOT CC positions
       if (name === "selectedDepartment") {
         newFormData.selectedPosition = null;
-        newFormData.ccPositions = [];
+        // Do NOT clear ccPositions to allow cross-department CC selection
       }
 
       // If request type changes to Leave Application, reset priority
@@ -252,7 +252,7 @@ const MailManagement = ({ user, onBack }) => {
         newFormData.toSession = "second";
       } else if (name === "requestType" && value !== "Leave Application" && value !== "Work from Home") {
         newFormData.priority = "Medium"; // Set default priority for non-leave/WFH requests
-        // Clear both Leave and WFH fields for other request types
+        // Clear both Leave and WFH fields for other request types example: "general" and actual "other"
         newFormData.leaveType = "";
         newFormData.fromDate = "";
         newFormData.fromSession = "first";
@@ -455,7 +455,9 @@ const MailManagement = ({ user, onBack }) => {
   const closeMailDetail = () => {
     setSelectedMail(null);
     setShowDetailModal(false);
-  }; // Helper function to get filtered positions based on selected department
+  };
+
+  // Helper function to get filtered positions based on selected department
   const getFilteredPositions = () => {
     if (!formData.selectedDepartment) {
       return [];
@@ -467,6 +469,42 @@ const MailManagement = ({ user, onBack }) => {
     );
 
     return selectedDept ? selectedDept.positions : [];
+  };
+
+  // Helper function to get all positions across all departments for CC
+  const getAllPositionsForCC = () => {
+    const allPositions = [];
+    availableDepartments.forEach(dept => {
+      dept.positions.forEach(position => {
+        allPositions.push({
+          ...position,
+          departmentName: dept.department, 
+          uniqueId: `${position._id}_${dept.department}` 
+        });
+      });
+    });
+    return allPositions;
+  };
+
+  // Helper function to get available CC positions (excluding main recipient and duplicates)
+  const getAvailableCCPositions = () => {
+    const allPositions = getAllPositionsForCC();
+    
+    return allPositions.filter(pos => {
+      // Exclude if it's the main recipient position (same _id and department)
+      if (formData.selectedPosition && 
+          pos._id === formData.selectedPosition._id &&
+          pos.departmentName === formData.selectedDepartment) {
+        return false;
+      }
+      
+      // Exclude if already selected as CC (prevent exact same position-department combination)
+      if (formData.ccPositions.some(ccPos => ccPos.uniqueId === pos.uniqueId)) {
+        return false;
+      }
+      
+      return true;
+    });
   };
 
   if (!mounted) {
@@ -532,12 +570,11 @@ const MailManagement = ({ user, onBack }) => {
 
             <Alert severity="info" sx={{ mb: 3 }}>
               <Typography variant="body2">
-                <strong>Department-Based Mailing:</strong> First select a
-                department to unlock position selection. Once a department is
-                chosen, you can select the specific position within that
-                department and optionally add CC positions. This ensures your
-                mail reaches only the intended recipients in the right
-                department.
+                <strong>Cross-Department Mailing:</strong> First select a
+                department to see positions for the main recipient ("Send To Position"). 
+                For CC positions, you can select from any department - they will accumulate 
+                as you switch between departments. The main recipient must be from the 
+                currently selected department, while CC recipients can be from multiple departments.
               </Typography>
             </Alert>
 
@@ -765,6 +802,7 @@ const MailManagement = ({ user, onBack }) => {
                       onChange={(event, newValue) =>
                         handlePositionChange("selectedPosition", newValue)
                       }
+                      isOptionEqualToValue={(option, value) => option._id === value._id}
                       renderInput={(params) => (
                         <TextField
                           {...params}
@@ -777,26 +815,23 @@ const MailManagement = ({ user, onBack }) => {
                     />
                   </Grid>
 
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={6} sx={{ minWidth: "66vw" }}>
                     <Autocomplete
                       multiple
-                      options={getFilteredPositions().filter(
-                        (pos) =>
-                          !formData.selectedPosition ||
-                          pos._id !== formData.selectedPosition._id
-                      )}
-                      getOptionLabel={(option) => option.position}
+                      options={getAvailableCCPositions()}
+                      getOptionLabel={(option) => `${option.position} (${option.departmentName})`}
                       value={formData.ccPositions}
                       onChange={(event, newValue) =>
                         handlePositionChange("ccPositions", newValue)
                       }
+                      isOptionEqualToValue={(option, value) => option.uniqueId === value.uniqueId}
                       renderTags={(value, getTagProps) =>
                         value.map((option, index) => (
                           <Chip
                             variant="outlined"
-                            label={option.position}
+                            label={`${option.position} (${option.departmentName})`}
                             {...getTagProps({ index })}
-                            key={option._id}
+                            key={option.uniqueId}
                           />
                         ))
                       }
@@ -804,8 +839,8 @@ const MailManagement = ({ user, onBack }) => {
                         <TextField
                           {...params}
                           label="CC Positions (Optional)"
-                          placeholder="Select positions to CC"
-                          helperText={`CC positions from ${formData.selectedDepartment} department`}
+                          placeholder="Select positions to CC from any department"
+                          helperText="You can select positions from any department for CC"
                         />
                       )}
                     />
@@ -866,13 +901,12 @@ const MailManagement = ({ user, onBack }) => {
 
               <Alert severity="info" sx={{ mb: 3 }}>
                 <Typography variant="body2">
-                  <strong>About Department-Based Mailing:</strong> All mails are
-                  sent to specific positions within selected departments. When
-                  you send a mail to "HR Manager" in the "Development"
-                  department, it goes only to HR Managers in that specific
-                  department. This allows precise targeting while maintaining
-                  the flexibility of position-based mailing when employees
-                  change roles within departments.
+                  <strong>About Cross-Department Mailing:</strong> The main recipient 
+                  ("Send To Position") is always from the selected department, while CC 
+                  recipients can be from multiple departments. When you send a mail to 
+                  "HR Manager" in the "Development" department with CC to positions from 
+                  "Marketing" and "Finance", it ensures precise targeting while allowing 
+                  cross-departmental communication.
                 </Typography>
               </Alert>
 
