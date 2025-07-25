@@ -12,13 +12,15 @@ import {
 // import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { getToken } from "../utils/storage";
 
-const COLORS = ["#75ac13","#FF5733", "#13ac97", "#ff9800"];
-import { PieChart } from '@mui/x-charts/PieChart';
+const COLORS = ["#75ac13", "#FF5733", "#13ac97", "#ff9800"];
+import { PieChart } from "@mui/x-charts/PieChart";
 
 const StatCard = ({ title, data, loading }) => {
   // Separate "Total" from the rest of the segments
   const totalEntry = data.find((item) => item.label.toLowerCase() === "total");
-  const pieSegments = data.filter((item) => item.label.toLowerCase() !== "total");
+  const pieSegments = data.filter(
+    (item) => item.label.toLowerCase() !== "total"
+  );
   const total = totalEntry?.value || 0;
 
   const pieData = pieSegments.map((item, index) => ({
@@ -49,7 +51,12 @@ const StatCard = ({ title, data, loading }) => {
       </Typography>
 
       {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          height="200px"
+        >
           <CircularProgress />
         </Box>
       ) : (
@@ -58,8 +65,8 @@ const StatCard = ({ title, data, loading }) => {
             series={[
               {
                 data: pieData,
-                highlightScope: { faded: 'global', highlighted: 'item' },
-                faded: { additionalRadius: -10, color: 'gray' },
+                highlightScope: { faded: "global", highlighted: "item" },
+                faded: { additionalRadius: -10, color: "gray" },
               },
             ]}
             width={250}
@@ -67,13 +74,18 @@ const StatCard = ({ title, data, loading }) => {
             slotProps={{ legend: { hidden: true } }}
             sx={{
               [`& .MuiPieArc-root`]: {
-                stroke: '#fff',
+                stroke: "#fff",
                 strokeWidth: 1,
               },
             }}
           />
           <Divider sx={{ my: 2 }} />
-          <Typography variant="body2" textAlign="center" fontWeight={600} mb={1}>
+          <Typography
+            variant="body2"
+            textAlign="center"
+            fontWeight={600}
+            mb={1}
+          >
             Total: {total}
           </Typography>
           <Box>
@@ -96,8 +108,6 @@ const StatCard = ({ title, data, loading }) => {
     </Card>
   );
 };
-
-
 
 const DashboardContent = ({ user }) => {
   const [weather, setWeather] = useState(null);
@@ -139,13 +149,13 @@ const DashboardContent = ({ user }) => {
       });
   }, []);
 
-  useEffect(()=>{
+  useEffect(() => {
     const updateDateTime = () => {
       setDateTime(new Date().toLocaleString());
     };
     const intervalId = setInterval(updateDateTime, 1000);
-    return () => clearInterval(intervalId); 
-  },[])
+    return () => clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -191,67 +201,143 @@ const DashboardContent = ({ user }) => {
     fetchStats();
   }, []);
 
+  // the suffix after a date
+  const getOrdinalSuffix = (day) => {
+    if (day > 3 && day < 21) return "th";
+    switch (day % 10) {
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
+    }
+  };
+
   const currentDate = new Date();
+
+  // Format the date
+  const weekday = currentDate.toLocaleDateString(undefined, {
+    weekday: "long",
+  });
+  const month = currentDate.toLocaleDateString(undefined, { month: "long" });
+  const day = currentDate.getDate();
+  const year = currentDate.getFullYear();
+
+  const formattedDate = `${weekday}, ${month} ${day}${getOrdinalSuffix(
+    day
+  )}, ${year}`;
+
+  // Extract the time from the dateTime string
+  const timenow = dateTime.split(",")[1].trim();
+
+  // The wind direction
+  const getWindDirection = (degree) => {
+    const directions = [
+      "North",
+      "North Northeast",
+      "Northeast",
+      "East Northeast",
+      "East",
+      "East Southeast",
+      "Southeast",
+      "South Southeast",
+      "South",
+      "South Southwest",
+      "Southwest",
+      "West Southwest",
+      "West",
+      "West Northwest",
+      "Northwest",
+      "North Northwest",
+    ];
+    const index = Math.round(degree / 22.5) % 16;
+    return directions[index];
+  };
 
   return (
     <Container maxWidth="lg" sx={{ py: 5 }}>
       {/* Header Section */}
       <Grid container spacing={3} mb={4}>
+        {/* The change */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ p: 3, backgroundColor: "#fdfdfd", borderRadius: 4 }}>
-            <Typography variant="h6" color="primary" fontWeight={600}>
-              Hello, {user.email?.split("@")[0] || "User"}!
-            </Typography>
-            <Typography variant="body1" mt={1}>
-              It's &nbsp;
-              {currentDate.toLocaleDateString(undefined, {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </Typography>
-            <Typography variant="h5" mt={2} fontWeight={700}>
-              {dateTime.split(",")[1].trim()}
-            </Typography>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Card sx={{ p: 3, backgroundColor: "#fdfdfd", borderRadius: 4 }}>
+          <Card
+            sx={{
+              p: 4,
+              backgroundColor: "#fdfdfd",
+              borderRadius: 4,
+              boxShadow: 2,
+            }}
+          >
             {loading ? (
-              <Typography>Loading weather...</Typography>
+              <Typography variant="body1">Please wait, loading...</Typography>
             ) : error ? (
               <Typography color="error">{error}</Typography>
             ) : (
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={8}>
-                  <Typography variant="h6" fontWeight={600} color="primary">
-                    Weather in {weather.name}
+              <Grid container spacing={3} alignItems="center">
+                {/* Left Content */}
+                <Grid item xs={12} sm={8}>
+                  <Typography variant="h6" gutterBottom>
+                    Hello,{" "}
+                    <Typography
+                      component="span"
+                      color="primary"
+                      fontWeight={600}
+                    >
+                      {user.email?.split("@")[0] || "User"}
+                    </Typography>
+                    !
                   </Typography>
-                  <Typography variant="body2" mt={1}>
-                    <strong>Condition:</strong> {weather.weather[0].description}
+
+                  <Typography variant="body1" gutterBottom>
+                    It's <strong>{formattedDate}</strong>. The current time is{" "}
+                    <strong>{timenow}</strong>.
                   </Typography>
-                  <Typography variant="body2">
-                    <strong>Temperature:</strong>{" "}
-                    <span style={{ color: "#f57c00", fontWeight: 600 }}>
-                      {Math.round(weather.main.temp)}°C
-                    </span>
+
+                  <Typography variant="body1" gutterBottom>
+                    Current weather in{" "}
+                    <Typography
+                      component="span"
+                      color="primary"
+                      fontWeight={600}
+                    >
+                      {weather.name}
+                    </Typography>{" "}
+                    is <em>{weather.weather[0].description}</em> with a
+                    temperature of{" "}
+                    <strong>{Math.round(weather.main.temp)}°C</strong> (feels
+                    like{" "}
+                    <strong>{Math.round(weather.main.feels_like)}°C</strong>).
                   </Typography>
-                  <Typography variant="body2">
-                    <strong>Feels like:</strong>{" "}
-                    {Math.round(weather.main.feels_like)}°C
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Humidity:</strong> {weather.main.humidity}% <br />
-                    <strong>Wind:</strong> {Math.round(weather.wind.speed)} km/h
+
+                  <Typography variant="body1" gutterBottom>
+                    Humidity: <strong>{weather.main.humidity}%</strong>, Wind:{" "}
+                    <strong>{weather.wind.speed} km/h</strong> from the{" "}
+                    <strong>{getWindDirection(weather.wind.deg)}</strong>.
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column", alignItems: "center" }} >
+
+                {/* Weather Icon */}
+                <Grid
+                  item
+                  xs={12}
+                  sm={4}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}
+                >
                   <img
                     src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
                     alt={weather.weather[0].description}
                     width={80}
-                    style={{ borderRadius: "50%", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+                    style={{
+                      borderRadius: "50%",
+                      boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                    }}
                   />
                   <Typography variant="caption" fontStyle="italic">
                     {weather.weather[0].main}
@@ -264,7 +350,7 @@ const DashboardContent = ({ user }) => {
       </Grid>
 
       {/* Stat Section */}
-      <Grid container spacing={4} sx={{marginBottom:"50px"}}>
+      <Grid container spacing={4} sx={{ marginBottom: "50px" }}>
         <Grid item xs={12} md={4}>
           <StatCard
             title="Employees"
