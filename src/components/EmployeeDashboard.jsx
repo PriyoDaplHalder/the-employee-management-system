@@ -31,6 +31,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
   const [projectCount, setProjectCount] = useState(0);
   const [myProjectCount, setMyProjectCount] = useState(0);
   const [myTaskCount, setMyTaskCount] = useState(0);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     setMounted(true);
@@ -173,7 +174,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
             onProjectCountChange={setMyProjectCount}
           />
         );
-        case "tasks":
+      case "tasks":
         return (
           <AssignedTasks
             user={user}
@@ -182,19 +183,9 @@ const EmployeeDashboard = ({ user, onLogout }) => {
           />
         );
       case "mailmanagement":
-        return (
-          <MailManagement
-            user={user}
-            onBack={handleBackToDashboard}
-          />
-        );
+        return <MailManagement user={user} onBack={handleBackToDashboard} />;
       case "inbox":
-        return (
-          <InboxManagement
-            user={user}
-            onBack={handleBackToDashboard}
-          />
-        );
+        return <InboxManagement user={user} onBack={handleBackToDashboard} />;
       case "schedule":
         return <SchedulePlaceholder />;
       case "timesheet":
@@ -257,6 +248,88 @@ const EmployeeDashboard = ({ user, onLogout }) => {
 
 // Dashboard main content
 const DashboardContent = ({ user, hasProfile, profileCompleted, loading }) => {
+  const [weather, setWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [dateTime, setDateTime] = useState(new Date().toLocaleString());
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
+    const city = "Kolkata";
+    fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.cod === 200) {
+          setWeather(data);
+        } else {
+          setError("Weather data not available");
+        }
+        setWeatherLoading(false);
+      })
+      .catch(() => {
+        setError("Failed to fetch weather");
+        setWeatherLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    const updateDateTime = () => {
+      setDateTime(new Date().toLocaleString());
+    };
+    const intervalId = setInterval(updateDateTime, 1000);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // the suffix after a date
+  const getOrdinalSuffix = (day) => {
+    if (day > 3 && day < 21) return "th";
+    switch (day % 10) {
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
+    }
+  };
+
+  const currentDate = new Date();
+  const weekday = currentDate.toLocaleDateString(undefined, {
+    weekday: "long",
+  });
+  const month = currentDate.toLocaleDateString(undefined, { month: "long" });
+  const day = currentDate.getDate();
+  const year = currentDate.getFullYear();
+  const formattedDate = `${weekday}, ${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
+  const timenow = dateTime.split(",")[1]?.trim() || "";
+
+  const getWindDirection = (degree) => {
+    const directions = [
+      "North",
+      "North Northeast",
+      "Northeast",
+      "East Northeast",
+      "East",
+      "East Southeast",
+      "Southeast",
+      "South Southeast",
+      "South",
+      "South Southwest",
+      "Southwest",
+      "West Southwest",
+      "West",
+      "West Northwest",
+      "Northwest",
+      "North Northwest",
+    ];
+    const index = Math.round(degree / 22.5) % 16;
+    return directions[index];
+  };
+
   if (loading) {
     return (
       <Box
@@ -274,17 +347,87 @@ const DashboardContent = ({ user, hasProfile, profileCompleted, loading }) => {
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ textAlign: "center", mt: 8, mb: 4 }}>
-        <Typography
-          variant="h4"
-          component="h1"
-          gutterBottom
-          sx={{ fontWeight: 600, color: "primary.main", mb: 2 }}
-        >
-          Hi {user?.name || user?.email}, welcome to your{" "}
-          {user?.role || "employee"} dashboard
-        </Typography>
-      </Box>
+      <Grid container spacing={3} my={4}>
+        <Grid item xs={12} md={6}>
+          <Card
+            sx={{
+              p: 4,
+              backgroundColor: "#fdfdfd",
+              borderRadius: 4,
+              boxShadow: 2,
+            }}
+          >
+            {weatherLoading ? (
+              <Typography variant="body1">Please wait, loading...</Typography>
+            ) : error ? (
+              <Typography color="error">{error}</Typography>
+            ) : (
+              <Grid container spacing={3} alignItems="center">
+                <Grid item xs={12} sm={8}>
+                  <Typography variant="h6" gutterBottom>
+                    Hello,{" "}
+                    <Typography
+                      component="span"
+                      color="primary"
+                      fontWeight={600}
+                    >
+                      {user.email?.split("@")[0] || "User"}
+                    </Typography>
+                    !
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    It's <strong>{formattedDate}</strong>. The current time is{" "}
+                    <strong>{timenow}</strong>.
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    Current weather in{" "}
+                    <Typography
+                      component="span"
+                      color="primary"
+                      fontWeight={600}
+                    >
+                      {weather.name}
+                    </Typography>{" "}
+                    is <em>{weather.weather[0].description}</em> with a
+                    temperature of{" "}
+                    <strong>{Math.round(weather.main.temp)}°C</strong> (feels
+                    like{" "}
+                    <strong>{Math.round(weather.main.feels_like)}°C</strong>).
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    Humidity: <strong>{weather.main.humidity}%</strong>, Wind: {" "}
+                    <strong>{weather.wind.speed} km/h</strong> from the {" "}
+                    <strong>{getWindDirection(weather.wind.deg)}</strong>.
+                  </Typography>
+                </Grid>
+                <Grid
+                  item
+                  xs={12}
+                  sm={4}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}
+                >
+                  <img
+                    src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
+                    alt={weather.weather[0].description}
+                    width={80}
+                    style={{
+                      borderRadius: "50%",
+                      boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                    }}
+                  />
+                  <Typography variant="caption" fontStyle="italic">
+                    {weather.weather[0].main}
+                  </Typography>
+                </Grid>
+              </Grid>
+            )}
+          </Card>
+        </Grid>
+      </Grid>
     </Container>
   );
 };
