@@ -37,6 +37,7 @@ const TaskAssignmentModal = ({
   taskItem,
   milestone,
   feature,
+  user, // Add user prop to determine role
 }) => {
   const [assignedEmployees, setAssignedEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
@@ -73,35 +74,74 @@ const TaskAssignmentModal = ({
       const token = getToken();
       console.log("Fetching assigned employees for project:", projectId);
 
-      // Use the new employee API endpoint for getting project assignments
-      const response = await fetch(
-        `/api/employee/projects/${projectId}/assignments`,
-        {
+      // Use appropriate API endpoint based on user role
+      const isManagement = user?.role === "management";
+      
+      let response;
+      let projectAssignments = [];
+
+      if (isManagement) {
+        // For management, use the management API and filter for the project
+        response = await fetch("/api/management/projects/assign", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("API Error:", {
-          status: response.status,
-          statusText: response.statusText,
-          projectId,
-          errorData,
         });
-        throw new Error(
-          errorData.error || "Failed to fetch assigned employees"
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("Management API Error:", {
+            status: response.status,
+            statusText: response.statusText,
+            projectId,
+            errorData,
+          });
+          throw new Error(
+            errorData.error || "Failed to fetch assigned employees"
+          );
+        }
+
+        const data = await response.json();
+        console.log("Management assigned employees data:", data);
+
+        // Filter assignments for the specific project
+        projectAssignments = data.assignments?.filter(
+          (assignment) =>
+            assignment.projectId?._id === projectId ||
+            assignment.projectId === projectId
+        ) || [];
+      } else {
+        // For employees, use the employee API endpoint
+        response = await fetch(
+          `/api/employee/projects/${projectId}/assignments`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
         );
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("Employee API Error:", {
+            status: response.status,
+            statusText: response.statusText,
+            projectId,
+            errorData,
+          });
+          throw new Error(
+            errorData.error || "Failed to fetch assigned employees"
+          );
+        }
+
+        const data = await response.json();
+        console.log("Employee assigned employees data:", data);
+
+        // The employee API returns assignments for the specific project, no need to filter
+        projectAssignments = data.assignments || [];
       }
-
-      const data = await response.json();
-      console.log("Assigned employees data:", data);
-
-      // The API returns assignments for the specific project, no need to filter
-      const projectAssignments = data.assignments || [];
 
       setAssignedEmployees(projectAssignments);
     } catch (err) {

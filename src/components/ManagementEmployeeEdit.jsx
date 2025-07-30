@@ -357,6 +357,7 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
               bgcolor: "rgba(255,255,255,0.2)",
               color: "white",
               fontWeight: 500,
+              pointerEvents: "none",
             }}
           />
         </Box>

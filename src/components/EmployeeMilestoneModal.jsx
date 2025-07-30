@@ -3008,6 +3008,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
           taskItem={assignmentModal.taskItem}
           milestone={assignmentModal.milestone}
           feature={assignmentModal.feature}
+          user={user}
         />
 
         <CustomSnackbar

@@ -2350,6 +2350,7 @@ const ProjectMilestoneModal = ({ project, open, onClose, onSuccess, user }) => {
         taskItem={assignmentModal.taskItem}
         milestone={assignmentModal.milestone}
         feature={assignmentModal.feature}
+        user={user}
       />
     </LocalizationProvider>
   );

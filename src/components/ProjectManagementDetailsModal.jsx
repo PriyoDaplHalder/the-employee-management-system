@@ -210,7 +210,6 @@ const ProjectManagementDetailsModal = ({
   };
 
   const handleMilestoneSuccess = () => {
-    setSuccess("Milestones updated successfully!");
     setTimeout(() => setSuccess(""), 3000);
     setShowMilestoneModal(false);
   };
@@ -224,7 +223,6 @@ const ProjectManagementDetailsModal = ({
   };
 
   const handleSRSDocumentSuccess = () => {
-    setSuccess("SRS document updated successfully!");
     setTimeout(() => setSuccess(""), 3000);
     setShowSRSDocumentModal(false);
   };
