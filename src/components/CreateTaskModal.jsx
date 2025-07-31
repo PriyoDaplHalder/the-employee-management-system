@@ -60,22 +60,27 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
         )
         .map((assignment) => assignment.employeeId?._id);
 
-      const filteredEmployees = employees.filter((employee) =>
-        assignedEmployeeIds.includes(employee._id)
+      // Only include active employees
+      const filteredEmployees = employees.filter(
+        (employee) =>
+          assignedEmployeeIds.includes(employee._id) && employee.isActive
       );
 
       setAvailableEmployees(filteredEmployees);
 
-      // Clear assignee if currently selected employee is not assigned to the project
+      // Clear assignee if currently selected employee is not assigned to the project or is inactive
       if (
         formData.assignedTo &&
-        !assignedEmployeeIds.includes(formData.assignedTo)
+        (!assignedEmployeeIds.includes(formData.assignedTo) ||
+          !employees.find(
+            (emp) => emp._id === formData.assignedTo && emp.isActive
+          ))
       ) {
         setFormData((prev) => ({ ...prev, assignedTo: "" }));
       }
     } else if (formData.projectId === "") {
       // If no project is selected, all employees are available
-      setAvailableEmployees(employees);
+      setAvailableEmployees(employees.filter((emp) => emp.isActive));
     } else {
       setAvailableEmployees([]);
     }
@@ -135,6 +140,17 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
       return;
     }
 
+    // New check: prevent submission if no employees assigned to project
+    if (formData.projectId && availableEmployees.length === 0) {
+      setSnackbar({
+        open: true,
+        message:
+          "No employees are assigned to this project. Please assign employees to the project before creating a task.",
+        severity: "error",
+      });
+      return;
+    }
+
     if (!formData.assignedTo) {
       setSnackbar({
         open: true,
@@ -150,6 +166,22 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
 
     try {
       const token = getToken();
+      // Log the request payload for debugging
+      console.log("Submitting task payload:", {
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
+        priority: formData.priority,
+        status: formData.status,
+        dueDate: formData.dueDate
+          ? (() => {
+              const date = new Date(formData.dueDate);
+              date.setHours(23, 59, 59, 999);
+              return date.toISOString();
+            })()
+          : undefined,
+        assignedTo: formData.assignedTo,
+        projectId: formData.projectId || undefined,
+      });
       const response = await fetch("/api/management/tasks", {
         method: "POST",
         headers: {
@@ -164,7 +196,6 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
           dueDate: formData.dueDate
             ? (() => {
                 const date = new Date(formData.dueDate);
-                // Set to end of day to avoid timing issues with today's date
                 date.setHours(23, 59, 59, 999);
                 return date.toISOString();
               })()
@@ -175,8 +206,17 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create task");
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (jsonErr) {
+          errorData = { message: response.statusText };
+        }
+        // Log the full error response for debugging
+        console.error("Task creation API error:", errorData);
+        throw new Error(
+          errorData.message || errorData.error || "Failed to create task"
+        );
       }
 
       const result = await response.json();
@@ -218,6 +258,14 @@ const CreateTaskModal = ({ open, onClose, onSuccess, projects, employees }) => {
             employee is assigned to the project before creating the task.
           </Typography>
         </Alert>
+
+        {/* Warning Alert for no employees assigned to project */}
+        {formData.projectId && availableEmployees.length === 0 && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            No employees are assigned to this project. Please assign employees to
+            the project before creating a task.
+          </Alert>
+        )}
 
         <Grid container spacing={3} sx={{ mt: 1 }}>
           {/* Title */}

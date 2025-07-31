@@ -21,8 +21,6 @@ import {
   MenuItem,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import EditIcon from "@mui/icons-material/Edit";
 import { getToken } from "../utils/storage";
 import CustomSnackbar from "./CustomSnackbar";
 
