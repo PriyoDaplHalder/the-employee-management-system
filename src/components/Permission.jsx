@@ -388,7 +388,14 @@ const Permission = ({ user }) => {
         body: JSON.stringify(body),
       });
 
-      if (!response.ok) throw new Error("Failed to save permission");
+      if (!response.ok) {
+        let errorMsg = "Failed to save permission";
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) errorMsg = errData.error;
+        } catch (e) {}
+        throw new Error(errorMsg);
+      }
 
       const data = await response.json();
 
