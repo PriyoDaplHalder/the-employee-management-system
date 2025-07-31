@@ -12,7 +12,7 @@ import {
 // import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { getToken } from "../utils/storage";
 
-const COLORS = ["#75ac13", "#FF5733", "#13ac97", "#ff9800"];
+const COLORS = ["#27AE60", "#E74C3C", "#F39C12", "#ff9800"];
 import { PieChart } from "@mui/x-charts/PieChart";
 
 const StatCard = ({ title, data, loading }) => {
@@ -76,6 +76,11 @@ const StatCard = ({ title, data, loading }) => {
               [`& .MuiPieArc-root`]: {
                 stroke: "#fff",
                 strokeWidth: 1,
+                transition: "0.3s",
+                "&:hover": {
+                  cursor: "pointer",
+                  transform: "scale(1.05)",
+                },
               },
             }}
           />
@@ -368,8 +373,8 @@ const DashboardContent = ({ user }) => {
             loading={statsLoading}
             data={[
               { label: "Total", value: stats.projectCount },
-              { label: "Active", value: stats.activeProjectCount },
-              { label: "Inactive", value: stats.inactiveProjectCount },
+              { label: "Open", value: stats.activeProjectCount },
+              { label: "Closed", value: stats.inactiveProjectCount },
             ]}
           />
         </Grid>
