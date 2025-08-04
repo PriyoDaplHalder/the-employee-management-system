@@ -21,6 +21,8 @@ import {
   MenuItem,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBackIos";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import EditIcon from "@mui/icons-material/Edit";
 import { getToken } from "../utils/storage";
 import CustomSnackbar from "./CustomSnackbar";
 
@@ -902,6 +904,26 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
             {profileExists ? "Employee Profile" : "Create Employee Profile"}
           </Typography>
 
+          {/* Profile Status Indicator */}
+          {profileExists && (
+            <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2 }}>
+              <Chip
+                label={
+                  profileCompleted ? "Profile Completed" : "Profile In Progress"
+                }
+                color={profileCompleted ? "success" : "warning"}
+                variant="filled"
+                icon={profileCompleted ? <CheckCircleIcon /> : <EditIcon />}
+                sx={{ fontWeight: 600, pointerEvents: "none" }}
+              />
+              {profileCompleted && (
+                <Typography variant="body2" color="text.secondary">
+                  Profile locked for editing. Contact management for changes.
+                </Typography>
+              )}
+            </Box>
+          )}
+
           {/* Permissions Status Indicator for Employees */}
           {profileExists && !isManagement && profileCompleted && (
             <Box sx={{ mb: 3 }}>
@@ -956,7 +978,7 @@ const EmployeeDetails = ({ user, onBack, hasExistingProfile }) => {
                             label="Address"
                             size="small"
                             color="secondary"
-                            sx={{ pointerEvents: "none" }}
+                            sx={{ "pointerEvents": "none" }}
                           />
                         )}
                         {permissions.personalInfoFields?.emergencyContact && (
