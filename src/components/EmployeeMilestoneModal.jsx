@@ -789,6 +789,7 @@ const EmployeeMilestoneModal = ({ assignment, open, onClose, user }) => {
                                   >
                                     <IconButton
                                       size="small"
+                                      component="span"
                                       tabIndex={-1}
                                       sx={{
                                         backgroundColor: "info.light",

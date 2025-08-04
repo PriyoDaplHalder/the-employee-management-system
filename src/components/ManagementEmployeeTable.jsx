@@ -12,6 +12,7 @@ const EmployeeTable = ({
   dragScrollRef,
   handleViewMenuOpen,
   handleAssignProject,
+  totalCount, // Add totalCount prop
 }) => (
   <Box>
     <TableContainer
@@ -210,7 +211,7 @@ const EmployeeTable = ({
     <TablePagination
       rowsPerPageOptions={[5, 10, 25, 50]}
       component="div"
-      count={employees.length}
+      count={totalCount}
       rowsPerPage={rowsPerPage}
       page={page}
       onPageChange={handleChangePage}

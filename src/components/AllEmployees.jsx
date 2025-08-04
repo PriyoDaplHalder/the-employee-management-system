@@ -285,6 +285,7 @@ const AllEmployees = ({ user, onBack, onEmployeeCountChange }) => {
             dragScrollRef={dragScrollRef}
             handleViewMenuOpen={handleViewMenuOpen}
             handleAssignProject={handleAssignProject}
+            totalCount={filteredEmployees.length}
           />
         )}
         {/* View Options Menu and Modals (unchanged) */}
