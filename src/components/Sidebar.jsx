@@ -24,17 +24,12 @@ import {
   People as PeopleIcon,
   Assignment as ProjectsIcon,
   Person as PersonIcon,
-  Business as CompanyIcon,
-  Analytics as AnalyticsIcon,
-  Settings as SettingsIcon,
   ExpandLess,
   ExpandMore,
-  Schedule as ScheduleIcon,
-  Notifications as NotificationsIcon,
+  AccessTime as AccessTimeIcon,
   AssignmentInd as AssignmentsIcon,
   Task as TaskIcon,
   Mail as MailIcon,
-  AlternateEmail as MailAltIcon,
 } from "@mui/icons-material";
 import LockPersonOutlinedIcon from '@mui/icons-material/LockPersonOutlined';
 
@@ -161,6 +156,23 @@ const Sidebar = ({
         },
       ],
     },
+    {
+      id: "timing",
+      text: "Timing",
+      icon: <AccessTimeIcon />,
+      submenu: [
+        {
+          id: "leave balance",
+          text: "My Leave Balance",
+          view: "leavebalance",
+        },
+        {
+          id: "attendance",
+          text: "My Attendance",
+          view: "attendance",
+        },
+      ],
+    },
   ];
 
   // Management navigation items
@@ -220,6 +232,23 @@ const Sidebar = ({
       icon: <LockPersonOutlinedIcon />,
       view: "permissions",
       badge: employeesWithPermissions?.length || "0",
+    },
+    {
+      id: "timing",
+      text: "Timing",
+      icon: <AccessTimeIcon />,
+      submenu: [
+        {
+          id: "leaves",
+          text: "Leaves",
+          view: "leaves",
+        },
+        {
+          id: "attendance",
+          text: "Attendance",
+          view: "attendance",
+        },
+      ],
     },
   ];
 

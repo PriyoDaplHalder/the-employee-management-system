@@ -14,8 +14,6 @@ import {
 const WelcomeScreen = ({
   onEmployeeLogin,
   onEmployeeSignup,
-  onManagementLogin,
-  onManagementSignup,
 }) => {
   return (
     <Box
