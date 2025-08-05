@@ -25,6 +25,8 @@ import {
   FormGroup,
   Checkbox,
   Avatar,
+  AppBar,
+  Toolbar,
   List,
   ListItem,
   ListItemText,
@@ -38,13 +40,12 @@ import {
   Delete as DeleteIcon,
   Security as SecurityIcon,
   Check as CheckIcon,
-  Close as CloseIcon,
-  Info as InfoIcon,
+  ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { getToken } from "../utils/storage";
 import CustomSnackbar from "./CustomSnackbar";
 
-const Permission = ({ user }) => {
+const Permission = ({ user, onBack }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -675,15 +676,35 @@ const Permission = ({ user }) => {
   }
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h4"
-          gutterBottom
-          sx={{ color: "primary.main", fontWeight: 600 }}
-        >
-          Employee Permissions Management
-        </Typography>
+    <Box sx={{ flexGrow: 1, bgcolor: "grey.50", minHeight: "100vh" }}>
+      <AppBar
+        position="static"
+        elevation={0}
+        sx={{
+          bgcolor: "transparent",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Toolbar>
+          <IconButton
+            edge="start"
+            color="primary"
+            onClick={onBack}
+            sx={{ mr: 2 }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ flexGrow: 1, color: "text.primary" }}
+          >
+            Permissions Management
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Box sx={{ p: 4 }}>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
           Grant or revoke permissions for employees to edit their personal
           information.
@@ -693,676 +714,685 @@ const Permission = ({ user }) => {
           variant="contained"
           startIcon={<PersonAddIcon />}
           onClick={() => handleOpenDialog()}
-          sx={{ borderRadius: 2 }}
+          sx={{ borderRadius: 2, mb: 3 }}
           disabled={getEmployeesWithoutPermissions().length === 0}
         >
           Grant Permission
         </Button>
-      </Box>
 
-      <Grid container spacing={3}>
-        {/* Employees with Permissions */}
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3, borderRadius: 3 }}>
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{ fontWeight: 600, mb: 2 }}
-            >
-              Employees with Permissions ({getEmployeesWithPermissions().length}
-              )
-            </Typography>
+        <Grid container spacing={3}>
+          {/* Employees with Permissions */}
+          <Grid item xs={12} md={8}>
+            <Paper sx={{ p: 3, borderRadius: 3 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ fontWeight: 600, mb: 2 }}
+              >
+                Employees with Permissions (
+                {getEmployeesWithPermissions().length})
+              </Typography>
 
-            {getEmployeesWithPermissions().length === 0 ? (
-              <Alert severity="info" sx={{ borderRadius: 2 }}>
-                No employees have been granted permissions yet.
-              </Alert>
-            ) : (
-              <List>
-                {getEmployeesWithPermissions().map((employee, index) => (
-                  <div key={employee._id}>
-                    <ListItem sx={{ px: 0 }}>
-                      <Avatar sx={{ bgcolor: "primary.main", mr: 2 }}>
-                        {employee.firstName?.[0] ||
-                          employee.email[0].toUpperCase()}
-                      </Avatar>
-                      <ListItemText
-                        primary={
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <Typography
-                              variant="subtitle1"
-                              sx={{ fontWeight: 600 }}
-                            >
-                              {employee.firstName && employee.lastName
-                                ? `${employee.firstName} ${employee.lastName}`
-                                : employee.email}
-                            </Typography>
-                            <Chip
-                              label={employee.employeeId}
-                              size="small"
-                              variant="outlined"
-                            />
-                          </Box>
-                        }
-                        secondary={
-                          <Box sx={{ mt: 1 }}>
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{ mb: 1 }}
-                            >
-                              {employee.email}
-                            </Typography>
+              {getEmployeesWithPermissions().length === 0 ? (
+                <Alert severity="info" sx={{ borderRadius: 2 }}>
+                  No employees have been granted permissions yet.
+                </Alert>
+              ) : (
+                <List>
+                  {getEmployeesWithPermissions().map((employee, index) => (
+                    <div key={employee._id}>
+                      <ListItem sx={{ px: 0 }}>
+                        <Avatar sx={{ bgcolor: "primary.main", mr: 2 }}>
+                          {employee.firstName?.[0] ||
+                            employee.email[0].toUpperCase()}
+                        </Avatar>
+                        <ListItemText
+                          primary={
                             <Box
                               sx={{
                                 display: "flex",
-                                flexWrap: "wrap",
-                                gap: 0.5,
+                                alignItems: "center",
+                                gap: 1,
                               }}
                             >
-                              {renderPermissionChips(employee.permission)}
-                            </Box>
-                            {employee.permission.reason && (
                               <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ mt: 1, display: "block" }}
+                                variant="subtitle1"
+                                sx={{ fontWeight: 600 }}
                               >
-                                Reason: {employee.permission.reason}
+                                {employee.firstName && employee.lastName
+                                  ? `${employee.firstName} ${employee.lastName}`
+                                  : employee.email}
                               </Typography>
-                            )}
-                          </Box>
-                        }
-                        secondaryTypographyProps={{ component: "span" }}
-                      />
-                      <ListItemSecondaryAction>
-                        <Tooltip title="Edit Permissions">
-                          <IconButton
-                            onClick={() => handleOpenDialog(employee)}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Revoke Permissions">
-                          <IconButton
-                            onClick={() =>
-                              handleRevokePermission(employee.permission._id)
-                            }
-                            color="error"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    {index < getEmployeesWithPermissions().length - 1 && (
-                      <Divider />
-                    )}
-                  </div>
-                ))}
-              </List>
-            )}
-          </Paper>
+                              <Chip
+                                label={employee.employeeId}
+                                sx={{ pointerEvents: "none" }}
+                                size="small"
+                                variant="outlined"
+                              />
+                            </Box>
+                          }
+                          secondary={
+                            <Box sx={{ mt: 1 }}>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ mb: 1 }}
+                              >
+                                {employee.email}
+                              </Typography>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 0.5,
+                                }}
+                              >
+                                {renderPermissionChips(employee.permission)}
+                              </Box>
+                              {employee.permission.reason && (
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{ mt: 1, display: "block" }}
+                                >
+                                  Reason: {employee.permission.reason}
+                                </Typography>
+                              )}
+                            </Box>
+                          }
+                          secondaryTypographyProps={{ component: "span" }}
+                        />
+                        <ListItemSecondaryAction>
+                          <Tooltip title="Edit Permissions">
+                            <IconButton
+                              onClick={() => handleOpenDialog(employee)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Revoke Permissions">
+                            <IconButton
+                              onClick={() =>
+                                handleRevokePermission(employee.permission._id)
+                              }
+                              color="error"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                      {index < getEmployeesWithPermissions().length - 1 && (
+                        <Divider />
+                      )}
+                    </div>
+                  ))}
+                </List>
+              )}
+            </Paper>
+          </Grid>
         </Grid>
-      </Grid>
 
-      {/* Permission Dialog */}
-      <Dialog
-        open={dialogOpen}
-        onClose={handleCloseDialog}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
-      >
-        <DialogTitle sx={{ pb: 1 }}>
-          <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
-            {editingPermission ? "Edit Permissions" : "Grant Permissions"}
-          </Typography>
-        </DialogTitle>
-
-        <DialogContent>
-          {!editingPermission && (
-            <FormControl fullWidth sx={{ mb: 3 }}>
-              <InputLabel>Select Employee</InputLabel>
-              <Select
-                value={selectedEmployee}
-                label="Select Employee"
-                onChange={(e) => setSelectedEmployee(e.target.value)}
-              >
-                {getEmployeesWithoutPermissions().map((employee) => (
-                  <MenuItem key={employee._id} value={employee._id}>
-                    <Box>
-                      <Typography variant="body2">
-                        {employee.firstName && employee.lastName
-                          ? `${employee.firstName} ${employee.lastName}`
-                          : employee.email}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {employee.employeeId} • {employee.email}
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-
-          <Box sx={{ mb: 3 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={permissionData.canEditBasicInfo}
-                  onChange={(e) =>
-                    setPermissionData({
-                      ...permissionData,
-                      canEditBasicInfo: e.target.checked,
-                      basicInfoFields: e.target.checked
-                        ? permissionData.basicInfoFields
-                        : {
-                            firstName: false,
-                            lastName: false,
-                          },
-                    })
-                  }
-                />
-              }
-              label={
-                <Box>
-                  <Typography variant="subtitle2">Basic Information</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Allow editing of name fields
-                  </Typography>
-                </Box>
-              }
-            />
-
-            {permissionData.canEditBasicInfo && (
-              <Box sx={{ ml: 4, mt: 1 }}>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={permissionData.basicInfoFields.firstName}
-                        onChange={(e) => {
-                          const newFirstNameValue = e.target.checked;
-                          const lastNameEnabled =
-                            permissionData.basicInfoFields.lastName;
-
-                          setPermissionData({
-                            ...permissionData,
-                            canEditBasicInfo:
-                              newFirstNameValue || lastNameEnabled,
-                            basicInfoFields: {
-                              ...permissionData.basicInfoFields,
-                              firstName: newFirstNameValue,
-                            },
-                          });
-                        }}
-                      />
-                    }
-                    label="First Name"
-                  />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={permissionData.basicInfoFields.lastName}
-                        onChange={(e) => {
-                          const newLastNameValue = e.target.checked;
-                          const firstNameEnabled =
-                            permissionData.basicInfoFields.firstName;
-
-                          setPermissionData({
-                            ...permissionData,
-                            canEditBasicInfo:
-                              newLastNameValue || firstNameEnabled,
-                            basicInfoFields: {
-                              ...permissionData.basicInfoFields,
-                              lastName: newLastNameValue,
-                            },
-                          });
-                        }}
-                      />
-                    }
-                    label="Last Name"
-                  />
-                </FormGroup>
-              </Box>
-            )}
-          </Box>
-
-          <Box sx={{ mb: 3 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={permissionData.canEditPersonalInfo}
-                  onChange={(e) =>
-                    setPermissionData({
-                      ...permissionData,
-                      canEditPersonalInfo: e.target.checked,
-                      personalInfoFields: e.target.checked
-                        ? permissionData.personalInfoFields
-                        : {
-                            phone: false,
-                            address: false,
-                            emergencyContact: false,
-                            skills: false,
-                          },
-                    })
-                  }
-                />
-              }
-              label={
-                <Box>
-                  <Typography variant="subtitle2">
-                    Personal Information
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Allow editing of contact, address, and skills fields
-                  </Typography>
-                </Box>
-              }
-            />
-
-            {permissionData.canEditPersonalInfo && (
-              <Box sx={{ ml: 4, mt: 1 }}>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={permissionData.personalInfoFields.phone}
-                        onChange={(e) => {
-                          const newPhoneValue = e.target.checked;
-                          const otherFieldsEnabled =
-                            permissionData.personalInfoFields.address ||
-                            permissionData.personalInfoFields
-                              .emergencyContact ||
-                            permissionData.personalInfoFields.skills;
-
-                          setPermissionData({
-                            ...permissionData,
-                            canEditPersonalInfo:
-                              newPhoneValue || otherFieldsEnabled,
-                            personalInfoFields: {
-                              ...permissionData.personalInfoFields,
-                              phone: newPhoneValue,
-                            },
-                          });
-                        }}
-                      />
-                    }
-                    label="Phone Number"
-                  />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={permissionData.personalInfoFields.address}
-                        onChange={(e) => {
-                          const newAddressValue = e.target.checked;
-                          const otherFieldsEnabled =
-                            permissionData.personalInfoFields.phone ||
-                            permissionData.personalInfoFields
-                              .emergencyContact ||
-                            permissionData.personalInfoFields.skills;
-
-                          setPermissionData({
-                            ...permissionData,
-                            canEditPersonalInfo:
-                              newAddressValue || otherFieldsEnabled,
-                            personalInfoFields: {
-                              ...permissionData.personalInfoFields,
-                              address: newAddressValue,
-                            },
-                          });
-                        }}
-                      />
-                    }
-                    label="Address"
-                  />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={
-                          permissionData.personalInfoFields.emergencyContact
-                        }
-                        onChange={(e) => {
-                          const newEmergencyValue = e.target.checked;
-                          const otherFieldsEnabled =
-                            permissionData.personalInfoFields.phone ||
-                            permissionData.personalInfoFields.address ||
-                            permissionData.personalInfoFields.skills;
-
-                          setPermissionData({
-                            ...permissionData,
-                            canEditPersonalInfo:
-                              newEmergencyValue || otherFieldsEnabled,
-                            personalInfoFields: {
-                              ...permissionData.personalInfoFields,
-                              emergencyContact: newEmergencyValue,
-                            },
-                          });
-                        }}
-                      />
-                    }
-                    label="Emergency Contact"
-                  />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={permissionData.personalInfoFields.skills}
-                        onChange={(e) => {
-                          const newSkillsValue = e.target.checked;
-                          const otherFieldsEnabled =
-                            permissionData.personalInfoFields.phone ||
-                            permissionData.personalInfoFields.address ||
-                            permissionData.personalInfoFields.emergencyContact;
-
-                          setPermissionData({
-                            ...permissionData,
-                            canEditPersonalInfo:
-                              newSkillsValue || otherFieldsEnabled,
-                            personalInfoFields: {
-                              ...permissionData.personalInfoFields,
-                              skills: newSkillsValue,
-                            },
-                          });
-                        }}
-                      />
-                    }
-                    label="Skills"
-                  />
-                </FormGroup>
-              </Box>
-            )}
-          </Box>
-
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
-              Project Permissions
+        {/* Permission Dialog */}
+        <Dialog
+          open={dialogOpen}
+          onClose={handleCloseDialog}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ pb: 1 }}>
+            <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
+              {editingPermission ? "Edit Permissions" : "Grant Permissions"}
             </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ mb: 2, display: "block" }}
-            >
-              Select projects and permissions for each selected project. The
-              employee will only be able to edit the content of projects they
-              are assigned to.
-            </Typography>
-            {projectsLoading ? (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <CircularProgress size={20} />
-                <Typography variant="body2" color="text.secondary">
-                  Loading projects...
-                </Typography>
-              </Box>
-            ) : employeeProjects.length === 0 ? (
-              <Alert severity="info" sx={{ mt: 1, mb: 2 }}>
-                This employee has no assigned projects.
-              </Alert>
-            ) : (
-              <Box>
-                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-                  Select Projects:
-                </Typography>
-                <FormGroup>
-                  {employeeProjects.map((project) => (
+          </DialogTitle>
+
+          <DialogContent>
+            {!editingPermission && (
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>Select Employee</InputLabel>
+                <Select
+                  value={selectedEmployee}
+                  label="Select Employee"
+                  onChange={(e) => setSelectedEmployee(e.target.value)}
+                >
+                  {getEmployeesWithoutPermissions().map((employee) => (
+                    <MenuItem key={employee._id} value={employee._id}>
+                      <Box>
+                        <Typography variant="body2">
+                          {employee.firstName && employee.lastName
+                            ? `${employee.firstName} ${employee.lastName}`
+                            : employee.email}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {employee.employeeId} • {employee.email}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            <Box sx={{ mb: 3 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={permissionData.canEditBasicInfo}
+                    onChange={(e) =>
+                      setPermissionData({
+                        ...permissionData,
+                        canEditBasicInfo: e.target.checked,
+                        basicInfoFields: e.target.checked
+                          ? permissionData.basicInfoFields
+                          : {
+                              firstName: false,
+                              lastName: false,
+                            },
+                      })
+                    }
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="subtitle2">
+                      Basic Information
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Allow editing of name fields
+                    </Typography>
+                  </Box>
+                }
+              />
+
+              {permissionData.canEditBasicInfo && (
+                <Box sx={{ ml: 4, mt: 1 }}>
+                  <FormGroup>
                     <FormControlLabel
-                      key={project._id}
                       control={
                         <Checkbox
-                          checked={selectedProjects.includes(project._id)}
+                          checked={permissionData.basicInfoFields.firstName}
                           onChange={(e) => {
-                            const checked = e.target.checked;
-                            setSelectedProjects((prev) =>
-                              checked
-                                ? [...prev, project._id]
-                                : prev.filter((id) => id !== project._id)
-                            );
+                            const newFirstNameValue = e.target.checked;
+                            const lastNameEnabled =
+                              permissionData.basicInfoFields.lastName;
+
+                            setPermissionData({
+                              ...permissionData,
+                              canEditBasicInfo:
+                                newFirstNameValue || lastNameEnabled,
+                              basicInfoFields: {
+                                ...permissionData.basicInfoFields,
+                                firstName: newFirstNameValue,
+                              },
+                            });
                           }}
                         />
                       }
-                      label={
-                        <Box>
-                          <Typography variant="subtitle2">
-                            {project.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {project.description}
-                          </Typography>
-                        </Box>
-                      }
+                      label="First Name"
                     />
-                  ))}
-                </FormGroup>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={permissionData.basicInfoFields.lastName}
+                          onChange={(e) => {
+                            const newLastNameValue = e.target.checked;
+                            const firstNameEnabled =
+                              permissionData.basicInfoFields.firstName;
 
-                {selectedProjects.length > 0 && (
-                  <Box sx={{ mt: 3 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      Set Permissions for Selected Projects:
+                            setPermissionData({
+                              ...permissionData,
+                              canEditBasicInfo:
+                                newLastNameValue || firstNameEnabled,
+                              basicInfoFields: {
+                                ...permissionData.basicInfoFields,
+                                lastName: newLastNameValue,
+                              },
+                            });
+                          }}
+                        />
+                      }
+                      label="Last Name"
+                    />
+                  </FormGroup>
+                </Box>
+              )}
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={permissionData.canEditPersonalInfo}
+                    onChange={(e) =>
+                      setPermissionData({
+                        ...permissionData,
+                        canEditPersonalInfo: e.target.checked,
+                        personalInfoFields: e.target.checked
+                          ? permissionData.personalInfoFields
+                          : {
+                              phone: false,
+                              address: false,
+                              emergencyContact: false,
+                              skills: false,
+                            },
+                      })
+                    }
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="subtitle2">
+                      Personal Information
                     </Typography>
-
-                    {selectedProjects.map((projectId) => {
-                      const project = employeeProjects.find(
-                        (p) => p._id === projectId
-                      );
-                      const projectPermission =
-                        permissionData.projectPermissions.find(
-                          (p) => p.projectId === projectId
-                        );
-
-                      return (
-                        <Paper
-                          key={projectId}
-                          variant="outlined"
-                          sx={{ p: 2, mb: 2, borderRadius: 2 }}
-                        >
-                          <Typography variant="subtitle2" gutterBottom>
-                            {project?.name}
-                          </Typography>
-
-                          <FormGroup>
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  checked={
-                                    projectPermission?.canEditMilestone || false
-                                  }
-                                  onChange={(e) => {
-                                    const existingPermissions =
-                                      permissionData.projectPermissions || [];
-                                    const existingIndex =
-                                      existingPermissions.findIndex(
-                                        (p) => p.projectId === projectId
-                                      );
-
-                                    let newPermissions;
-                                    if (existingIndex >= 0) {
-                                      // Update existing permission
-                                      newPermissions = existingPermissions.map(
-                                        (p, index) =>
-                                          index === existingIndex
-                                            ? {
-                                                ...p,
-                                                canEditMilestone:
-                                                  e.target.checked,
-                                              }
-                                            : p
-                                      );
-                                    } else {
-                                      // Create new permission entry
-                                      newPermissions = [
-                                        ...existingPermissions,
-                                        {
-                                          projectId: projectId,
-                                          canEditMilestone: e.target.checked,
-                                          canEditSRS: false,
-                                          canEditOtherDocs: false,
-                                        },
-                                      ];
-                                    }
-
-                                    setPermissionData({
-                                      ...permissionData,
-                                      projectPermissions: newPermissions,
-                                    });
-                                  }}
-                                />
-                              }
-                              label="Full Project Milestones Access"
-                            />
-
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  checked={
-                                    projectPermission?.canEditSRS || false
-                                  }
-                                  onChange={(e) => {
-                                    const existingPermissions =
-                                      permissionData.projectPermissions || [];
-                                    const existingIndex =
-                                      existingPermissions.findIndex(
-                                        (p) => p.projectId === projectId
-                                      );
-
-                                    let newPermissions;
-                                    if (existingIndex >= 0) {
-                                      // Update existing permission
-                                      newPermissions = existingPermissions.map(
-                                        (p, index) =>
-                                          index === existingIndex
-                                            ? {
-                                                ...p,
-                                                canEditSRS: e.target.checked,
-                                              }
-                                            : p
-                                      );
-                                    } else {
-                                      // Create new permission entry
-                                      newPermissions = [
-                                        ...existingPermissions,
-                                        {
-                                          projectId: projectId,
-                                          canEditMilestone: false,
-                                          canEditSRS: e.target.checked,
-                                          canEditOtherDocs: false,
-                                        },
-                                      ];
-                                    }
-
-                                    setPermissionData({
-                                      ...permissionData,
-                                      projectPermissions: newPermissions,
-                                    });
-                                  }}
-                                />
-                              }
-                              label="Full SRS Documents Access"
-                            />
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  checked={
-                                    projectPermission?.canEditOtherDocs || false
-                                  }
-                                  onChange={(e) => {
-                                    const existingPermissions =
-                                      permissionData.projectPermissions || [];
-                                    const existingIndex =
-                                      existingPermissions.findIndex(
-                                        (p) => p.projectId === projectId
-                                      );
-
-                                    let newPermissions;
-                                    if (existingIndex >= 0) {
-                                      // Update existing permission
-                                      newPermissions = existingPermissions.map(
-                                        (p, index) =>
-                                          index === existingIndex
-                                            ? {
-                                                ...p,
-                                                canEditOtherDocs:
-                                                  e.target.checked,
-                                              }
-                                            : p
-                                      );
-                                    } else {
-                                      // Create new permission entry
-                                      newPermissions = [
-                                        ...existingPermissions,
-                                        {
-                                          projectId: projectId,
-                                          canEditMilestone: false,
-                                          canEditSRS: false,
-                                          canEditOtherDocs: e.target.checked,
-                                        },
-                                      ];
-                                    }
-
-                                    setPermissionData({
-                                      ...permissionData,
-                                      projectPermissions: newPermissions,
-                                    });
-                                  }}
-                                />
-                              }
-                              label="Full Other Documents Access"
-                            />
-                          </FormGroup>
-                        </Paper>
-                      );
-                    })}
+                    <Typography variant="caption" color="text.secondary">
+                      Allow editing of contact, address, and skills fields
+                    </Typography>
                   </Box>
-                )}
-              </Box>
-            )}
-          </Box>
+                }
+              />
 
-          <TextField
-            fullWidth
-            label="Reason (Optional)"
-            multiline
-            rows={3}
-            value={permissionData.reason}
-            onChange={(e) =>
-              setPermissionData({
-                ...permissionData,
-                reason: e.target.value,
-              })
-            }
-            placeholder="Specify the reason for granting these permissions..."
-            sx={{ borderRadius: 2 }}
-          />
-        </DialogContent>
+              {permissionData.canEditPersonalInfo && (
+                <Box sx={{ ml: 4, mt: 1 }}>
+                  <FormGroup>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={permissionData.personalInfoFields.phone}
+                          onChange={(e) => {
+                            const newPhoneValue = e.target.checked;
+                            const otherFieldsEnabled =
+                              permissionData.personalInfoFields.address ||
+                              permissionData.personalInfoFields
+                                .emergencyContact ||
+                              permissionData.personalInfoFields.skills;
 
-        <DialogActions sx={{ p: 3, pt: 1 }}>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button
-            onClick={handleSavePermission}
-            variant="contained"
-            disabled={actionLoading}
-            startIcon={
-              actionLoading ? <CircularProgress size={16} /> : <CheckIcon />
-            }
-            sx={{ borderRadius: 2 }}
-          >
-            {editingPermission ? "Update" : "Grant"} Permission
-          </Button>
-        </DialogActions>
-      </Dialog>
+                            setPermissionData({
+                              ...permissionData,
+                              canEditPersonalInfo:
+                                newPhoneValue || otherFieldsEnabled,
+                              personalInfoFields: {
+                                ...permissionData.personalInfoFields,
+                                phone: newPhoneValue,
+                              },
+                            });
+                          }}
+                        />
+                      }
+                      label="Phone Number"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={permissionData.personalInfoFields.address}
+                          onChange={(e) => {
+                            const newAddressValue = e.target.checked;
+                            const otherFieldsEnabled =
+                              permissionData.personalInfoFields.phone ||
+                              permissionData.personalInfoFields
+                                .emergencyContact ||
+                              permissionData.personalInfoFields.skills;
 
-      <CustomSnackbar
-        open={snackbar.open}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        message={snackbar.message}
-        severity={snackbar.severity}
-      />
+                            setPermissionData({
+                              ...permissionData,
+                              canEditPersonalInfo:
+                                newAddressValue || otherFieldsEnabled,
+                              personalInfoFields: {
+                                ...permissionData.personalInfoFields,
+                                address: newAddressValue,
+                              },
+                            });
+                          }}
+                        />
+                      }
+                      label="Address"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={
+                            permissionData.personalInfoFields.emergencyContact
+                          }
+                          onChange={(e) => {
+                            const newEmergencyValue = e.target.checked;
+                            const otherFieldsEnabled =
+                              permissionData.personalInfoFields.phone ||
+                              permissionData.personalInfoFields.address ||
+                              permissionData.personalInfoFields.skills;
+
+                            setPermissionData({
+                              ...permissionData,
+                              canEditPersonalInfo:
+                                newEmergencyValue || otherFieldsEnabled,
+                              personalInfoFields: {
+                                ...permissionData.personalInfoFields,
+                                emergencyContact: newEmergencyValue,
+                              },
+                            });
+                          }}
+                        />
+                      }
+                      label="Emergency Contact"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={permissionData.personalInfoFields.skills}
+                          onChange={(e) => {
+                            const newSkillsValue = e.target.checked;
+                            const otherFieldsEnabled =
+                              permissionData.personalInfoFields.phone ||
+                              permissionData.personalInfoFields.address ||
+                              permissionData.personalInfoFields
+                                .emergencyContact;
+
+                            setPermissionData({
+                              ...permissionData,
+                              canEditPersonalInfo:
+                                newSkillsValue || otherFieldsEnabled,
+                              personalInfoFields: {
+                                ...permissionData.personalInfoFields,
+                                skills: newSkillsValue,
+                              },
+                            });
+                          }}
+                        />
+                      }
+                      label="Skills"
+                    />
+                  </FormGroup>
+                </Box>
+              )}
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+                Project Permissions
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ mb: 2, display: "block" }}
+              >
+                Select projects and permissions for each selected project. The
+                employee will only be able to edit the content of projects they
+                are assigned to.
+              </Typography>
+              {projectsLoading ? (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <CircularProgress size={20} />
+                  <Typography variant="body2" color="text.secondary">
+                    Loading projects...
+                  </Typography>
+                </Box>
+              ) : employeeProjects.length === 0 ? (
+                <Alert severity="info" sx={{ mt: 1, mb: 2 }}>
+                  This employee has no assigned projects.
+                </Alert>
+              ) : (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                    Select Projects:
+                  </Typography>
+                  <FormGroup>
+                    {employeeProjects.map((project) => (
+                      <FormControlLabel
+                        key={project._id}
+                        control={
+                          <Checkbox
+                            checked={selectedProjects.includes(project._id)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setSelectedProjects((prev) =>
+                                checked
+                                  ? [...prev, project._id]
+                                  : prev.filter((id) => id !== project._id)
+                              );
+                            }}
+                          />
+                        }
+                        label={
+                          <Box>
+                            <Typography variant="subtitle2">
+                              {project.name}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {project.description}
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                    ))}
+                  </FormGroup>
+
+                  {selectedProjects.length > 0 && (
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        Set Permissions for Selected Projects:
+                      </Typography>
+
+                      {selectedProjects.map((projectId) => {
+                        const project = employeeProjects.find(
+                          (p) => p._id === projectId
+                        );
+                        const projectPermission =
+                          permissionData.projectPermissions.find(
+                            (p) => p.projectId === projectId
+                          );
+
+                        return (
+                          <Paper
+                            key={projectId}
+                            variant="outlined"
+                            sx={{ p: 2, mb: 2, borderRadius: 2 }}
+                          >
+                            <Typography variant="subtitle2" gutterBottom>
+                              {project?.name}
+                            </Typography>
+
+                            <FormGroup>
+                              <FormControlLabel
+                                control={
+                                  <Checkbox
+                                    checked={
+                                      projectPermission?.canEditMilestone ||
+                                      false
+                                    }
+                                    onChange={(e) => {
+                                      const existingPermissions =
+                                        permissionData.projectPermissions || [];
+                                      const existingIndex =
+                                        existingPermissions.findIndex(
+                                          (p) => p.projectId === projectId
+                                        );
+
+                                      let newPermissions;
+                                      if (existingIndex >= 0) {
+                                        // Update existing permission
+                                        newPermissions =
+                                          existingPermissions.map((p, index) =>
+                                            index === existingIndex
+                                              ? {
+                                                  ...p,
+                                                  canEditMilestone:
+                                                    e.target.checked,
+                                                }
+                                              : p
+                                          );
+                                      } else {
+                                        // Create new permission entry
+                                        newPermissions = [
+                                          ...existingPermissions,
+                                          {
+                                            projectId: projectId,
+                                            canEditMilestone: e.target.checked,
+                                            canEditSRS: false,
+                                            canEditOtherDocs: false,
+                                          },
+                                        ];
+                                      }
+
+                                      setPermissionData({
+                                        ...permissionData,
+                                        projectPermissions: newPermissions,
+                                      });
+                                    }}
+                                  />
+                                }
+                                label="Full Project Milestones Access"
+                              />
+
+                              <FormControlLabel
+                                control={
+                                  <Checkbox
+                                    checked={
+                                      projectPermission?.canEditSRS || false
+                                    }
+                                    onChange={(e) => {
+                                      const existingPermissions =
+                                        permissionData.projectPermissions || [];
+                                      const existingIndex =
+                                        existingPermissions.findIndex(
+                                          (p) => p.projectId === projectId
+                                        );
+
+                                      let newPermissions;
+                                      if (existingIndex >= 0) {
+                                        // Update existing permission
+                                        newPermissions =
+                                          existingPermissions.map((p, index) =>
+                                            index === existingIndex
+                                              ? {
+                                                  ...p,
+                                                  canEditSRS: e.target.checked,
+                                                }
+                                              : p
+                                          );
+                                      } else {
+                                        // Create new permission entry
+                                        newPermissions = [
+                                          ...existingPermissions,
+                                          {
+                                            projectId: projectId,
+                                            canEditMilestone: false,
+                                            canEditSRS: e.target.checked,
+                                            canEditOtherDocs: false,
+                                          },
+                                        ];
+                                      }
+
+                                      setPermissionData({
+                                        ...permissionData,
+                                        projectPermissions: newPermissions,
+                                      });
+                                    }}
+                                  />
+                                }
+                                label="Full SRS Documents Access"
+                              />
+                              <FormControlLabel
+                                control={
+                                  <Checkbox
+                                    checked={
+                                      projectPermission?.canEditOtherDocs ||
+                                      false
+                                    }
+                                    onChange={(e) => {
+                                      const existingPermissions =
+                                        permissionData.projectPermissions || [];
+                                      const existingIndex =
+                                        existingPermissions.findIndex(
+                                          (p) => p.projectId === projectId
+                                        );
+
+                                      let newPermissions;
+                                      if (existingIndex >= 0) {
+                                        // Update existing permission
+                                        newPermissions =
+                                          existingPermissions.map((p, index) =>
+                                            index === existingIndex
+                                              ? {
+                                                  ...p,
+                                                  canEditOtherDocs:
+                                                    e.target.checked,
+                                                }
+                                              : p
+                                          );
+                                      } else {
+                                        // Create new permission entry
+                                        newPermissions = [
+                                          ...existingPermissions,
+                                          {
+                                            projectId: projectId,
+                                            canEditMilestone: false,
+                                            canEditSRS: false,
+                                            canEditOtherDocs: e.target.checked,
+                                          },
+                                        ];
+                                      }
+
+                                      setPermissionData({
+                                        ...permissionData,
+                                        projectPermissions: newPermissions,
+                                      });
+                                    }}
+                                  />
+                                }
+                                label="Full Other Documents Access"
+                              />
+                            </FormGroup>
+                          </Paper>
+                        );
+                      })}
+                    </Box>
+                  )}
+                </Box>
+              )}
+            </Box>
+
+            <TextField
+              fullWidth
+              label="Reason (Optional)"
+              multiline
+              rows={3}
+              value={permissionData.reason}
+              onChange={(e) =>
+                setPermissionData({
+                  ...permissionData,
+                  reason: e.target.value,
+                })
+              }
+              placeholder="Specify the reason for granting these permissions..."
+              sx={{ borderRadius: 2 }}
+            />
+          </DialogContent>
+
+          <DialogActions sx={{ p: 3, pt: 1 }}>
+            <Button onClick={handleCloseDialog}>Cancel</Button>
+            <Button
+              onClick={handleSavePermission}
+              variant="contained"
+              disabled={actionLoading}
+              startIcon={
+                actionLoading ? <CircularProgress size={16} /> : <CheckIcon />
+              }
+              sx={{ borderRadius: 2 }}
+            >
+              {editingPermission ? "Update" : "Grant"} Permission
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <CustomSnackbar
+          open={snackbar.open}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          message={snackbar.message}
+          severity={snackbar.severity}
+        />
+      </Box>
     </Box>
   );
 };
