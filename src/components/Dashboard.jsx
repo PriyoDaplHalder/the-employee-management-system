@@ -21,6 +21,8 @@ import MailManagement from "./MailManagement";
 import InboxManagement from "./InboxManagement";
 import Permission from "./Permission";
 import { getToken } from "../utils/storage";
+import Leaves from "./Leaves";
+import Attendance from "./Attendance";
 
 const Dashboard = ({ user, title, onLogout }) => {
   const [mounted, setMounted] = useState(false);
@@ -142,6 +144,10 @@ const Dashboard = ({ user, title, onLogout }) => {
         return <MailMappings user={user} onBack={handleBackToDashboard} />;
       case "permissions":
         return <Permission user={user} onBack={handleBackToDashboard} />;
+      case "leaves":
+        return <Leaves user={user} onBack={handleBackToDashboard} />;
+      case "attendance":
+        return <Attendance user={user} onBack={handleBackToDashboard} />;
       default:
         return <DashboardContent user={user} />;
     }
