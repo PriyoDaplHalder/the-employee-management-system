@@ -33,30 +33,6 @@ import {
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 
-// Predefined positions for dropdown - moved outside component to prevent recreation
-const PREDEFINED_POSITIONS = [
-  "Human Resource",
-  "Team Leader",
-  "Project Manager",
-  "Senior Developer",
-  "Junior Developer",
-  "Quality Assurance",
-  "Business Analyst",
-  "Data Scientist",
-  "UI/UX Designer",
-  "System Administrator",
-  "Network Engineer",
-  "DevOps Engineer",
-  "Technical Support",
-  "Sales Executive",
-  "Marketing Specialist",
-  "Customer Service",
-  "Trainee",
-  "Student",
-  "Intern",
-  "Others",
-];
-
 const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -81,6 +57,29 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
   });
   const [validationErrors, setValidationErrors] = useState({});
   const [showCustomPosition, setShowCustomPosition] = useState(false);
+  const [positions, setPositions] = useState([]);
+  const [positionsLoading, setPositionsLoading] = useState(true);
+  const [positionsError, setPositionsError] = useState("");
+
+  // Fetch positions from API
+  useEffect(() => {
+    const fetchPositions = async () => {
+      setPositionsLoading(true);
+      setPositionsError("");
+      try {
+        const res = await fetch("/api/positions");
+        if (!res.ok) throw new Error("Failed to fetch positions");
+        const data = await res.json();
+        setPositions(Array.isArray(data.positions) ? data.positions : []);
+      } catch (err) {
+        setPositionsError("Could not load positions");
+        setPositions([]);
+      } finally {
+        setPositionsLoading(false);
+      }
+    };
+    fetchPositions();
+  }, []);
 
   // Helper function to safely access nested employee data
   const getEmployeeData = useCallback((employee) => {
@@ -138,13 +137,13 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
 
     // Handle custom positions if the position is not in predefined list
     const position = result.position;
-    if (position && !PREDEFINED_POSITIONS.includes(position)) {
+    if (position && !positions.includes(position)) {
       result.position = "Others";
       result.customPosition = position;
     }
 
     return result;
-  }, []);
+  }, [positions]);
   useEffect(() => {
     if (employee) {
       const employeeData = getEmployeeData(employee);
@@ -543,13 +542,25 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
                           sx={{
                             borderRadius: 2,
                           }}
+                          disabled={positionsLoading || !!positionsError}
                         >
-                          {PREDEFINED_POSITIONS.map((position) => (
+                          {positions.map((position) => (
                             <MenuItem key={position} value={position}>
                               {position}
                             </MenuItem>
                           ))}
+                          <MenuItem value="Others">Others</MenuItem>
                         </Select>
+                        {positionsLoading && (
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1 }}>
+                            Loading positions...
+                          </Typography>
+                        )}
+                        {positionsError && (
+                          <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
+                            {positionsError}
+                          </Typography>
+                        )}
                         {validationErrors.position && (
                           <Typography
                             variant="caption"

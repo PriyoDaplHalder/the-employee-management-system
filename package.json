@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed:hr": "node scripts/seed-hr.js"
+    "seed:hr": "node scripts/seed-hr.js",
+    "seed:position": "node scripts/seed-position.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
