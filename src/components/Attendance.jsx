@@ -45,22 +45,3 @@ const Attendance = ({ user, onBack }) => {
 };
 
 export default Attendance;
-
-
-// import React from "react";
-// import { Box, Typography } from "@mui/material";
-
-// const Attendance = () => {
-//   return (
-//     <Box sx={{ p: 4 }}>
-//       <Typography variant="h4" gutterBottom>
-//         Attendance Management
-//       </Typography>
-//       <Typography variant="body1" color="text.secondary">
-//         This is the management side Attendance page. Features will be added soon.
-//       </Typography>
-//     </Box>
-//   );
-// };
-
-// export default Attendance;

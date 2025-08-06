@@ -164,12 +164,12 @@ const Sidebar = ({
         {
           id: "leave balance",
           text: "My Leave Balance",
-          view: "leavebalance",
+          view: "employeeleavebalance",
         },
         {
           id: "attendance",
           text: "My Attendance",
-          view: "attendance",
+          view: "employeeattendance",
         },
       ],
     },
