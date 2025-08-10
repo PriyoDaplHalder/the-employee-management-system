@@ -1,13 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Box, Typography, AppBar, Toolbar, IconButton } from "@mui/material";
-import { ArrowBack as ArrowBackIcon } from "@mui/icons-material";
-import { getToken } from "../utils/storage";
+
+import AttendanceCalendar from "./AttendanceCalendar";
+import AttendanceDetails from "./AttendanceDetails";
+import { Typography, Box, AppBar, Toolbar, IconButton } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+// import AppBar from "@mui/material/AppBar";
 
 const EmployeeAttendance = ({ user, onBack }) => {
+  const [selectedDate, setSelectedDate] = useState(null);
+
   return (
-    <Box sx={{ flexGrow: 1, bgcolor: "grey.50", minHeight: "100vh" }}>
+    <Box sx={{ flexGrow: 1, bgcolor: "#f8fafc", minHeight: "100vh" }}>
+      {/* Keep the AppBar unchanged as requested */}
       <AppBar
         position="static"
         elevation={0}
@@ -31,14 +37,34 @@ const EmployeeAttendance = ({ user, onBack }) => {
             component="div"
             sx={{ flexGrow: 1, color: "text.primary" }}
           >
-            Attendance 
+            Attendance
           </Typography>
         </Toolbar>
       </AppBar>
-      <Box sx={{ p: 4 }}>
-        <Typography variant="body1" color="text.secondary">
-          This is the employee side Attendance page. Features will be added soon.
-        </Typography>
+
+      {/* New improved layout */}
+      <Box
+        sx={{
+          display: "flex",
+          gap: 4,
+          p: 4,
+          maxWidth: 1400,
+          mx: "auto",
+          flexDirection: { xs: "column", lg: "row" },
+        }}
+      >
+        {/* Calendar Section */}
+        <Box sx={{ flex: 2, minWidth: 0 }}>
+          <AttendanceCalendar
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+          />
+        </Box>
+
+        {/* Details Section */}
+        <Box sx={{ flex: 1, minWidth: 300 }}>
+          <AttendanceDetails selectedDate={selectedDate} />
+        </Box>
       </Box>
     </Box>
   );
