@@ -69,7 +69,7 @@ const generateOTPEmailTemplate = (otp) => {
     <body>
       <div class="email-container">
         <div class="email-header">
-          <h2>Employee Management System</h2>
+          <h2>Managix</h2>
           <p>Password Reset Request</p>
         </div>
         <div class="email-content">
@@ -91,7 +91,7 @@ const generateOTPEmailTemplate = (otp) => {
           <p>Enter this code along with your new password to complete the password reset process.</p>
           
           <div class="footer">
-            <p>This email was sent from the Employee Management System.</p>
+            <p>This email was sent from Managix.</p>
             <p>If you did not request a password reset, please contact your administrator immediately.</p>
           </div>
         </div>
@@ -101,8 +101,8 @@ const generateOTPEmailTemplate = (otp) => {
   `;
 
   const text = `
-    Employee Management System - Password Reset Request
-    
+    Managix - Password Reset Request
+
     You have requested to reset your password. Please use the following verification code:
     
     Verification Code: ${otp}
@@ -170,7 +170,7 @@ export async function POST(request) {
       const { html, text } = generateOTPEmailTemplate(otpCode);
       const emailResult = await sendEmail({
         to: email,
-        subject: 'Password Reset Verification Code - Employee Management System',
+        subject: 'Password Reset Verification Code - Managix',
         html,
         text,
       });

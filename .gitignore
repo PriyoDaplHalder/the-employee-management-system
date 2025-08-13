@@ -44,3 +44,4 @@ next-env.d.ts
 # large files
 /public/uploads/srs-documents/*
 /public/uploads/other-documents/*
+/public/managix-logo.png

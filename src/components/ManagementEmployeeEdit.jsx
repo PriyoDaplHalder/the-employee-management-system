@@ -256,10 +256,24 @@ const ManagementEmployeeEdit = ({ employee, onClose, onSave }) => {
         .filter((skill) => skill);
 
       // Use custom position if "Others" is selected, otherwise use the selected position
-      const finalPosition =
-        formData.position === "Others"
-          ? formData.customPosition
-          : formData.position;
+      let finalPosition = formData.position === "Others"
+        ? formData.customPosition
+        : formData.position;
+
+      // If "Others" is selected and customPosition is not in positions, add it to DB
+      if (formData.position === "Others" && formData.customPosition.trim()) {
+        if (!positions.includes(formData.customPosition.trim())) {
+          try {
+            await fetch("/api/positions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: formData.customPosition.trim() })
+            });
+          } catch (err) {
+            console.error("Failed to save new position", err);
+          }
+        }
+      }
 
       const submissionData = {
         ...formData,

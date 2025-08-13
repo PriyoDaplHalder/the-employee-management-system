@@ -318,7 +318,7 @@ const ForgotPasswordForm = ({ onBack, onSuccess }) => {
                 Reset Password
               </Typography>
               <Typography variant="h6" color="text.secondary">
-                Employee Management System
+                Managix
               </Typography>
             </Box>
 

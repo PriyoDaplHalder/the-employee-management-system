@@ -39,7 +39,7 @@ const WelcomeScreen = ({
               mb: 2,
             }}
           >
-            Employee Management System
+            Managix
           </Typography>
           <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
             Streamline your workforce management with our comprehensive platform

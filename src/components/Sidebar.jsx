@@ -31,7 +31,7 @@ import {
   Task as TaskIcon,
   Mail as MailIcon,
 } from "@mui/icons-material";
-import LockPersonOutlinedIcon from '@mui/icons-material/LockPersonOutlined';
+import LockPersonOutlinedIcon from "@mui/icons-material/LockPersonOutlined";
 
 const Sidebar = ({
   user,
@@ -223,7 +223,7 @@ const Sidebar = ({
           id: "mailmappings",
           text: "Mail Mappings",
           view: "mailmappings",
-        }
+        },
       ],
     },
     {
@@ -464,7 +464,7 @@ const Sidebar = ({
         {/* System Title */}
         <Box
           sx={{
-            p: isCollapsed ? 1 : 2,
+            py: isCollapsed ? 1 : 2,
             textAlign: "center",
             bgcolor: "primary.main",
             color: "white",
@@ -486,19 +486,30 @@ const Sidebar = ({
             },
           }}
         >
-          <Typography
-            variant={isCollapsed ? "caption" : "h6"}
-            sx={{
-              fontWeight: 600,
-              fontSize: isCollapsed ? "1.25rem" : ".9rem",
-              lineHeight: isCollapsed ? "2.35" : "2.2",
-              whiteSpace: isCollapsed ? "nowrap" : "nowrap",
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
-            {isCollapsed ? "EMS" : "Employee Management System"}
-          </Typography>
+          {isCollapsed ? (
+            <img
+              src="/managix-logo.png"
+              alt="Logo"
+              style={{
+                width: 40,
+                height: "auto",
+              }}
+            />
+          ) : (
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                fontSize: "1.25rem",
+                lineHeight: "1.55",
+                whiteSpace: "nowrap",
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
+              Managix
+            </Typography>
+          )}
         </Box>
 
         {/* Navigation */}

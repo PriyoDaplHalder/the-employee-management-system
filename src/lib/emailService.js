@@ -175,7 +175,7 @@ export const generateEmailTemplate = ({
     <body>
       <div class="email-container">
         <div class="email-header">
-          <h2>Employee Management System</h2>
+          <h2>Managix</h2>
           <p>${requestType} request</p>
         </div>
         <div class="email-content">
@@ -202,8 +202,8 @@ export const generateEmailTemplate = ({
           </div>
           
           <div class="footer">
-            <p>This email was sent from the Employee Management System.</p>
-            <p>Please respond to this request through the Employee Management System portal.</p>
+            <p>This email was sent from the Managix.</p>
+            <p>Please respond to this request through the Managix portal.</p>
           </div>
         </div>
       </div>
@@ -228,8 +228,8 @@ export const generateEmailTemplate = ({
   }
 
   const text = `
-    Employee Management System - New ${requestType} Request
-    
+    Managix - New ${requestType} Request
+
     Subject: ${subject}
     ${requestType !== "Leave Application" && requestType !== "Leave Application Response" && requestType !== "Work from Home" && requestType !== "Work from Home Response" ? `Priority: ${priority}` : ''}
     From: ${senderName} (${senderEmail})
@@ -238,9 +238,9 @@ export const generateEmailTemplate = ({
     
     Message:
     ${message}
-    
-    This email was sent from the Employee Management System.
-    Please respond to this request through the Employee Management System portal.
+
+    This email was sent from the Managix.
+    Please respond to this request through the Managix portal.
   `;
 
   return { html, text };

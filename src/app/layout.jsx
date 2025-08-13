@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Employee Management System",
-  description: "Employee Management System for Login and Management",
+  title: "Managix",
+  description: "An Employee Management System for Login and Management",
 };
 
 export default function RootLayout({ children }) {
@@ -36,7 +36,7 @@ export default function RootLayout({ children }) {
               textDecoration: "underline",
             }}
           >
-            Employee Management System
+            Managix
           </h1>
           <h2
             style={{ padding:"5px", margin: "20px", textAlign: "center", color: "#ff5733", boxShadow: "0 0 10px rgba(255, 87, 51, 0.5)" , borderRadius: "10px" }}
