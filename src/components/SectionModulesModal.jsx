@@ -115,7 +115,7 @@ const SectionModulesModal = ({ open, onClose, project, section, onSave }) => {
         </DialogTitle>
 
         <DialogContent sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", my: 1 }}>
             <Typography variant="h6" color="primary.main" sx={{ fontWeight: 600 }}>
               Modules ({modules.length})
             </Typography>

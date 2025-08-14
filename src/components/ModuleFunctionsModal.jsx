@@ -123,7 +123,7 @@ const ModuleFunctionsModal = ({ open, onClose, project, section, module, onSave 
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setShowAddFunctionModal(true)}
-              sx={{ textTransform: "none", borderRadius: 2 }}
+              sx={{ textTransform: "none", borderRadius: 2, my: 1 }}
             >
               Add Function
             </Button>

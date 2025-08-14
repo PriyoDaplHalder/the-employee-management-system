@@ -118,9 +118,10 @@ const FunctionDescriptionsModal = ({ open, onClose, project, section, module, fu
         </DialogTitle>
 
         <DialogContent sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", my: 1 }}>
             <Typography variant="h6" color="primary.main" sx={{ fontWeight: 600 }}>
-              Function Descriptions ({descriptions.filter(d => d.trim()).length})
+              Function Description
+               {/* ({descriptions.filter(d => d.trim()).length}) */}
             </Typography>
             <Button
               variant="outlined"
