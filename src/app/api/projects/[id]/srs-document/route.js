@@ -137,6 +137,23 @@ export async function PUT(request, { params }) {
       srsDocument.uploadedBy = user.userId;
     }
 
+    // Handle SRS sections update
+    const sectionsRaw = formData.get("sections");
+    if (sectionsRaw) {
+      try {
+        const sections = JSON.parse(sectionsRaw);
+        if (Array.isArray(sections)) {
+          srsDocument.sections = sections.map(s => ({
+            title: s.title,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }));
+        }
+      } catch (e) {
+        return NextResponse.json({ error: "Invalid sections data" }, { status: 400 });
+      }
+    }
+
     // Update the project
     const updatedProject = await Project.findByIdAndUpdate(
       projectId,

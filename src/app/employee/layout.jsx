@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Employee - EMS"
+  title: "Employee - Managix"
 }
 
 const EmployeeLayout = ({ children }) => {

@@ -796,6 +796,22 @@ const ProjectsManagement = ({ user, onBack, onProjectCountChange }) => {
           onClose={handleCloseDetailsModal}
           onRefresh={fetchProjects}
           user={user}
+          onSectionSave={newSections => {
+            // Update selectedProject with new sections
+            setSelectedProject(prev => prev ? {
+              ...prev,
+              srsDocument: {
+                ...prev.srsDocument,
+                sections: newSections
+              }
+            } : prev);
+            // Optionally, update the projects array if needed
+            setProjects(projects => projects.map(p =>
+              p._id === selectedProject?._id
+                ? { ...p, srsDocument: { ...p.srsDocument, sections: newSections } }
+                : p
+            ));
+          }}
         />
       </Container>
 

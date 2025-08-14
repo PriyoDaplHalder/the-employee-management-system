@@ -80,7 +80,39 @@ const projectSchema = new mongoose.Schema({
     filePath: { type: String, trim: true },
     uploadedAt: { type: Date },
     uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+    sections: [
+      {
+        _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+        title: { type: String, required: true, trim: true },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now },
+        modules: [
+          {
+            _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+            title: { type: String, required: true, trim: true },
+            createdAt: { type: Date, default: Date.now },
+            updatedAt: { type: Date, default: Date.now },
+            functions: [
+              {
+                _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+                title: { type: String, required: true, trim: true },
+                createdAt: { type: Date, default: Date.now },
+                updatedAt: { type: Date, default: Date.now },
+                descriptions: [
+                  {
+                    _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+                    content: { type: String, required: true, trim: true },
+                    createdAt: { type: Date, default: Date.now },
+                    updatedAt: { type: Date, default: Date.now }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
   },
   notes: [{
     id: { type: String, required: true },

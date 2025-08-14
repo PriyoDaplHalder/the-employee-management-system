@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Management - EMS"
+  title: "Management - Managix"
 }
 
 const ManagementLayout = ({ children }) => {

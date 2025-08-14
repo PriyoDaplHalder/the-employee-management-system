@@ -528,7 +528,7 @@ const Sidebar = ({
               whiteSpace: "nowrap",
             }}
           >
-            {isCollapsed ? "©" : "© 2025 EMS"}
+            {isCollapsed ? "©" : "© 2025 Managix."}
           </Typography>
         </Box>
       </Drawer>

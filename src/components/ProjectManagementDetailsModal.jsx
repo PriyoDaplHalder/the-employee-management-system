@@ -38,15 +38,18 @@ import {
   Notes as NotesIcon,
   Info as InfoIcon,
   DocumentScanner as DocumentScannerIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
-import FileCopyIcon from '@mui/icons-material/FileCopy';
-import TimelineIcon from '@mui/icons-material/Timeline';
+import FileCopyIcon from "@mui/icons-material/FileCopy";
+import TimelineIcon from "@mui/icons-material/Timeline";
 import ConfirmationModal from "./ConfirmationModal";
 import ProjectRelatedInfoModal from "./ProjectRelatedInfoModal";
 import EmployeeAssignmentModal from "./EmployeeAssignmentModal";
 import ProjectMilestoneModal from "./ProjectMilestoneModal";
 import ProjectSRSDocumentModal from "./ProjectSRSDocumentModal";
 import ProjectOtherDocumentModal from "./ProjectOtherDocumentModal";
+import AddSRSSectionModal from "./AddSRSSectionModal";
+import SectionModulesModal from "./SectionModulesModal";
 
 const ProjectManagementDetailsModal = ({
   project,
@@ -54,6 +57,7 @@ const ProjectManagementDetailsModal = ({
   onClose,
   onRefresh,
   user,
+  onSectionSave,
 }) => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -65,17 +69,26 @@ const ProjectManagementDetailsModal = ({
   const [success, setSuccess] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [assigningEmployee, setAssigningEmployee] = useState(null);
   const [assignmentToDelete, setAssignmentToDelete] = useState(null);
   const [showRelatedInfoModal, setShowRelatedInfoModal] = useState(false);
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [showEmployeeAssignModal, setShowEmployeeAssignModal] = useState(false);
   const [showSRSDocumentModal, setShowSRSDocumentModal] = useState(false);
   const [otherDocuments, setOtherDocuments] = useState(false);
+  const [showAddSectionModal, setShowAddSectionModal] = useState(false);
+  const [sectionCards, setSectionCards] = useState([]);
+  const [showSectionModulesModal, setShowSectionModulesModal] = useState(false);
+  const [selectedSection, setSelectedSection] = useState(null);
 
   useEffect(() => {
     if (open && project) {
       fetchProjectAssignments();
+    }
+  }, [open, project]);
+
+  useEffect(() => {
+    if (open && project?.srsDocument?.sections) {
+      setSectionCards(Array.isArray(project.srsDocument.sections) ? project.srsDocument.sections : []);
     }
   }, [open, project]);
 
@@ -229,11 +242,28 @@ const ProjectManagementDetailsModal = ({
 
   const handleOtherDocumentsClick = () => {
     setOtherDocuments(true);
-  }
+  };
 
   const handleCloseOtherDocuments = () => {
     setOtherDocuments(false);
-  }
+  };
+
+  const handleSectionSaveSuccess = (newSections) => {
+    setSectionCards(newSections);
+    if (onSectionSave) {
+      onSectionSave(newSections);
+    }
+  };
+
+  const handleSectionClick = (section) => {
+    setSelectedSection(section);
+    setShowSectionModulesModal(true);
+  };
+
+  const handleCloseSectionModules = () => {
+    setShowSectionModulesModal(false);
+    setSelectedSection(null);
+  };
 
   if (!project) return null;
 
@@ -382,6 +412,49 @@ const ProjectManagementDetailsModal = ({
               </Card>
             </Grid>
           </Grid>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 2 }}>
+            {Array.isArray(sectionCards) && sectionCards.length > 0 && (
+              <Box sx={{ display: "inline-flex", gap: 1, ml: 2 }}>
+                {sectionCards.map((section, idx) => (
+                  <Card
+                    key={section._id || idx}
+                    sx={{
+                      minWidth: 120,
+                      boxShadow: 2,
+                      bgcolor: "primary.50",
+                      borderRadius: 2,
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      "&:hover": {
+                        transform: "translateY(-2px)",
+                        boxShadow: 4,
+                      },
+                    }}
+                    onClick={() => handleSectionClick(section)}
+                  >
+                    <CardContent sx={{ py: 1, px: 2 }}>
+                      <Typography
+                        variant="subtitle2"
+                        color="primary"
+                        sx={{ fontWeight: 600 }}
+                      >
+                        {section.title}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+            )}
+            <Button
+              variant="outlined"
+              color="primary"
+              sx={{ textTransform: "none", py: "0.18rem" }}
+              startIcon={<AddIcon />}
+              onClick={() => setShowAddSectionModal(true)}
+            >
+              Add section
+            </Button>
+          </Box>
         </Box>
 
         <Divider />
@@ -667,11 +740,25 @@ const ProjectManagementDetailsModal = ({
       />
 
       {/* Other Documents Modal */}
-      <ProjectOtherDocumentModal 
+      <ProjectOtherDocumentModal
         project={project}
         open={otherDocuments}
         onClose={handleCloseOtherDocuments}
         user={user || { role: "management" }}
+      />
+
+      <AddSRSSectionModal
+        open={showAddSectionModal}
+        onClose={() => setShowAddSectionModal(false)}
+        project={project}
+        onSave={handleSectionSaveSuccess}
+      />
+
+      <SectionModulesModal
+        open={showSectionModulesModal}
+        onClose={handleCloseSectionModules}
+        project={project}
+        section={selectedSection}
       />
 
       <CustomSnackbar
