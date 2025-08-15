@@ -28,19 +28,23 @@ const AddModuleModal = ({ open, onClose, project, section, onSave }) => {
     if (open) {
       // Always populate from database if available
       const dbModules = section?.modules;
-      setModules(Array.isArray(dbModules) && dbModules.length > 0 ? dbModules.map(m => m.title) : [""]);
+      if (Array.isArray(dbModules) && dbModules.length > 0) {
+        setModules(dbModules.map((m) => m.title));
+      } else {
+        setModules([""]);
+      }
     }
-  }, [open, section]);
+  }, [open, section?.modules]);
 
   const handleModuleChange = (index, value) => {
-    setModules(modules => modules.map((m, i) => (i === index ? value : m)));
+    setModules((modules) => modules.map((m, i) => (i === index ? value : m)));
   };
 
-  const handleAddModule = () => setModules(modules => [...modules, ""]);
+  const handleAddModule = () => setModules((modules) => [...modules, ""]);
 
-  const handleRemoveModule = index => {
+  const handleRemoveModule = (index) => {
     if (modules.length === 1) return;
-    setModules(modules => modules.filter((_, i) => i !== index));
+    setModules((modules) => modules.filter((_, i) => i !== index));
   };
 
   const handleSaveModules = async () => {
@@ -48,31 +52,57 @@ const AddModuleModal = ({ open, onClose, project, section, onSave }) => {
     try {
       const token = getToken();
       const endpoint = `/api/projects/${project._id}/sections/${section._id}/modules`;
-      const moduleData = modules.filter(title => title.trim()).map(title => ({ title: title.trim() }));
-      
+
+      // Filter out empty modules and prepare data
+      const validModules = modules.filter((title) => title.trim());
+      if (validModules.length === 0) {
+        setSnackbar({
+          open: true,
+          message: "At least one module is required",
+          severity: "warning",
+        });
+        setSaveLoading(false);
+        return;
+      }
+
+      const moduleData = validModules.map((title) => ({ title: title.trim() }));
+
       const response = await fetch(endpoint, {
         method: "PUT",
-        headers: { 
+        headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ modules: moduleData }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        setSnackbar({ open: true, message: "Modules saved successfully!", severity: "success" });
-        setModules(moduleData.map(m => m.title));
+        setSnackbar({
+          open: true,
+          message: "Modules saved successfully!",
+          severity: "success",
+        });
+        setModules(validModules);
         if (onSave && data.modules) {
           onSave(data.modules);
         }
         onClose();
       } else {
         const errorData = await response.json();
-        setSnackbar({ open: true, message: errorData.error || "Failed to save modules", severity: "error" });
+        setSnackbar({
+          open: true,
+          message: errorData.error || "Failed to save modules",
+          severity: "error",
+        });
       }
-    } catch {
-      setSnackbar({ open: true, message: "Error saving modules", severity: "error" });
+    } catch (error) {
+      console.error("Error saving modules:", error);
+      setSnackbar({
+        open: true,
+        message: "Error saving modules",
+        severity: "error",
+      });
     } finally {
       setSaveLoading(false);
     }

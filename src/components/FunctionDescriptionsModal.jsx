@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -8,17 +8,16 @@ import {
   Typography,
   Box,
   IconButton,
-  TextField,
   Card,
   CardContent,
-  Divider,
 } from "@mui/material";
 import {
   Close as CloseIcon,
-  Add as AddIcon,
   Description as DescriptionIcon,
   RemoveCircleOutline as RemoveCircleOutlineIcon,
 } from "@mui/icons-material";
+import Quill from "quill";
+import "quill/dist/quill.snow.css";
 import { getToken } from "../utils/storage";
 import CustomSnackbar from "./CustomSnackbar";
 
@@ -32,6 +31,8 @@ const FunctionDescriptionsModal = ({
   onSave,
 }) => {
   const [descriptions, setDescriptions] = useState([""]);
+  const editorsRef = useRef([]);
+  const containersRef = useRef([]);
   const [saveLoading, setSaveLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -41,7 +42,6 @@ const FunctionDescriptionsModal = ({
 
   useEffect(() => {
     if (open && functionItem) {
-      // Always populate from database if available
       const dbDescriptions = functionItem?.descriptions;
       setDescriptions(
         Array.isArray(dbDescriptions) && dbDescriptions.length > 0
@@ -51,7 +51,103 @@ const FunctionDescriptionsModal = ({
     }
   }, [open, functionItem]);
 
+  useEffect(() => {
+    descriptions.forEach((desc, idx) => {
+      const container = containersRef.current[idx];
+      if (!container) return;
+
+      if (!editorsRef.current[idx]) {
+        const toolbarOptions = [
+          ["bold", "italic", "underline", "strike"],
+          [{ header: [1, 2, 3, false] }],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["blockquote", "code-block"],
+          ["link"],
+        ];
+
+        const editor = new Quill(container, {
+          theme: "snow",
+          modules: { toolbar: toolbarOptions },
+        });
+
+        try {
+          if (desc && desc.trim()) {
+            editor.clipboard.dangerouslyPasteHTML(desc);
+          } else {
+            editor.setText("");
+          }
+        } catch (e) {
+          editor.setText(desc || "");
+        }
+
+        editor.on("text-change", () => {
+          const editorElement = container.querySelector(".ql-editor");
+          if (editorElement) {
+            const html = editorElement.innerHTML;
+            setDescriptions((prev) =>
+              prev.map((p, i) => (i === idx ? html : p))
+            );
+          }
+        });
+
+        editorsRef.current[idx] = editor;
+      } else {
+        const editor = editorsRef.current[idx];
+        const editorElement = container.querySelector(".ql-editor");
+        const currentHtml = editorElement ? editorElement.innerHTML : "";
+        if ((desc || "") !== (currentHtml || "")) {
+          try {
+            editor.clipboard.dangerouslyPasteHTML(desc || "");
+          } catch (e) {
+            editor.setText(desc || "");
+          }
+        }
+      }
+    });
+
+    if (editorsRef.current.length > descriptions.length) {
+      for (let i = descriptions.length; i < editorsRef.current.length; i++) {
+        try {
+          const ed = editorsRef.current[i];
+          if (ed) {
+            ed.off && ed.off();
+          }
+        } catch (e) {}
+      }
+      editorsRef.current.length = descriptions.length;
+      containersRef.current.length = descriptions.length;
+    }
+
+    return () => {};
+  }, [descriptions, open]);
+
+  // Clean up editors when modal closes
+  useEffect(() => {
+    if (!open) {
+      // Clean up all editors
+      editorsRef.current.forEach((editor, index) => {
+        if (editor) {
+          try {
+            editor.off && editor.off();
+          } catch (e) {
+            console.error("Error cleaning up editor:", e);
+          }
+        }
+      });
+      editorsRef.current = [];
+      containersRef.current = [];
+    }
+  }, [open]);
+
   const handleDescriptionChange = (index, value) => {
+    const editor = editorsRef.current[index];
+    if (editor) {
+      try {
+        editor.clipboard.dangerouslyPasteHTML(value);
+      } catch (e) {
+        editor.setText(value);
+      }
+    }
     setDescriptions((descriptions) =>
       descriptions.map((d, i) => (i === index ? value : d))
     );
@@ -62,6 +158,13 @@ const FunctionDescriptionsModal = ({
 
   const handleRemoveDescription = (index) => {
     if (descriptions.length === 1) return;
+    if (editorsRef.current[index]) {
+      try {
+        editorsRef.current[index].off && editorsRef.current[index].off();
+      } catch (e) {}
+      editorsRef.current.splice(index, 1);
+    }
+    containersRef.current.splice(index, 1);
     setDescriptions((descriptions) =>
       descriptions.filter((_, i) => i !== index)
     );
@@ -73,8 +176,19 @@ const FunctionDescriptionsModal = ({
       const token = getToken();
       const endpoint = `/api/projects/${project._id}/sections/${section._id}/modules/${module._id}/functions/${functionItem._id}/descriptions`;
       const descriptionData = descriptions
-        .filter((content) => content.trim())
-        .map((content) => ({ content: content.trim() }));
+        .map((content, idx) => {
+          const container = containersRef.current[idx];
+          let html = content;
+          if (container) {
+            const editorElement = container.querySelector(".ql-editor");
+            if (editorElement) {
+              html = editorElement.innerHTML;
+            }
+          }
+          return (html || "").trim();
+        })
+        .filter((content) => content && content !== "<p><br></p>")
+        .map((content) => ({ content }));
 
       const response = await fetch(endpoint, {
         method: "PUT",
@@ -166,16 +280,7 @@ const FunctionDescriptionsModal = ({
               sx={{ fontWeight: 600 }}
             >
               Function Description
-              {/* ({descriptions.filter(d => d.trim()).length}) */}
             </Typography>
-            {/* <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={handleAddDescription}
-              sx={{ textTransform: "none", borderRadius: 2 }}
-            >
-              Add Description
-            </Button> */}
           </Box>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -194,37 +299,13 @@ const FunctionDescriptionsModal = ({
                   >
                     <DescriptionIcon color="action" sx={{ mt: 1 }} />
                     <Box sx={{ flex: 1 }}>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={3}
-                        label={`Description`}
-                        variant="outlined"
-                        value={description}
-                        onChange={(e) =>
-                          handleDescriptionChange(index, e.target.value)
-                        }
-                        placeholder="Enter function description..."
-                        sx={{
-                          "& textarea": {
-                            minHeight: 120,
-                            maxHeight: "60vh",
-                            overflow: "auto",
-                          },
-                        }}
+                      <div
+                        ref={(el) => (containersRef.current[index] = el)}
+                        className="quill-container"
+                        style={{ minHeight: 120 }}
+                        aria-label={`Description editor ${index + 1}`}
                       />
                     </Box>
-                    {descriptions.length > 1 && (
-                      <IconButton
-                        color="error"
-                        size="small"
-                        onClick={() => handleRemoveDescription(index)}
-                        aria-label="Remove description"
-                        sx={{ mt: 1 }}
-                      >
-                        <RemoveCircleOutlineIcon />
-                      </IconButton>
-                    )}
                   </Box>
                 </CardContent>
               </Card>

@@ -28,7 +28,9 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    const section = project.srsDocument?.sections?.find(s => s._id.toString() === sectionId);
+    const section = project.srsDocument?.sections?.find(
+      (s) => s._id.toString() === sectionId
+    );
     if (!section) {
       return NextResponse.json({ error: "Section not found" }, { status: 404 });
     }
@@ -39,12 +41,15 @@ export async function GET(request, { params }) {
     });
   } catch (error) {
     console.error("Error fetching modules:", error);
-    
+
     // Handle authentication errors
-    if (error.message === "No token provided" || error.message === "Invalid token") {
+    if (
+      error.message === "No token provided" ||
+      error.message === "Invalid token"
+    ) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
-    
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -72,22 +77,45 @@ export async function PUT(request, { params }) {
     const { modules } = await request.json();
 
     if (!Array.isArray(modules)) {
-      return NextResponse.json({ error: "Modules must be an array" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Modules must be an array" },
+        { status: 400 }
+      );
     }
 
     // Find the section and update its modules
-    const sectionIndex = project.srsDocument?.sections?.findIndex(s => s._id.toString() === sectionId);
+    const sectionIndex = project.srsDocument?.sections?.findIndex(
+      (s) => s._id.toString() === sectionId
+    );
     if (sectionIndex === -1) {
       return NextResponse.json({ error: "Section not found" }, { status: 404 });
     }
 
-    // Prepare modules data
-    const moduleData = modules.map(module => ({
-      title: module.title.trim(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      functions: []
-    }));
+    // Get existing modules to preserve their functions
+    const existingModules =
+      project.srsDocument.sections[sectionIndex].modules || [];
+
+    // Merge new modules with existing ones, preserving existing data
+    const moduleData = modules.map((newModule, index) => {
+      const existingModule = existingModules[index];
+
+      if (existingModule) {
+        // Update existing module, preserve functions
+        return {
+          ...existingModule,
+          title: newModule.title.trim(),
+          updatedAt: new Date(),
+        };
+      } else {
+        // Create new module
+        return {
+          title: newModule.title.trim(),
+          functions: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }
+    });
 
     // Update the modules
     project.srsDocument.sections[sectionIndex].modules = moduleData;
@@ -103,12 +131,15 @@ export async function PUT(request, { params }) {
     });
   } catch (error) {
     console.error("Error updating modules:", error);
-    
+
     // Handle authentication errors
-    if (error.message === "No token provided" || error.message === "Invalid token") {
+    if (
+      error.message === "No token provided" ||
+      error.message === "Invalid token"
+    ) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
-    
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

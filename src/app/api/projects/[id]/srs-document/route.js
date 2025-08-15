@@ -44,12 +44,15 @@ export async function GET(request, { params }) {
     });
   } catch (error) {
     console.error("Error fetching SRS document:", error);
-    
+
     // Handle authentication errors
-    if (error.message === "No token provided" || error.message === "Invalid token") {
+    if (
+      error.message === "No token provided" ||
+      error.message === "Invalid token"
+    ) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
-    
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -86,7 +89,7 @@ export async function PUT(request, { params }) {
     const srsFile = formData.get("srsFile");
 
     let srsDocument = project.srsDocument || {};
-    
+
     // Update website link
     srsDocument.websiteLink = websiteLink.trim();
     srsDocument.updatedAt = new Date();
@@ -102,14 +105,23 @@ export async function PUT(request, { params }) {
       }
 
       // Create upload directory if it doesn't exist
-      const uploadDir = path.join(process.cwd(), "public", "uploads", "srs-documents");
+      const uploadDir = path.join(
+        process.cwd(),
+        "public",
+        "uploads",
+        "srs-documents"
+      );
       if (!existsSync(uploadDir)) {
         mkdirSync(uploadDir, { recursive: true });
       }
 
       // Delete old file if exists
       if (srsDocument.filePath) {
-        const oldFilePath = path.join(process.cwd(), "public", srsDocument.filePath);
+        const oldFilePath = path.join(
+          process.cwd(),
+          "public",
+          srsDocument.filePath
+        );
         try {
           if (existsSync(oldFilePath)) {
             await unlink(oldFilePath);
@@ -141,26 +153,47 @@ export async function PUT(request, { params }) {
     const sectionsRaw = formData.get("sections");
     if (sectionsRaw) {
       try {
-        const sections = JSON.parse(sectionsRaw);
-        if (Array.isArray(sections)) {
-          srsDocument.sections = sections.map(s => ({
-            title: s.title,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }));
+        const newSections = JSON.parse(sectionsRaw);
+        if (Array.isArray(newSections)) {
+          const existingSections = srsDocument.sections || [];
+
+          // Merge new sections with existing ones, preserving existing data
+          srsDocument.sections = newSections.map((newSection, index) => {
+            const existingSection = existingSections[index];
+
+            if (existingSection) {
+              // Update existing section, preserve modules/functions/descriptions
+              return {
+                ...existingSection,
+                title: newSection.title,
+                updatedAt: new Date(),
+              };
+            } else {
+              // Create new section
+              return {
+                title: newSection.title,
+                modules: [],
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              };
+            }
+          });
         }
       } catch (e) {
-        return NextResponse.json({ error: "Invalid sections data" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Invalid sections data" },
+          { status: 400 }
+        );
       }
     }
 
     // Update the project
     const updatedProject = await Project.findByIdAndUpdate(
       projectId,
-      { 
-        $set: { 
-          srsDocument: srsDocument
-        }
+      {
+        $set: {
+          srsDocument: srsDocument,
+        },
       },
       { new: true, runValidators: true }
     );
@@ -172,12 +205,15 @@ export async function PUT(request, { params }) {
     });
   } catch (error) {
     console.error("Error updating SRS document:", error);
-    
+
     // Handle authentication errors
-    if (error.message === "No token provided" || error.message === "Invalid token") {
+    if (
+      error.message === "No token provided" ||
+      error.message === "Invalid token"
+    ) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
-    
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -232,10 +268,10 @@ export async function DELETE(request, { params }) {
       // Update the project
       const updatedProject = await Project.findByIdAndUpdate(
         projectId,
-        { 
-          $set: { 
-            srsDocument: srsDocument
-          }
+        {
+          $set: {
+            srsDocument: srsDocument,
+          },
         },
         { new: true, runValidators: true }
       );
@@ -246,19 +282,19 @@ export async function DELETE(request, { params }) {
         srsDocument: updatedProject.srsDocument,
       });
     } else {
-      return NextResponse.json(
-        { error: "No file to delete" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No file to delete" }, { status: 400 });
     }
   } catch (error) {
     console.error("Error deleting SRS document:", error);
-    
+
     // Handle authentication errors
-    if (error.message === "No token provided" || error.message === "Invalid token") {
+    if (
+      error.message === "No token provided" ||
+      error.message === "Invalid token"
+    ) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
-    
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

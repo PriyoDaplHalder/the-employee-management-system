@@ -28,19 +28,25 @@ const AddSRSSectionModal = ({ open, onClose, project, onSave }) => {
     if (open) {
       // Always populate from database if available
       const dbSections = project?.srsDocument?.sections;
-      setSections(Array.isArray(dbSections) && dbSections.length > 0 ? dbSections.map(s => s.title) : [""]);
+      if (Array.isArray(dbSections) && dbSections.length > 0) {
+        setSections(dbSections.map((s) => s.title));
+      } else {
+        setSections([""]);
+      }
     }
-  }, [open]);
+  }, [open, project?.srsDocument?.sections]);
 
   const handleSectionChange = (index, value) => {
-    setSections(sections => sections.map((s, i) => (i === index ? value : s)));
+    setSections((sections) =>
+      sections.map((s, i) => (i === index ? value : s))
+    );
   };
 
-  const handleAddSection = () => setSections(sections => [...sections, ""]);
+  const handleAddSection = () => setSections((sections) => [...sections, ""]);
 
-  const handleRemoveSection = index => {
+  const handleRemoveSection = (index) => {
     if (sections.length === 1) return;
-    setSections(sections => sections.filter((_, i) => i !== index));
+    setSections((sections) => sections.filter((_, i) => i !== index));
   };
 
   const handleSaveSections = async () => {
@@ -48,28 +54,58 @@ const AddSRSSectionModal = ({ open, onClose, project, onSave }) => {
     try {
       const token = getToken();
       const endpoint = `/api/projects/${project._id}/srs-document`;
-      const sectionData = sections.filter(title => title.trim()).map(title => ({ title: title.trim() }));
+
+      // Filter out empty sections and prepare data
+      const validSections = sections.filter((title) => title.trim());
+      if (validSections.length === 0) {
+        setSnackbar({
+          open: true,
+          message: "At least one section is required",
+          severity: "warning",
+        });
+        setSaveLoading(false);
+        return;
+      }
+
+      const sectionData = validSections.map((title) => ({
+        title: title.trim(),
+      }));
       const formData = new FormData();
       formData.append("sections", JSON.stringify(sectionData));
+
       const response = await fetch(endpoint, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
+
       if (response.ok) {
         const data = await response.json();
-        setSnackbar({ open: true, message: "Sections saved successfully!", severity: "success" });
-        setSections(sectionData.map(s => s.title));
+        setSnackbar({
+          open: true,
+          message: "Sections saved successfully!",
+          severity: "success",
+        });
+        setSections(validSections);
         if (onSave && data.srsDocument?.sections) {
           onSave(data.srsDocument.sections);
         }
         onClose();
       } else {
         const errorData = await response.json();
-        setSnackbar({ open: true, message: errorData.error || "Failed to save sections", severity: "error" });
+        setSnackbar({
+          open: true,
+          message: errorData.error || "Failed to save sections",
+          severity: "error",
+        });
       }
-    } catch {
-      setSnackbar({ open: true, message: "Error saving sections", severity: "error" });
+    } catch (error) {
+      console.error("Error saving sections:", error);
+      setSnackbar({
+        open: true,
+        message: "Error saving sections",
+        severity: "error",
+      });
     } finally {
       setSaveLoading(false);
     }

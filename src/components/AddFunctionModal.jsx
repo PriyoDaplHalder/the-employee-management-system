@@ -15,7 +15,14 @@ import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { getToken } from "../utils/storage";
 import CustomSnackbar from "./CustomSnackbar";
 
-const AddFunctionModal = ({ open, onClose, project, section, module, onSave }) => {
+const AddFunctionModal = ({
+  open,
+  onClose,
+  project,
+  section,
+  module,
+  onSave,
+}) => {
   const [functions, setFunctions] = useState([""]);
   const [saveLoading, setSaveLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -28,19 +35,26 @@ const AddFunctionModal = ({ open, onClose, project, section, module, onSave }) =
     if (open) {
       // Always populate from database if available
       const dbFunctions = module?.functions;
-      setFunctions(Array.isArray(dbFunctions) && dbFunctions.length > 0 ? dbFunctions.map(f => f.title) : [""]);
+      if (Array.isArray(dbFunctions) && dbFunctions.length > 0) {
+        setFunctions(dbFunctions.map((f) => f.title));
+      } else {
+        setFunctions([""]);
+      }
     }
-  }, [open, module]);
+  }, [open, module?.functions]);
 
   const handleFunctionChange = (index, value) => {
-    setFunctions(functions => functions.map((f, i) => (i === index ? value : f)));
+    setFunctions((functions) =>
+      functions.map((f, i) => (i === index ? value : f))
+    );
   };
 
-  const handleAddFunction = () => setFunctions(functions => [...functions, ""]);
+  const handleAddFunction = () =>
+    setFunctions((functions) => [...functions, ""]);
 
-  const handleRemoveFunction = index => {
+  const handleRemoveFunction = (index) => {
     if (functions.length === 1) return;
-    setFunctions(functions => functions.filter((_, i) => i !== index));
+    setFunctions((functions) => functions.filter((_, i) => i !== index));
   };
 
   const handleSaveFunctions = async () => {
@@ -48,31 +62,59 @@ const AddFunctionModal = ({ open, onClose, project, section, module, onSave }) =
     try {
       const token = getToken();
       const endpoint = `/api/projects/${project._id}/sections/${section._id}/modules/${module._id}/functions`;
-      const functionData = functions.filter(title => title.trim()).map(title => ({ title: title.trim() }));
-      
+
+      // Filter out empty functions and prepare data
+      const validFunctions = functions.filter((title) => title.trim());
+      if (validFunctions.length === 0) {
+        setSnackbar({
+          open: true,
+          message: "At least one function is required",
+          severity: "warning",
+        });
+        setSaveLoading(false);
+        return;
+      }
+
+      const functionData = validFunctions.map((title) => ({
+        title: title.trim(),
+      }));
+
       const response = await fetch(endpoint, {
         method: "PUT",
-        headers: { 
+        headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ functions: functionData }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        setSnackbar({ open: true, message: "Functions saved successfully!", severity: "success" });
-        setFunctions(functionData.map(f => f.title));
+        setSnackbar({
+          open: true,
+          message: "Functions saved successfully!",
+          severity: "success",
+        });
+        setFunctions(validFunctions);
         if (onSave && data.functions) {
           onSave(data.functions);
         }
         onClose();
       } else {
         const errorData = await response.json();
-        setSnackbar({ open: true, message: errorData.error || "Failed to save functions", severity: "error" });
+        setSnackbar({
+          open: true,
+          message: errorData.error || "Failed to save functions",
+          severity: "error",
+        });
       }
-    } catch {
-      setSnackbar({ open: true, message: "Error saving functions", severity: "error" });
+    } catch (error) {
+      console.error("Error saving functions:", error);
+      setSnackbar({
+        open: true,
+        message: "Error saving functions",
+        severity: "error",
+      });
     } finally {
       setSaveLoading(false);
     }
