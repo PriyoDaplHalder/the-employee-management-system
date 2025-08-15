@@ -198,22 +198,18 @@ const FunctionDescriptionsModal = ({
                         fullWidth
                         multiline
                         rows={3}
-                        label={`Description ${index + 1}`}
+                        label={`Description`}
                         variant="outlined"
                         value={description}
                         onChange={(e) =>
                           handleDescriptionChange(index, e.target.value)
                         }
                         placeholder="Enter function description..."
-                        InputProps={{
-                          sx: {
-                            // allow the underlying textarea to be vertically resizable
-                            "& textarea": {
-                              resize: "vertical",
-                              minHeight: 120,
-                              maxHeight: "60vh",
-                              overflow: "auto",
-                            },
+                        sx={{
+                          "& textarea": {
+                            minHeight: 120,
+                            maxHeight: "60vh",
+                            overflow: "auto",
                           },
                         }}
                       />
