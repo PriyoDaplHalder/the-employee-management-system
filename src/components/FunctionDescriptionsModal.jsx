@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -15,11 +15,12 @@ import {
   Close as CloseIcon,
   Description as DescriptionIcon,
   RemoveCircleOutline as RemoveCircleOutlineIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
-import Quill from "quill";
-import "quill/dist/quill.snow.css";
 import { getToken } from "../utils/storage";
 import CustomSnackbar from "./CustomSnackbar";
+import NoSSR from "./NoSSR";
+import QuillEditor from "./QuillEditor";
 
 const FunctionDescriptionsModal = ({
   open,
@@ -31,8 +32,6 @@ const FunctionDescriptionsModal = ({
   onSave,
 }) => {
   const [descriptions, setDescriptions] = useState([""]);
-  const editorsRef = useRef([]);
-  const containersRef = useRef([]);
   const [saveLoading, setSaveLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -51,103 +50,7 @@ const FunctionDescriptionsModal = ({
     }
   }, [open, functionItem]);
 
-  useEffect(() => {
-    descriptions.forEach((desc, idx) => {
-      const container = containersRef.current[idx];
-      if (!container) return;
-
-      if (!editorsRef.current[idx]) {
-        const toolbarOptions = [
-          ["bold", "italic", "underline", "strike"],
-          [{ header: [1, 2, 3, false] }],
-          [{ list: "ordered" }, { list: "bullet" }],
-          ["blockquote", "code-block"],
-          ["link"],
-        ];
-
-        const editor = new Quill(container, {
-          theme: "snow",
-          modules: { toolbar: toolbarOptions },
-        });
-
-        try {
-          if (desc && desc.trim()) {
-            editor.clipboard.dangerouslyPasteHTML(desc);
-          } else {
-            editor.setText("");
-          }
-        } catch (e) {
-          editor.setText(desc || "");
-        }
-
-        editor.on("text-change", () => {
-          const editorElement = container.querySelector(".ql-editor");
-          if (editorElement) {
-            const html = editorElement.innerHTML;
-            setDescriptions((prev) =>
-              prev.map((p, i) => (i === idx ? html : p))
-            );
-          }
-        });
-
-        editorsRef.current[idx] = editor;
-      } else {
-        const editor = editorsRef.current[idx];
-        const editorElement = container.querySelector(".ql-editor");
-        const currentHtml = editorElement ? editorElement.innerHTML : "";
-        if ((desc || "") !== (currentHtml || "")) {
-          try {
-            editor.clipboard.dangerouslyPasteHTML(desc || "");
-          } catch (e) {
-            editor.setText(desc || "");
-          }
-        }
-      }
-    });
-
-    if (editorsRef.current.length > descriptions.length) {
-      for (let i = descriptions.length; i < editorsRef.current.length; i++) {
-        try {
-          const ed = editorsRef.current[i];
-          if (ed) {
-            ed.off && ed.off();
-          }
-        } catch (e) {}
-      }
-      editorsRef.current.length = descriptions.length;
-      containersRef.current.length = descriptions.length;
-    }
-
-    return () => {};
-  }, [descriptions, open]);
-
-  // Clean up editors when modal closes
-  useEffect(() => {
-    if (!open) {
-      // Clean up all editors
-      editorsRef.current.forEach((editor, index) => {
-        if (editor) {
-          try {
-            editor.off && editor.off();
-          } catch (e) {
-            console.error("Error cleaning up editor:", e);
-          }
-        }
-      });
-      editorsRef.current = [];
-      containersRef.current = [];
-    }
-  }, [open]);
-
   const handleDescriptionChange = (index, value) => {
-    const editor = editorsRef.current[index];
-    if (editor) {
-      try {
-        editor.clipboard.dangerouslyPasteHTML(value);
-      } catch (e) {
-        editor.setText(value);
-      }
-    }
     setDescriptions((descriptions) =>
       descriptions.map((d, i) => (i === index ? value : d))
     );
@@ -158,13 +61,6 @@ const FunctionDescriptionsModal = ({
 
   const handleRemoveDescription = (index) => {
     if (descriptions.length === 1) return;
-    if (editorsRef.current[index]) {
-      try {
-        editorsRef.current[index].off && editorsRef.current[index].off();
-      } catch (e) {}
-      editorsRef.current.splice(index, 1);
-    }
-    containersRef.current.splice(index, 1);
     setDescriptions((descriptions) =>
       descriptions.filter((_, i) => i !== index)
     );
@@ -176,17 +72,7 @@ const FunctionDescriptionsModal = ({
       const token = getToken();
       const endpoint = `/api/projects/${project._id}/sections/${section._id}/modules/${module._id}/functions/${functionItem._id}/descriptions`;
       const descriptionData = descriptions
-        .map((content, idx) => {
-          const container = containersRef.current[idx];
-          let html = content;
-          if (container) {
-            const editorElement = container.querySelector(".ql-editor");
-            if (editorElement) {
-              html = editorElement.innerHTML;
-            }
-          }
-          return (html || "").trim();
-        })
+        .map((content) => (content || "").trim())
         .filter((content) => content && content !== "<p><br></p>")
         .map((content) => ({ content }));
 
@@ -200,29 +86,25 @@ const FunctionDescriptionsModal = ({
       });
 
       if (response.ok) {
-        const data = await response.json();
         setSnackbar({
           open: true,
-          message: "Descriptions saved successfully!",
+          message: "Function descriptions saved successfully!",
           severity: "success",
         });
-        setDescriptions(descriptionData.map((d) => d.content));
-        if (onSave) {
-          onSave();
-        }
-        onClose();
+        if (onSave) onSave();
+        setTimeout(() => onClose(), 1500);
       } else {
         const errorData = await response.json();
         setSnackbar({
           open: true,
-          message: errorData.error || "Failed to save descriptions",
+          message: errorData.message || "Failed to save descriptions",
           severity: "error",
         });
       }
-    } catch {
+    } catch (error) {
       setSnackbar({
         open: true,
-        message: "Error saving descriptions",
+        message: "Error saving descriptions: " + error.message,
         severity: "error",
       });
     } finally {
@@ -230,137 +112,138 @@ const FunctionDescriptionsModal = ({
     }
   };
 
+  const handleClose = () => {
+    setDescriptions([""]);
+    onClose();
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
+
+  if (!functionItem) return null;
+
   return (
     <>
       <Dialog
         open={open}
-        onClose={onClose}
-        maxWidth="md"
+        onClose={handleClose}
+        maxWidth="lg"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 3, maxHeight: "90vh", overflow: "visible" },
+          sx: {
+            height: "90vh",
+            maxHeight: "90vh",
+          },
         }}
-        sx={{ overflow: "visible" }}
       >
         <DialogTitle
           sx={{
-            pb: 2,
-            borderBottom: "1px solid",
-            borderColor: "divider",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            pb: 1,
           }}
         >
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              {functionItem?.title} - Descriptions
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {module?.title} | {section?.title} - {project?.name}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <DescriptionIcon />
+            <Typography variant="h6" component="span">
+              Function Descriptions - {functionItem.name}
             </Typography>
           </Box>
-          <IconButton onClick={onClose} size="small">
+          <IconButton onClick={handleClose} size="small">
             <CloseIcon />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 3, overflow: "visible" }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              my: 1,
-            }}
-          >
-            <Typography
-              variant="h6"
-              color="primary.main"
-              sx={{ fontWeight: 600 }}
-            >
-              Function Description
+        <DialogContent sx={{ px: 3, py: 2, overflow: "auto" }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Project: {project?.name} → Section: {section?.name} → Module:{" "}
+              {module?.name}
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {descriptions.map((description, index) => (
-              <Card
-                key={index}
-                sx={{
-                  bgcolor: "grey.50",
-                  border: "1px solid",
-                  borderColor: "grey.200",
-                }}
-              >
-                <CardContent sx={{ p: 2 }}>
+              <Card key={index} elevation={2}>
+                <CardContent>
                   <Box
-                    sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 2,
+                    }}
                   >
-                    <DescriptionIcon color="action" sx={{ mt: 1 }} />
-                    <Box sx={{ flex: 1 }}>
-                      <div
-                        ref={(el) => (containersRef.current[index] = el)}
-                        className="quill-container"
-                        style={{ minHeight: 120 }}
-                        aria-label={`Description editor ${index + 1}`}
-                      />
+                    <Typography variant="subtitle1" fontWeight="medium">
+                      Description
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      {descriptions.length > 1 && (
+                        <IconButton
+                          onClick={() => handleRemoveDescription(index)}
+                          size="small"
+                          color="error"
+                          title="Remove description"
+                        >
+                          <RemoveCircleOutlineIcon />
+                        </IconButton>
+                      )}
                     </Box>
                   </Box>
+
+                  <NoSSR
+                    fallback={
+                      <Box
+                        sx={{
+                          height: "200px",
+                          border: "1px solid #ccc",
+                          borderRadius: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "text.secondary",
+                        }}
+                      >
+                        Loading editor...
+                      </Box>
+                    }
+                  >
+                    <QuillEditor
+                      value={description}
+                      onChange={(value) =>
+                        handleDescriptionChange(index, value)
+                      }
+                      height="200px"
+                      placeholder={`Enter description...`}
+                    />
+                  </NoSSR>
                 </CardContent>
               </Card>
             ))}
           </Box>
-
-          {descriptions.length === 0 && (
-            <Box sx={{ textAlign: "center", py: 4 }}>
-              <DescriptionIcon
-                sx={{ fontSize: 48, color: "grey.400", mb: 2 }}
-              />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                No descriptions added yet
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Add descriptions to detail what this function does.
-              </Typography>
-            </Box>
-          )}
         </DialogContent>
 
-        <DialogActions
-          sx={{
-            p: 2,
-            borderTop: "1px solid",
-            borderColor: "divider",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            Number of descriptions:{" "}
-            {descriptions.filter((d) => d.trim()).length}
-          </Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Button
-              variant="contained"
-              onClick={handleSaveDescriptions}
-              disabled={saveLoading}
-            >
-              {saveLoading ? "Saving..." : "Save"}
-            </Button>
-            <Button onClick={onClose} variant="outlined">
-              Close
-            </Button>
-          </Box>
+        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <Button onClick={handleClose} disabled={saveLoading}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSaveDescriptions}
+            disabled={saveLoading}
+          >
+            {saveLoading ? "Saving..." : "Save Descriptions"}
+          </Button>
         </DialogActions>
       </Dialog>
 
       <CustomSnackbar
         open={snackbar.open}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
         message={snackbar.message}
         severity={snackbar.severity}
+        onClose={handleSnackbarClose}
       />
     </>
   );
