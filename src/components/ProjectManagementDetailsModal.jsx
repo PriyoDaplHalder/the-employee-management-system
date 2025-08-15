@@ -88,7 +88,11 @@ const ProjectManagementDetailsModal = ({
 
   useEffect(() => {
     if (open && project?.srsDocument?.sections) {
-      setSectionCards(Array.isArray(project.srsDocument.sections) ? project.srsDocument.sections : []);
+      setSectionCards(
+        Array.isArray(project.srsDocument.sections)
+          ? project.srsDocument.sections
+          : []
+      );
     }
   }, [open, project]);
 
@@ -448,7 +452,7 @@ const ProjectManagementDetailsModal = ({
             <Button
               variant="outlined"
               color="primary"
-              sx={{ textTransform: "none", py: "0.18rem" }}
+              sx={{ textTransform: "none", py: "0.8rem" }}
               startIcon={<AddIcon />}
               onClick={() => setShowAddSectionModal(true)}
             >

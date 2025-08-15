@@ -22,7 +22,15 @@ import {
 import { getToken } from "../utils/storage";
 import CustomSnackbar from "./CustomSnackbar";
 
-const FunctionDescriptionsModal = ({ open, onClose, project, section, module, functionItem, onSave }) => {
+const FunctionDescriptionsModal = ({
+  open,
+  onClose,
+  project,
+  section,
+  module,
+  functionItem,
+  onSave,
+}) => {
   const [descriptions, setDescriptions] = useState([""]);
   const [saveLoading, setSaveLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -35,19 +43,28 @@ const FunctionDescriptionsModal = ({ open, onClose, project, section, module, fu
     if (open && functionItem) {
       // Always populate from database if available
       const dbDescriptions = functionItem?.descriptions;
-      setDescriptions(Array.isArray(dbDescriptions) && dbDescriptions.length > 0 ? dbDescriptions.map(d => d.content) : [""]);
+      setDescriptions(
+        Array.isArray(dbDescriptions) && dbDescriptions.length > 0
+          ? dbDescriptions.map((d) => d.content)
+          : [""]
+      );
     }
   }, [open, functionItem]);
 
   const handleDescriptionChange = (index, value) => {
-    setDescriptions(descriptions => descriptions.map((d, i) => (i === index ? value : d)));
+    setDescriptions((descriptions) =>
+      descriptions.map((d, i) => (i === index ? value : d))
+    );
   };
 
-  const handleAddDescription = () => setDescriptions(descriptions => [...descriptions, ""]);
+  const handleAddDescription = () =>
+    setDescriptions((descriptions) => [...descriptions, ""]);
 
-  const handleRemoveDescription = index => {
+  const handleRemoveDescription = (index) => {
     if (descriptions.length === 1) return;
-    setDescriptions(descriptions => descriptions.filter((_, i) => i !== index));
+    setDescriptions((descriptions) =>
+      descriptions.filter((_, i) => i !== index)
+    );
   };
 
   const handleSaveDescriptions = async () => {
@@ -55,31 +72,45 @@ const FunctionDescriptionsModal = ({ open, onClose, project, section, module, fu
     try {
       const token = getToken();
       const endpoint = `/api/projects/${project._id}/sections/${section._id}/modules/${module._id}/functions/${functionItem._id}/descriptions`;
-      const descriptionData = descriptions.filter(content => content.trim()).map(content => ({ content: content.trim() }));
-      
+      const descriptionData = descriptions
+        .filter((content) => content.trim())
+        .map((content) => ({ content: content.trim() }));
+
       const response = await fetch(endpoint, {
         method: "PUT",
-        headers: { 
+        headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ descriptions: descriptionData }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        setSnackbar({ open: true, message: "Descriptions saved successfully!", severity: "success" });
-        setDescriptions(descriptionData.map(d => d.content));
+        setSnackbar({
+          open: true,
+          message: "Descriptions saved successfully!",
+          severity: "success",
+        });
+        setDescriptions(descriptionData.map((d) => d.content));
         if (onSave) {
           onSave();
         }
         onClose();
       } else {
         const errorData = await response.json();
-        setSnackbar({ open: true, message: errorData.error || "Failed to save descriptions", severity: "error" });
+        setSnackbar({
+          open: true,
+          message: errorData.error || "Failed to save descriptions",
+          severity: "error",
+        });
       }
     } catch {
-      setSnackbar({ open: true, message: "Error saving descriptions", severity: "error" });
+      setSnackbar({
+        open: true,
+        message: "Error saving descriptions",
+        severity: "error",
+      });
     } finally {
       setSaveLoading(false);
     }
@@ -92,7 +123,10 @@ const FunctionDescriptionsModal = ({ open, onClose, project, section, module, fu
         onClose={onClose}
         maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3, maxHeight: "90vh" } }}
+        PaperProps={{
+          sx: { borderRadius: 3, maxHeight: "90vh", overflow: "visible" },
+        }}
+        sx={{ overflow: "visible" }}
       >
         <DialogTitle
           sx={{
@@ -117,27 +151,47 @@ const FunctionDescriptionsModal = ({ open, onClose, project, section, module, fu
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", my: 1 }}>
-            <Typography variant="h6" color="primary.main" sx={{ fontWeight: 600 }}>
+        <DialogContent sx={{ p: 3, overflow: "visible" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              my: 1,
+            }}
+          >
+            <Typography
+              variant="h6"
+              color="primary.main"
+              sx={{ fontWeight: 600 }}
+            >
               Function Description
-               {/* ({descriptions.filter(d => d.trim()).length}) */}
+              {/* ({descriptions.filter(d => d.trim()).length}) */}
             </Typography>
-            <Button
+            {/* <Button
               variant="outlined"
               startIcon={<AddIcon />}
               onClick={handleAddDescription}
               sx={{ textTransform: "none", borderRadius: 2 }}
             >
               Add Description
-            </Button>
+            </Button> */}
           </Box>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {descriptions.map((description, index) => (
-              <Card key={index} sx={{ bgcolor: "grey.50", border: "1px solid", borderColor: "grey.200" }}>
+              <Card
+                key={index}
+                sx={{
+                  bgcolor: "grey.50",
+                  border: "1px solid",
+                  borderColor: "grey.200",
+                }}
+              >
                 <CardContent sx={{ p: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                  <Box
+                    sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}
+                  >
                     <DescriptionIcon color="action" sx={{ mt: 1 }} />
                     <Box sx={{ flex: 1 }}>
                       <TextField
@@ -147,8 +201,21 @@ const FunctionDescriptionsModal = ({ open, onClose, project, section, module, fu
                         label={`Description ${index + 1}`}
                         variant="outlined"
                         value={description}
-                        onChange={(e) => handleDescriptionChange(index, e.target.value)}
+                        onChange={(e) =>
+                          handleDescriptionChange(index, e.target.value)
+                        }
                         placeholder="Enter function description..."
+                        InputProps={{
+                          sx: {
+                            // allow the underlying textarea to be vertically resizable
+                            "& textarea": {
+                              resize: "vertical",
+                              minHeight: 120,
+                              maxHeight: "60vh",
+                              overflow: "auto",
+                            },
+                          },
+                        }}
                       />
                     </Box>
                     {descriptions.length > 1 && (
@@ -170,7 +237,9 @@ const FunctionDescriptionsModal = ({ open, onClose, project, section, module, fu
 
           {descriptions.length === 0 && (
             <Box sx={{ textAlign: "center", py: 4 }}>
-              <DescriptionIcon sx={{ fontSize: 48, color: "grey.400", mb: 2 }} />
+              <DescriptionIcon
+                sx={{ fontSize: 48, color: "grey.400", mb: 2 }}
+              />
               <Typography variant="h6" color="text.secondary" gutterBottom>
                 No descriptions added yet
               </Typography>
@@ -192,7 +261,8 @@ const FunctionDescriptionsModal = ({ open, onClose, project, section, module, fu
           }}
         >
           <Typography variant="body2" color="text.secondary">
-            Number of descriptions: {descriptions.filter(d => d.trim()).length}
+            Number of descriptions:{" "}
+            {descriptions.filter((d) => d.trim()).length}
           </Typography>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button
