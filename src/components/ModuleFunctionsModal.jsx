@@ -22,11 +22,19 @@ import CustomSnackbar from "./CustomSnackbar";
 import AddFunctionModal from "./AddFunctionModal";
 import FunctionDescriptionsModal from "./FunctionDescriptionsModal";
 
-const ModuleFunctionsModal = ({ open, onClose, project, section, module, onSave }) => {
+const ModuleFunctionsModal = ({
+  open,
+  onClose,
+  project,
+  section,
+  module,
+  onSave,
+}) => {
   const [functions, setFunctions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAddFunctionModal, setShowAddFunctionModal] = useState(false);
-  const [showFunctionDescriptionsModal, setShowFunctionDescriptionsModal] = useState(false);
+  const [showFunctionDescriptionsModal, setShowFunctionDescriptionsModal] =
+    useState(false);
   const [selectedFunction, setSelectedFunction] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -115,8 +123,19 @@ const ModuleFunctionsModal = ({ open, onClose, project, section, module, onSave 
         </DialogTitle>
 
         <DialogContent sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-            <Typography variant="h6" color="primary.main" sx={{ fontWeight: 600 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Typography
+              variant="h6"
+              color="primary.main"
+              sx={{ fontWeight: 600 }}
+            >
               Functions ({functions.length})
             </Typography>
             <Button
@@ -142,7 +161,13 @@ const ModuleFunctionsModal = ({ open, onClose, project, section, module, onSave 
           ) : (
             <Grid container spacing={2}>
               {functions.map((functionItem, index) => (
-                <Grid item xs={12} sm={6} md={4} key={functionItem._id || index}>
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  key={functionItem._id || index}
+                >
                   <Card
                     sx={{
                       cursor: "pointer",
@@ -158,9 +183,20 @@ const ModuleFunctionsModal = ({ open, onClose, project, section, module, onSave 
                     onClick={() => handleFunctionClick(functionItem)}
                   >
                     <CardContent sx={{ p: 2 }}>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mb: 1,
+                        }}
+                      >
                         <FunctionsIcon color="secondary" fontSize="small" />
-                        <Typography variant="subtitle1" color="secondary" sx={{ fontWeight: 600 }}>
+                        <Typography
+                          variant="subtitle1"
+                          color="secondary"
+                          sx={{ fontWeight: 600 }}
+                        >
                           {functionItem.title}
                         </Typography>
                       </Box>
@@ -196,6 +232,7 @@ const ModuleFunctionsModal = ({ open, onClose, project, section, module, onSave 
         project={project}
         section={section}
         module={module}
+        initialFunctions={functions}
         onSave={handleFunctionSave}
       />
 

@@ -21,6 +21,7 @@ const AddFunctionModal = ({
   project,
   section,
   module,
+  initialFunctions = [],
   onSave,
 }) => {
   const [functions, setFunctions] = useState([""]);
@@ -33,7 +34,13 @@ const AddFunctionModal = ({
 
   useEffect(() => {
     if (open) {
-      // Always populate from database if available
+      // Prefer parent-provided initialFunctions if available (keeps latest state after save)
+      if (Array.isArray(initialFunctions) && initialFunctions.length > 0) {
+        setFunctions(initialFunctions.map((f) => f.title || f));
+        return;
+      }
+
+      // Otherwise fall back to database module.functions
       const dbFunctions = module?.functions;
       if (Array.isArray(dbFunctions) && dbFunctions.length > 0) {
         setFunctions(dbFunctions.map((f) => f.title));
@@ -41,7 +48,7 @@ const AddFunctionModal = ({
         setFunctions([""]);
       }
     }
-  }, [open, module?.functions]);
+  }, [open, module?.functions, initialFunctions]);
 
   const handleFunctionChange = (index, value) => {
     setFunctions((functions) =>

@@ -26,7 +26,8 @@ const SectionModulesModal = ({ open, onClose, project, section, onSave }) => {
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAddModuleModal, setShowAddModuleModal] = useState(false);
-  const [showModuleFunctionsModal, setShowModuleFunctionsModal] = useState(false);
+  const [showModuleFunctionsModal, setShowModuleFunctionsModal] =
+    useState(false);
   const [selectedModule, setSelectedModule] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -115,8 +116,19 @@ const SectionModulesModal = ({ open, onClose, project, section, onSave }) => {
         </DialogTitle>
 
         <DialogContent sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", my: 1 }}>
-            <Typography variant="h6" color="primary.main" sx={{ fontWeight: 600 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              my: 1,
+            }}
+          >
+            <Typography
+              variant="h6"
+              color="primary.main"
+              sx={{ fontWeight: 600 }}
+            >
               Modules ({modules.length})
             </Typography>
             <Button
@@ -158,9 +170,20 @@ const SectionModulesModal = ({ open, onClose, project, section, onSave }) => {
                     onClick={() => handleModuleClick(module)}
                   >
                     <CardContent sx={{ p: 2 }}>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mb: 1,
+                        }}
+                      >
                         <ModuleIcon color="primary" fontSize="small" />
-                        <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 600 }}>
+                        <Typography
+                          variant="subtitle1"
+                          color="primary"
+                          sx={{ fontWeight: 600 }}
+                        >
                           {module.title}
                         </Typography>
                       </Box>
@@ -195,6 +218,7 @@ const SectionModulesModal = ({ open, onClose, project, section, onSave }) => {
         onClose={() => setShowAddModuleModal(false)}
         project={project}
         section={section}
+        initialModules={modules}
         onSave={handleModuleSave}
       />
 

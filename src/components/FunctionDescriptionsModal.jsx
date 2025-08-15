@@ -148,7 +148,8 @@ const FunctionDescriptionsModal = ({
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <DescriptionIcon />
             <Typography variant="h6" component="span">
-              Function Descriptions - {functionItem.name}
+              {functionItem?.title || functionItem?.name} - Function
+              Descriptions
             </Typography>
           </Box>
           <IconButton onClick={handleClose} size="small">
@@ -159,8 +160,9 @@ const FunctionDescriptionsModal = ({
         <DialogContent sx={{ px: 3, py: 2, overflow: "auto" }}>
           <Box sx={{ mb: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              Project: {project?.name} → Section: {section?.name} → Module:{" "}
-              {module?.name}
+              {module?.name || module?.title} |{" "}
+              {section?.name || section?.title} |{" "}
+              {project?.name || project?.title}
             </Typography>
           </Box>
 

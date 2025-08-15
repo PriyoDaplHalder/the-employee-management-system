@@ -15,7 +15,14 @@ import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { getToken } from "../utils/storage";
 import CustomSnackbar from "./CustomSnackbar";
 
-const AddModuleModal = ({ open, onClose, project, section, onSave }) => {
+const AddModuleModal = ({
+  open,
+  onClose,
+  project,
+  section,
+  initialModules = [],
+  onSave,
+}) => {
   const [modules, setModules] = useState([""]);
   const [saveLoading, setSaveLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -26,7 +33,11 @@ const AddModuleModal = ({ open, onClose, project, section, onSave }) => {
 
   useEffect(() => {
     if (open) {
-      // Always populate from database if available
+      if (Array.isArray(initialModules) && initialModules.length > 0) {
+        setModules(initialModules.map((m) => m.title || m));
+        return;
+      }
+
       const dbModules = section?.modules;
       if (Array.isArray(dbModules) && dbModules.length > 0) {
         setModules(dbModules.map((m) => m.title));
@@ -34,7 +45,7 @@ const AddModuleModal = ({ open, onClose, project, section, onSave }) => {
         setModules([""]);
       }
     }
-  }, [open, section?.modules]);
+  }, [open, section?.modules, initialModules]);
 
   const handleModuleChange = (index, value) => {
     setModules((modules) => modules.map((m, i) => (i === index ? value : m)));
@@ -53,7 +64,6 @@ const AddModuleModal = ({ open, onClose, project, section, onSave }) => {
       const token = getToken();
       const endpoint = `/api/projects/${project._id}/sections/${section._id}/modules`;
 
-      // Filter out empty modules and prepare data
       const validModules = modules.filter((title) => title.trim());
       if (validModules.length === 0) {
         setSnackbar({
